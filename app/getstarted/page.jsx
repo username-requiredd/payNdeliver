@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ChevronRight, Store, User } from "lucide-react";
+import Image from "next/image";
 
 const GetStartedPage = () => {
   const [step, setStep] = useState(0);
@@ -125,8 +126,8 @@ const GetStartedPage = () => {
             Congratulations! Your account has been created.
           </h3>
           <p className="text-gray-600 mb-6">
-            You're all set to start using PayNDeliver. Let's get you to your
-            dashboard.
+            You&apos;re all set to start using PayNDeliver. Let&apos;s get you
+            to your dashboard.
           </p>
           <Button onClick={() => console.log("Redirect to dashboard")}>
             Go to Dashboard
@@ -144,10 +145,12 @@ const GetStartedPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <img
+          <Image
             src="/images/logo/payNdeliver.svg"
             alt="PayNDeliver Logo"
-            className="h-12 w-auto mx-auto mb-8"
+            width={200}
+            height={48}
+            className="mx-auto mb-8"
           />
           <div className="bg-white shadow-xl rounded-lg overflow-hidden">
             <div className="px-4 py-5 sm:p-6">
