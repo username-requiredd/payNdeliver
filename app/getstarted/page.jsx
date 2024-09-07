@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, ChevronRight, Store, Truck, User } from "lucide-react";
+import { Check, ChevronRight, Store, User } from "lucide-react";
 
 const GetStartedPage = () => {
   const [step, setStep] = useState(0);
@@ -14,17 +14,20 @@ const GetStartedPage = () => {
     businessType: "",
   });
 
+  // Handle form input changes
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Here you would typically send the form data to your backend
+    // Perform client-side form handling
     console.log("Form submitted:", formData);
     setStep(step + 1);
   };
 
+  // Define steps in the form process
   const steps = [
     {
       title: "Choose Account Type",
@@ -167,6 +170,7 @@ const GetStartedPage = () => {
   );
 };
 
+// Account Type Card Component
 const AccountTypeCard = ({ icon: Icon, title, description, onClick }) => (
   <motion.div
     whileHover={{ scale: 1.05 }}
@@ -181,6 +185,7 @@ const AccountTypeCard = ({ icon: Icon, title, description, onClick }) => (
   </motion.div>
 );
 
+// Input Component
 const Input = ({ label, ...props }) => (
   <div>
     <label
@@ -196,6 +201,7 @@ const Input = ({ label, ...props }) => (
   </div>
 );
 
+// Select Component
 const Select = ({ label, options, ...props }) => (
   <div>
     <label
@@ -218,6 +224,7 @@ const Select = ({ label, options, ...props }) => (
   </div>
 );
 
+// Button Component
 const Button = ({ children, variant = "primary", ...props }) => (
   <motion.button
     whileHover={{ scale: 1.05 }}
