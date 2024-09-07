@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    assetPrefix: process.env.NODE_ENV === 'production' ? 'https://payndeliverr.netlify.app' : '',
-    // Add any other configuration options here
-  };
-  
-  export default nextConfig;
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
+  // You can add other configuration options here as needed
+};
+
+module.exports = nextConfig;
