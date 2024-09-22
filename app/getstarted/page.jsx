@@ -1,18 +1,25 @@
 "use client";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, ChevronRight, Store, User } from "lucide-react";
+import { Check, ChevronRight, Loader2, Store, User } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const GetStartedPage = () => {
   const [step, setStep] = useState(0);
+  const [loading, setLoading] = useState(false)
+  const [error,setError] = useState(null)
   const [accountType, setAccountType] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
+    phone: "",
     businessName: "",
-    businessType: "",
+    businessType: "", // Added businessType to state
   });
 
   // Handle form input changes
@@ -21,11 +28,47 @@ const GetStartedPage = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Perform client-side form handling
-    console.log("Form submitted:", formData);
-    setStep(step + 1);
+
+    // Check if passwords match for business account
+    if (accountType === "business" && formData.password !== formData.confirmPassword) {
+      return alert("Passwords do not match!");
+    }
+
+    // Set the appropriate endpoint based on account type
+    const endpoint =
+      accountType === "business" ? "/api/business" : "/api/users";
+
+    try {
+      setLoading(true)
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+      console.log("Response from server:", result);
+
+      if (response.ok) {
+        setLoading(false)
+
+        // Handle success (e.g., navigate to dashboard)
+        setStep(step + 1);
+      } else {
+        // Handle errors (e.g., show error message)
+        setError(err.message)
+        toast.error(err.message)
+        console.error("Error:", result.message);
+      }
+    } catch (error) {
+      setLoading(false)
+
+      console.error("Error submitting form:", error);
+    }
   };
 
   // Define steps in the form process
@@ -60,9 +103,9 @@ const GetStartedPage = () => {
       content: (
         <form onSubmit={handleSubmit} className="space-y-6">
           <Input
-            label="Full Name"
-            name="name"
-            value={formData.name}
+            label={accountType === "business" ? "Business Name" : "Full Name"}
+            name={accountType === "business" ? "businessName" : "name"}
+            value={accountType === "business" ? formData.businessName : formData.name}
             onChange={handleInputChange}
             required
           />
@@ -75,6 +118,13 @@ const GetStartedPage = () => {
             required
           />
           <Input
+            label="Phone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleInputChange}
+            required
+          />
+          <Input
             label="Password"
             name="password"
             type="password"
@@ -82,31 +132,31 @@ const GetStartedPage = () => {
             onChange={handleInputChange}
             required
           />
+          <Input
+            label="Confirm Password"
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleInputChange}
+            required
+          />
           {accountType === "business" && (
-            <>
-              <Input
-                label="Business Name"
-                name="businessName"
-                value={formData.businessName}
-                onChange={handleInputChange}
-                required
-              />
-              <Select
-                label="Business Type"
-                name="businessType"
-                value={formData.businessType}
-                onChange={handleInputChange}
-                required
-                options={[
-                  { value: "restaurant", label: "Restaurant" },
-                  { value: "grocery", label: "Grocery Store" },
-                  { value: "retail", label: "Retail Store" },
-                  { value: "other", label: "Other" },
-                ]}
-              />
-            </>
+            <Select
+              label="Business Type"
+              name="businessType"
+              value={formData.businessType}
+              onChange={handleInputChange}
+              required
+              options={[
+                { value: "restaurant", label: "Restaurant" },
+                { value: "grocery", label: "Grocery" },
+                { value: "retail", label: "Retail" },
+                { value: "others", label: "Others" },
+              ]}
+            />
           )}
-          <Button type="submit">Create Account</Button>
+          <Button  type="submit">{loading?               <Loader2 className="animate-spin h-5 w-5" />
+: "Create Account"}</Button>
         </form>
       ),
     },
@@ -129,9 +179,13 @@ const GetStartedPage = () => {
             You&apos;re all set to start using PayNDeliver. Let&apos;s get you
             to your dashboard.
           </p>
-          <Button onClick={() => console.log("Redirect to dashboard")}>
-            Go to Dashboard
-          </Button>
+          <Link
+  className="inline-block bg-green-600 text-white font-semibold py-3 px-6 rounded-md shadow-md hover:bg-green-700 transition duration-200 ease-in-out transform hover:scale-105"
+  href="/signin"
+>
+  Go to Dashboard
+</Link>
+
         </div>
       ),
     },
@@ -139,6 +193,8 @@ const GetStartedPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <ToastContainer position="top-right" autoClose={3000} />
+
       <div className="max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

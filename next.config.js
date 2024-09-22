@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
-  // You can add other configuration options here as needed
+  images: {
+    domains: ['via.placeholder.com'], // Add allowed domains here
+  },
 };
 
 module.exports = nextConfig;

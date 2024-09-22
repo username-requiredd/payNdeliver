@@ -1,9 +1,8 @@
 "use client"
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Truck, CreditCard, Bitcoin, Store, User, ChevronDown, ChevronUp, Check, DollarSign, Clock, Shield, Star } from 'lucide-react';
+import { ShoppingBag, Truck, CreditCard, Bitcoin, Store, User, ChevronDown, ChevronUp, Check, DollarSign, Clock, Shield, Star, StoreIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-
 
 const FAQItem = ({ question, answer }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -111,9 +110,9 @@ export default function LandingPage() {
                 <a key={item} href={`#${item.toLowerCase()}`} className="text-gray-600 hover:text-green-500 transition-colors duration-300">{item}</a>
               ))}
             </div>
-            <Link href={"/getstarted"}>
-            <CTAButton primary>Get Started</CTAButton>
-
+            <Link href={"/stores"}>
+            <CTAButton primary>            <Store/>
+            </CTAButton>
             </Link>
           </div>
         </div>
@@ -131,8 +130,11 @@ export default function LandingPage() {
               <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">Revolutionize Your Business</h1>
               <p className="text-xl mb-6">List your products, reach more customers, and accept both crypto and fiat payments.</p>
               <div className="space-x-4">
+                <Link href={"/getstarted"}>
                 <CTAButton primary>Get Started</CTAButton>
-                <CTAButton>Learn More</CTAButton>
+
+                </Link>
+                {/* <CTAButton>Learn More</CTAButton> */}
               </div>
             </motion.div>
             <motion.div 
@@ -316,51 +318,11 @@ export default function LandingPage() {
         </div>
       </Section>
 
-      {/* <footer className="bg-gray-800 text-white py-12">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-2xl font-bold mb-4">PayNDeliver</h3>
-              <p>Revolutionizing the delivery industry</p>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2">
-                {['About', 'Contact', 'Blog', 'Careers'].map((item) => (
-                  <li key={item}><a href="#" className="hover:text-green-400 transition-colors duration-300">{item}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2">
-                {['Terms of Service', 'Privacy Policy', 'Cookie Policy'].map((item) => (
-                  <li key={item}><a href="#" className="hover:text-green-400 transition-colors duration-300">{item}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Connect With Us</h4>
-              <div className="flex space-x-4">
-                {['Facebook', 'Twitter', 'LinkedIn', 'Instagram'].map((item) => (
-                  <a key={item} href="#" className="hover:text-green-400 transition-colors duration-300">{item}</a>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-gray-700 text-center text-sm">
-            © {new Date().getFullYear()} PayNDeliver. All rights reserved.
-          </div>
-        </div>
-      </footer> */}
-
-      {/* Add a floating scroll-to-top button */}
       <ScrollToTopButton />
     </div>
   );
 }
 
-// New component for scroll-to-top functionality
 const ScrollToTopButton = () => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -404,9 +366,7 @@ const ScrollToTopButton = () => {
   );
 };
 
-// Add some additional styles to the existing components for enhanced visual appeal
 
-// Update the Feature component
 const Feature = ({ icon: Icon, title, description }) => (
   <motion.div 
     className="flex flex-col items-center p-6 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
@@ -421,7 +381,6 @@ const Feature = ({ icon: Icon, title, description }) => (
   </motion.div>
 );
 
-// Update the CTAButton component
 const CTAButton = ({ children, primary }) => (
   <motion.button 
     className={`px-8 py-3 rounded-full font-semibold text-lg transition-colors duration-300 ${
@@ -436,7 +395,6 @@ const CTAButton = ({ children, primary }) => (
   </motion.button>
 );
 
-// Update the TestimonialCard component
 const TestimonialCard = ({ quote, author, role }) => (
   <motion.div 
     className="bg-white p-6 rounded-lg shadow-xl max-w-md"
@@ -458,7 +416,6 @@ const TestimonialCard = ({ quote, author, role }) => (
   </motion.div>
 );
 
-// Add a new component for animated statistics
 const AnimatedStat = ({ value, label }) => {
   const [count, setCount] = useState(0);
 
@@ -490,7 +447,6 @@ const AnimatedStat = ({ value, label }) => {
   );
 };
 
-// Update the Section component to use the AnimatedStat
 const StatsSection = () => (
   <Section className="bg-gray-50">
     <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -502,4 +458,3 @@ const StatsSection = () => (
   </Section>
 );
 
-// Don't forget to replace the StatCard usage with StatsSection in the main component
