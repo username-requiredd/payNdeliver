@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from "next/link";
 import { Suspense } from "react";
 import ShopCard from "@/components/shopCards";
 import Header from "@/components/header";
@@ -13,17 +13,18 @@ import {
   Shirt,
 } from "lucide-react";
 
-async function fetchBusiness(category = 'All') {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  const response = await fetch(`${baseUrl}/api/business?category=${category}`, { 
-    next: { revalidate: 3600 } 
+async function fetchBusiness(category = "All") {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  const response = await fetch(`${baseUrl}/api/business?category=${category}`, {
+    next: { revalidate: 3600 },
   });
-  if (!response.ok) throw new Error('Failed to fetch business data');
+  if (!response.ok) throw new Error("Failed to fetch business data");
   return response.json();
 }
 
 const CategoryLink = ({ children, icon: Icon, isActive, href }) => (
-  <Link href={href}
+  <Link
+    href={href}
     className={`flex items-center px-4 py-2 rounded-full transition-all duration-200 ${
       isActive
         ? "bg-green-500 text-white  scale-105"
@@ -48,9 +49,9 @@ const categories = [
 ];
 
 export default async function Stores({ searchParams }) {
-  const activeCategory = searchParams.category || 'All';
+  const activeCategory = searchParams.category || "All";
   const data = await fetchBusiness(activeCategory);
-
+  console.log(data);
   return (
     <>
       <div className="mb-4">
@@ -73,9 +74,15 @@ export default async function Stores({ searchParams }) {
 
           <header className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-4">
-              {activeCategory === 'All' ? 'All Stores' : `${activeCategory} Stores`}
+              {activeCategory === "All"
+                ? "All Stores"
+                : `${activeCategory} Stores`}
             </h1>
-            <form action="/stores" method="GET" className="w-full md:w-1/2 lg:w-1/3 relative">
+            <form
+              action="/stores"
+              method="GET"
+              className="w-full md:w-1/2 lg:w-1/3 relative"
+            >
               <input
                 type="text"
                 name="search"

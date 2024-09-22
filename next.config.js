@@ -2,7 +2,18 @@
 const nextConfig = {
   assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
   images: {
-    domains: ['via.placeholder.com'], // Add allowed domains here
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "ik.imagekit.io",
+        port: "",
+      },
+      {
+        protocol: "https",
+        hostname: "via.placeholder.com",
+        port: "",
+      },
+    ],
   },
 };
 

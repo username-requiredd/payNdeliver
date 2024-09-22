@@ -1,10 +1,11 @@
-import Spinner from "../Loading"
+"use client";
+import ImageUpload from "@/components/Imageupload";
+const Test = () => {
+  return (
+    <>
+      <ImageUpload />
+    </>
+  );
+};
 
-const Test = ()=>{
-    return(
-        <>
-        <Spinner/>
-        </>
-    )
-}
-export default Test
+export default Test;

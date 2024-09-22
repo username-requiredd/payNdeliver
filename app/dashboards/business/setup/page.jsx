@@ -1,41 +1,45 @@
 "use client";
+
 import React, { useState } from "react";
-import { Camera } from "lucide-react";
-import { useSession } from "next-auth/react"; // Import useSession to get session info
+import { Camera, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import ImageUpload from "@/components/Imageupload";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-
-const ProfileSetupPage =()=> {
-  const { data: session } = useSession(); // Extract session data
-  const [coverImage, setCoverImage] = useState(null);
+const ProfileSetupPage = () => {
+  const { data: session } = useSession();
+  const [image, setimage] = useState(null);
   const [address, setAddress] = useState("");
   const [openingHours, setOpeningHours] = useState("");
   const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => setCoverImage(e.target.result);
-      reader.readAsDataURL(file);
-    }
+  const router = useRouter();
+
+  const handleImageUpload = (url) => {
+    setimage(url);
   };
 
   const handleSaveProfile = async () => {
-    if (!session || !session.user) {
+    if (!session?.user) {
       console.error("No session found.");
       return;
     }
 
-    const businessId = session?.user?.id; // Extract business ID from session (adjust this based on your session structure)
-  
+    const businessId = session.user.id;
+
     const updatedData = {
-      coverImage, // Assuming coverImage is in base64 format or can be processed on the server
+      image,
       address,
       openingHours,
       description,
     };
 
     try {
+      setLoading(true);
       const response = await fetch(`/api/business/${businessId}`, {
         method: "PUT",
         headers: {
@@ -49,9 +53,29 @@ const ProfileSetupPage =()=> {
       }
 
       const result = await response.json();
+      setLoading(false);
       console.log("Profile updated successfully:", result);
+
+      // Show success toast notification
+      toast.success("Account setup completed successfully! Redirecting...", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
+      // Redirect to the products/add route after successful profile update
+      setTimeout(() => {
+        router.push("products/add");
+      }, 2000); // Delay redirect to let user see the success message
     } catch (error) {
+      setError(error.message);
+      setLoading(false);
       console.error("Error updating profile:", error);
+
+      // Show error toast notification
+      toast.error("Error updating profile: " + error.message, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -69,9 +93,9 @@ const ProfileSetupPage =()=> {
             </label>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
               <div className="space-y-1 text-center">
-                {coverImage ? (
+                {image ? (
                   <img
-                    src={coverImage}
+                    src={image}
                     alt="Cover"
                     className="mx-auto h-48 w-full object-cover rounded-md"
                   />
@@ -79,22 +103,11 @@ const ProfileSetupPage =()=> {
                   <Camera className="mx-auto h-12 w-12 text-gray-400" />
                 )}
                 <div className="flex text-sm text-gray-600">
-                  <label
-                    htmlFor="file-upload"
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                  >
-                    <span>Upload a file</span>
-                    <input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      className="sr-only"
-                      onChange={handleImageUpload}
-                    />
-                  </label>
-                  <p className="pl-1">or drag and drop</p>
+                  <ImageUpload onImageUpload={handleImageUpload} />
                 </div>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                <p className="text-xs text-gray-500">
+                  PNG, JPG, GIF up to 10MB
+                </p>
               </div>
             </div>
           </div>
@@ -109,7 +122,6 @@ const ProfileSetupPage =()=> {
             <input
               type="text"
               id="address"
-              name="address"
               className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2"
               placeholder="Enter your address"
               value={address}
@@ -126,7 +138,6 @@ const ProfileSetupPage =()=> {
             </label>
             <textarea
               id="opening-hours"
-              name="opening-hours"
               rows="3"
               className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2"
               placeholder="e.g. Mon-Fri: 9AM-5PM, Sat: 10AM-3PM, Sun: Closed"
@@ -144,7 +155,6 @@ const ProfileSetupPage =()=> {
             </label>
             <textarea
               id="description"
-              name="description"
               rows="3"
               className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2"
               placeholder="Brief description of your business"
@@ -155,17 +165,25 @@ const ProfileSetupPage =()=> {
 
           <div className="mt-8">
             <button
+              disabled={loading}
               type="button"
               onClick={handleSaveProfile}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Save Profile
+              {loading ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : (
+                "Save Profile"
+              )}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Toast container to display toasts */}
+      <ToastContainer />
     </div>
   );
-}
+};
 
-export default ProfileSetupPage
+export default ProfileSetupPage;
