@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -12,6 +12,16 @@ const SignInForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Check if there's a redirect parameter in the URL
+    const redirectParam = searchParams.get('redirect');
+    if (redirectParam) {
+      // Store the redirect URL in session storage
+      sessionStorage.setItem('redirectAfterSignIn', redirectParam);
+    }
+  }, [searchParams]);
 
   const validateForm = () => {
     if (!credentials.email || !credentials.password) {
@@ -21,7 +31,7 @@ const SignInForm = () => {
       return false;
     }
     if (credentials.email.length < 5) {
-      const errorMsg = "email must be at least 5 characters long";
+      const errorMsg = "Email must be at least 5 characters long";
       setError(errorMsg);
       toast.error(errorMsg);
       return false;
@@ -57,7 +67,15 @@ const SignInForm = () => {
       } else if (login?.ok) {
         toast.success("Sign in successful, redirecting...");
         console.log("Sign in successful, redirecting...");
-        router.push("/dashboards/business");
+        
+        // Check if there's a stored redirect URL
+        const redirectUrl = sessionStorage.getItem('redirectAfterSignIn');
+        if (redirectUrl) {
+          sessionStorage.removeItem('redirectAfterSignIn'); // Clear the stored URL
+          router.push(redirectUrl);
+        } else {
+          router.push("/dashboards/business");
+        }
       } else {
         throw new Error("Unexpected response from server");
       }
@@ -73,7 +91,7 @@ const SignInForm = () => {
     let errorMsg;
 
     if (error === "CredentialsSignin") {
-      errorMsg = "Unable to sign in. Please try again later.";
+      errorMsg = "Invalid credentials. Please check your email and password.";
     } else if (error.message === "Network Error" || error.name === "TypeError") {
       errorMsg = "Unable to connect to the server. Please check your internet connection and try again.";
     } else if (error.message === "Unexpected response from server") {
@@ -104,9 +122,9 @@ const SignInForm = () => {
               onChange={handleInputChange}
               className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               id="email"
-              type="text"
+              type="email"
               name="email"
-              placeholder="Your ID number"
+              placeholder="Your email address"
               required
               minLength={5}
             />

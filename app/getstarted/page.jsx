@@ -19,7 +19,7 @@ const GetStartedPage = () => {
     confirmPassword: "",
     phone: "",
     businessName: "",
-    businessType: "", // Added businessType to state
+    businessType: "",
   });
 
   // Handle form input changes
@@ -39,9 +39,7 @@ const GetStartedPage = () => {
       return alert("Passwords do not match!");
     }
 
-    // Set the appropriate endpoint based on account type
-    const endpoint =
-      accountType === "business" ? "/api/business" : "/api/users";
+    const endpoint = accountType === "business" ? "/api/business" : "/api/users";
 
     try {
       setLoading(true);
@@ -58,23 +56,17 @@ const GetStartedPage = () => {
 
       if (response.ok) {
         setLoading(false);
-
-        // Handle success (e.g., navigate to dashboard)
         setStep(step + 1);
       } else {
-        // Handle errors (e.g., show error message)
-        setError(err.message);
-        toast.error(err.message);
-        console.error("Error:", result.message);
+        setError(result.message);
+        toast.error(result.message);
       }
     } catch (error) {
       setLoading(false);
-
       console.error("Error submitting form:", error);
     }
   };
 
-  // Define steps in the form process
   const steps = [
     {
       title: "Choose Account Type",
@@ -108,9 +100,7 @@ const GetStartedPage = () => {
           <Input
             label={accountType === "business" ? "Business Name" : "Full Name"}
             name={accountType === "business" ? "businessName" : "name"}
-            value={
-              accountType === "business" ? formData.businessName : formData.name
-            }
+            value={accountType === "business" ? formData.businessName : formData.name}
             onChange={handleInputChange}
             required
           />
@@ -186,12 +176,11 @@ const GetStartedPage = () => {
             Congratulations! Your account has been created.
           </h3>
           <p className="text-gray-600 mb-6">
-            You&apos;re all set to start using PayNDeliver. Let&apos;s get you
-            to your dashboard.
+            You're all set to start using PayNDeliver. Let's get you to your dashboard.
           </p>
           <Link
             className="inline-block bg-green-600 text-white font-semibold py-3 px-6 rounded-md shadow-md hover:bg-green-700 transition duration-200 ease-in-out transform hover:scale-105"
-            href="/signin"
+            href="/signin?redirect=/dashboards/business/setup" // Add redirect here
           >
             Go to Dashboard
           </Link>

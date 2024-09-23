@@ -236,8 +236,8 @@ const MenuSection = ({
         Array(4)
           .fill()
           .map((_, index) => <Productscardskeleton key={index} />)
-      ) : products.length > 0 ? (
-        products.map((product) => (
+      ) : products?.length > 0 ? (
+        products?.map((product) => (
           <ProductCard
             key={product._id}
             {...product}
