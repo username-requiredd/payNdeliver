@@ -1,41 +1,61 @@
 "use client";
 import React, { useState } from "react";
-import { Camera } from "lucide-react";
-import { useSession } from "next-auth/react"; // Import useSession to get session info
+import { Camera, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import ImageUpload from "@/components/Imageupload";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-
-const ProfileSetupPage = ()=>{
-  const { data: session } = useSession(); // Extract session data
+const ProfileSetupPage = () => {
+  const { data: session } = useSession();
+  const [image, setImage] = useState(null);
   const [coverImage, setCoverImage] = useState(null);
   const [address, setAddress] = useState("");
-  const [openingHours, setOpeningHours] = useState("");
+  const [openingHours, setOpeningHours] = useState([
+    { day: "Monday", openingTime: "", closingTime: "" },
+    { day: "Tuesday", openingTime: "", closingTime: "" },
+    { day: "Wednesday", openingTime: "", closingTime: "" },
+    { day: "Thursday", openingTime: "", closingTime: "" },
+    { day: "Friday", openingTime: "", closingTime: "" },
+    { day: "Saturday", openingTime: "", closingTime: "" },
+    { day: "Sunday", openingTime: "", closingTime: "" },
+  ]);
   const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => setCoverImage(e.target.result);
-      reader.readAsDataURL(file);
-    }
+  const router = useRouter();
+
+  const handleImageUpload = (url) => {
+    setImage(url);
+    setCoverImage(url);
+  };
+
+  const handleOpeningHoursChange = (index, field, value) => {
+    const newOpeningHours = [...openingHours];
+    newOpeningHours[index][field] = value;
+    setOpeningHours(newOpeningHours);
   };
 
   const handleSaveProfile = async () => {
-    if (!session || !session.user) {
+    if (!session?.user) {
       console.error("No session found.");
       return;
     }
 
-    const businessId = session?.user?.id; // Extract business ID from session (adjust this based on your session structure)
-  
+    const businessId = session.user.id;
+
     const updatedData = {
-      coverImage, // Assuming coverImage is in base64 format or can be processed on the server
+      image,
+      coverImage,
       address,
-      openingHours,
+      openingHours, // Now structured data
       description,
     };
 
     try {
+      setLoading(true);
       const response = await fetch(`/api/business/${businessId}`, {
         method: "PUT",
         headers: {
@@ -49,9 +69,26 @@ const ProfileSetupPage = ()=>{
       }
 
       const result = await response.json();
+      setLoading(false);
       console.log("Profile updated successfully:", result);
+
+      toast.success("Account setup completed successfully! Redirecting...", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
+      setTimeout(() => {
+        router.push("products/add");
+      }, 2000);
     } catch (error) {
+      setError(error.message);
+      setLoading(false);
       console.error("Error updating profile:", error);
+
+      toast.error("Error updating profile: " + error.message, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -79,22 +116,11 @@ const ProfileSetupPage = ()=>{
                   <Camera className="mx-auto h-12 w-12 text-gray-400" />
                 )}
                 <div className="flex text-sm text-gray-600">
-                  <label
-                    htmlFor="file-upload"
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                  >
-                    <span>Upload a file</span>
-                    <input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      className="sr-only"
-                      onChange={handleImageUpload}
-                    />
-                  </label>
-                  <p className="pl-1">or drag and drop</p>
+                  <ImageUpload onImageUpload={handleImageUpload} />
                 </div>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                <p className="text-xs text-gray-500">
+                  PNG, JPG, GIF up to 10MB
+                </p>
               </div>
             </div>
           </div>
@@ -109,7 +135,6 @@ const ProfileSetupPage = ()=>{
             <input
               type="text"
               id="address"
-              name="address"
               className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2"
               placeholder="Enter your address"
               value={address}
@@ -118,21 +143,40 @@ const ProfileSetupPage = ()=>{
           </div>
 
           <div className="mb-6">
-            <label
-              htmlFor="opening-hours"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Opening Hours
             </label>
-            <textarea
-              id="opening-hours"
-              name="opening-hours"
-              rows="3"
-              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2"
-              placeholder="e.g. Mon-Fri: 9AM-5PM, Sat: 10AM-3PM, Sun: Closed"
-              value={openingHours}
-              onChange={(e) => setOpeningHours(e.target.value)}
-            ></textarea>
+            {openingHours.map((dayInfo, index) => (
+              <div key={index} className="flex items-center space-x-4 mb-4">
+                <span>{dayInfo.day}</span>
+                <input
+                  type="time"
+                  className="border p-1"
+                  value={dayInfo.openingTime}
+                  onChange={(e) =>
+                    handleOpeningHoursChange(
+                      index,
+                      "openingTime",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Opening Time"
+                />
+                <input
+                  type="time"
+                  className="border p-1"
+                  value={dayInfo.closingTime}
+                  onChange={(e) =>
+                    handleOpeningHoursChange(
+                      index,
+                      "closingTime",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Closing Time"
+                />
+              </div>
+            ))}
           </div>
 
           <div className="mb-6">
@@ -144,7 +188,6 @@ const ProfileSetupPage = ()=>{
             </label>
             <textarea
               id="description"
-              name="description"
               rows="3"
               className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2"
               placeholder="Brief description of your business"
@@ -155,17 +198,24 @@ const ProfileSetupPage = ()=>{
 
           <div className="mt-8">
             <button
+              disabled={loading}
               type="button"
               onClick={handleSaveProfile}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Save Profile
+              {loading ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : (
+                "Save Profile"
+              )}
             </button>
           </div>
         </div>
       </div>
+
+      <ToastContainer />
     </div>
   );
-}
+};
 
-export default ProfileSetupPage
+export default ProfileSetupPage;
