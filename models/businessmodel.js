@@ -1,4 +1,21 @@
 import mongoose from 'mongoose';
+
+const OpeningHourSchema = new mongoose.Schema({
+  day: {
+    type: String,
+    enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    required: false,
+  },
+  openingTime: {
+    type: String, 
+    required: false,
+  },
+  closingTime: {
+    type: String, 
+    required: false,
+  },
+});
+
 const BusinessSchema = new mongoose.Schema(
   {
     businessName: { 
@@ -27,7 +44,6 @@ const BusinessSchema = new mongoose.Schema(
       enum: ["restaurant", "grocery", "retail", "others"], 
       required: true
     },
-    // Optional fields to be filled later on the dashboard
     coverImage: { 
       type: String, 
       required: false
@@ -35,7 +51,8 @@ const BusinessSchema = new mongoose.Schema(
     address: { 
       type: String, 
       required: false 
-    }
+    },
+    openingHours: [OpeningHourSchema] // Adding opening hours field
   },
   {
     timestamps: true,

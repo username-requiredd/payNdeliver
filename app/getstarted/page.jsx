@@ -9,8 +9,8 @@ import "react-toastify/dist/ReactToastify.css";
 
 const GetStartedPage = () => {
   const [step, setStep] = useState(0);
-  const [loading, setLoading] = useState(false)
-  const [error,setError] = useState(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [accountType, setAccountType] = useState("");
   const [formData, setFormData] = useState({
     name: "",
@@ -32,7 +32,10 @@ const GetStartedPage = () => {
     e.preventDefault();
 
     // Check if passwords match for business account
-    if (accountType === "business" && formData.password !== formData.confirmPassword) {
+    if (
+      accountType === "business" &&
+      formData.password !== formData.confirmPassword
+    ) {
       return alert("Passwords do not match!");
     }
 
@@ -41,7 +44,7 @@ const GetStartedPage = () => {
       accountType === "business" ? "/api/business" : "/api/users";
 
     try {
-      setLoading(true)
+      setLoading(true);
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -54,18 +57,18 @@ const GetStartedPage = () => {
       console.log("Response from server:", result);
 
       if (response.ok) {
-        setLoading(false)
+        setLoading(false);
 
         // Handle success (e.g., navigate to dashboard)
         setStep(step + 1);
       } else {
         // Handle errors (e.g., show error message)
-        setError(err.message)
-        toast.error(err.message)
+        setError(err.message);
+        toast.error(err.message);
         console.error("Error:", result.message);
       }
     } catch (error) {
-      setLoading(false)
+      setLoading(false);
 
       console.error("Error submitting form:", error);
     }
@@ -105,7 +108,9 @@ const GetStartedPage = () => {
           <Input
             label={accountType === "business" ? "Business Name" : "Full Name"}
             name={accountType === "business" ? "businessName" : "name"}
-            value={accountType === "business" ? formData.businessName : formData.name}
+            value={
+              accountType === "business" ? formData.businessName : formData.name
+            }
             onChange={handleInputChange}
             required
           />
@@ -155,8 +160,13 @@ const GetStartedPage = () => {
               ]}
             />
           )}
-          <Button  type="submit">{loading?               <Loader2 className="animate-spin h-5 w-5" />
-: "Create Account"}</Button>
+          <Button type="submit">
+            {loading ? (
+              <Loader2 className="animate-spin h-5 w-5" />
+            ) : (
+              "Create Account"
+            )}
+          </Button>
         </form>
       ),
     },
@@ -180,12 +190,11 @@ const GetStartedPage = () => {
             to your dashboard.
           </p>
           <Link
-  className="inline-block bg-green-600 text-white font-semibold py-3 px-6 rounded-md shadow-md hover:bg-green-700 transition duration-200 ease-in-out transform hover:scale-105"
-  href="/signin"
->
-  Go to Dashboard
-</Link>
-
+            className="inline-block bg-green-600 text-white font-semibold py-3 px-6 rounded-md shadow-md hover:bg-green-700 transition duration-200 ease-in-out transform hover:scale-105"
+            href="/signin"
+          >
+            Go to Dashboard
+          </Link>
         </div>
       ),
     },
@@ -193,7 +202,7 @@ const GetStartedPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer position="top-right" autoClose={3000} />
 
       <div className="max-w-3xl mx-auto">
         <motion.div

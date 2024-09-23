@@ -1,5 +1,5 @@
 import Link from "next/link";
-const ProductCard = ({ image, title, dsc, price, onclick, id }) => {
+const ProductCard = ({ image, name, description, price, onclick, id }) => {
   return (
     <>
       <div
@@ -9,15 +9,17 @@ const ProductCard = ({ image, title, dsc, price, onclick, id }) => {
       >
         <div className="flex bg-white border h-28 border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:border-gray-700 h-30 min-w-0">
           <div className="flex flex-col justify-between p-2 leading-tight w-2/3 max-w-full min-w-0 overflow-hidden">
-            <div className="dsc">
+            <div className="description">
               <h5 className=" font-semibold text-ellipsis truncate text-xs sm:text-sm">
-                {title}
+                {name}
               </h5>
               <p className="text-xs mt-2 text-gray-700 dark:text-gray-400 truncate">
-                {dsc}
+                {description}
               </p>
             </div>
-            <div className="text-xs sm:text-sm font-bold text-green-700">${price}</div>
+            <div className="text-xs sm:text-sm font-bold text-green-700">
+              ${price}
+            </div>
           </div>
           <div className=" h-full  w-1/3 min-w-0">
             <img

@@ -1,13 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Plus,Minus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import { useRouter } from "next/navigation";
 const FoodDetailsModal = ({
-  title,
+  name,
   price,
   onClose,
-  dsc,
+  description,
   image,
   addToCart,
   saveCartToDatabase,
@@ -22,23 +22,22 @@ const FoodDetailsModal = ({
       return;
     }
     addToCart({
-      title,
+      name,
       price,
-      dsc,
+      description,
       image,
       id,
       quantity,
     });
-
   };
   const increaseQuantity = () => setQuantity((prev) => prev + 1);
   const decreaseQuantity = () => setQuantity((prev) => Math.max(1, prev - 1));
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div className="fixed z-50 inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-h_idden">
         <div className="relative h-64">
-          <img src={image} alt={title} className="w-full h-full object-cover" />
+          <img src={image} alt={name} className="w-full h-full object-cover" />
           <div className="rounded-full" onClick={onClose}>
             <button
               onClick={onClose}
@@ -63,8 +62,8 @@ const FoodDetailsModal = ({
         </div>
 
         <div className="p-6">
-          <h2 className="text-2xl font-bold mb-2 ">{title}</h2>
-          <p className=" text-gray-600 mb-6">{dsc}</p>
+          <h2 className="text-2xl font-bold mb-2 ">{name}</h2>
+          <p className=" text-gray-600 mb-6">{description}</p>
 
           <p className="text-xl text-green-600 font-semibold mb-6">${price}</p>
 

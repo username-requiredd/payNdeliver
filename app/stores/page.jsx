@@ -16,7 +16,7 @@ import {
 async function fetchBusiness(category = "All") {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   const response = await fetch(`${baseUrl}/api/business?category=${category}`, {
-    next: { revalidate: 3600 },
+    cache: "no-store",
   });
   if (!response.ok) throw new Error("Failed to fetch business data");
   return response.json();
@@ -109,12 +109,12 @@ export default async function Stores({ searchParams }) {
 function ShopCards({ data }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {data?.data?.map(({ _id, coverImage, name, cuisineType }) => (
+      {data?.data?.map(({ _id, coverImage, businessName, cuisineType }) => (
         <ShopCard
           key={_id}
           id={_id}
           image={coverImage}
-          title={name}
+          title={businessName}
           rating={5}
           categories={cuisineType}
           deliverytime={"9:00am - 4:00pm"}
