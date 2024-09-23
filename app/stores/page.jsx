@@ -109,11 +109,11 @@ export default async function Stores({ searchParams }) {
 function ShopCards({ data }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {data?.data?.map(({ _id, image, name, cuisineType }) => (
+      {data?.data?.map(({ _id, coverImage, name, cuisineType }) => (
         <ShopCard
           key={_id}
           id={_id}
-          image={image}
+          image={coverImage}
           title={name}
           rating={5}
           categories={cuisineType}
