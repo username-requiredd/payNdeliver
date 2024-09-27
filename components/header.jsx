@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,12 +23,12 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex-shrink-0">
             <img
-              src="/images/logo/logo.png"
+              src="/images/logo/payNdeliver.svg"
               className="h-8 w-auto"
               alt="Logo"
             />
           </Link>
-          
+
           <div className="flex items-center space-x-4">
             <Link
               href="/cart"

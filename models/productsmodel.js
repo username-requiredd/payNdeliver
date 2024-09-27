@@ -25,10 +25,12 @@ const ProductsSchema = new mongoose.Schema(
       min: 0,
     },
     category: {
-      type: String,
-      required: true,
-      trim: true,
+      type: [String],
+      required: false,  
+      trim: true,      
     },
+    
+
     image: {
       type: String,
       trim: true,
@@ -38,6 +40,15 @@ const ProductsSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    tags: {
+      type: [String],
+      default: [],
+    },
+    brand: {
+      type: String,
+      trim: true,
+      maxlength: 50,
+    },
   },
   {
     timestamps: true,
@@ -46,5 +57,8 @@ const ProductsSchema = new mongoose.Schema(
 );
 
 ProductsSchema.index({ businessId: 1, category: 1 });
+ProductsSchema.index({ name: 'text', description: 'text' });
 
-export default mongoose.models.Product || mongoose.model('Product', ProductsSchema);
+const ProductModel = mongoose.models.Product || mongoose.model('Product', ProductsSchema);
+
+export default ProductModel;

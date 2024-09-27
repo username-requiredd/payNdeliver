@@ -90,7 +90,9 @@ export default function ProductTable() {
       }
 
       if (!response.ok) {
-        throw new Error("Error fetching products!");
+        throw new Error(
+          "Error fetching products! try checking your connection or try again later."
+        );
       }
 
       const products = await response.json();
@@ -106,7 +108,7 @@ export default function ProductTable() {
       setRows(formattedProducts);
     } catch (err) {
       setError(err.message);
-      console.error("Error:", err.message);
+      console.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -142,7 +144,6 @@ export default function ProductTable() {
       setProductToDelete(null);
     } catch (err) {
       console.error("Error deleting product:", err);
-      // Optionally, show an error message to the user
     }
   };
 

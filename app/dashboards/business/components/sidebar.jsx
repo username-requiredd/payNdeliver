@@ -27,11 +27,23 @@ const Sidebar = () => {
 
   const navItems = [
     { href: "/dashboards/business", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/dashboards/business/products", icon: ShoppingBag, label: "Products" },
+    {
+      href: "/dashboards/business/products",
+      icon: ShoppingBag,
+      label: "Products",
+    },
     { href: "/dashboards/business/customers", icon: Users, label: "Customers" },
     { href: "/dashboards/business/sales", icon: Coins, label: "Sales" },
-    { href: "/dashboards/business/transactions", icon: ArrowRightLeft, label: "Transactions" },
-    { href: "/dashboards/business/settings", icon: Settings, label: "Settings" },
+    {
+      href: "/dashboards/business/transactions",
+      icon: ArrowRightLeft,
+      label: "Transactions",
+    },
+    {
+      href: "/dashboards/business/settings",
+      icon: Settings,
+      label: "Settings",
+    },
   ];
 
   return (
@@ -74,35 +86,15 @@ const Sidebar = () => {
           </nav>
 
           <div className="mt-auto">
-            {/* {session && (
-              <div className="flex items-center mb-4 p-3 rounded-lg bg-gray-700">
-                <div className="relative w-10 h-10 mr-3">
-                  <img
-                    src={session.user.image || "/images/profile/profile.jpg"}
-                    className="rounded-full"
-                    alt="Profile"
-                    width={40}
-                    height={40}
-                  />
-                </div>
-                <div>
-                  <p className="font-medium">{session.user.name}</p>
-                  <p className="text-sm text-gray-400">{session.user.email}</p>
-                </div>
-              </div>
-            )} */}
             <button
               onClick={() => signOut()}
-              className="w-full mb-2 flex items-center  p-3 bg-red-600 text-white hover:bg-red-700 transition-colors duration-200"
+              className="w-fit mb-2 rounded-md flex items-center  p-3 bg-gray-700 text-white hover:bg-gray-600 transition-colors duration-200"
             >
-              Logout 
-             <ArrowRight className=" mx-2" />
+              Logout
+              <LogOut className=" mx-2" />
             </button>
           </div>
         </aside>
-      </div>
-      <div className="md:ml-64">
-        {/* Main content goes here */}
       </div>
     </>
   );
