@@ -9,9 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@candypay/checkout-sdk": "^0.1.57",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@mui/x-data-grid": "^7.17.0",
+    "@solana/pay": "^0.2.5",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/wallet-adapter-react-ui": "^0.9.35",
+    "@solana/web3.js": "^1.95.3",
+    "@stripe/react-stripe-js": "^2.8.0",
+    "@stripe/stripe-js": "^4.5.0",
     "bcryptjs": "^2.4.3",
     "formidable": "^3.5.1",
     "framer-motion": "^11.5.4",

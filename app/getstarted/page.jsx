@@ -39,7 +39,8 @@ const GetStartedPage = () => {
       return alert("Passwords do not match!");
     }
 
-    const endpoint = accountType === "business" ? "/api/business" : "/api/users";
+    const endpoint =
+      accountType === "business" ? "/api/business" : "/api/users";
 
     try {
       setLoading(true);
@@ -100,7 +101,9 @@ const GetStartedPage = () => {
           <Input
             label={accountType === "business" ? "Business Name" : "Full Name"}
             name={accountType === "business" ? "businessName" : "name"}
-            value={accountType === "business" ? formData.businessName : formData.name}
+            value={
+              accountType === "business" ? formData.businessName : formData.name
+            }
             onChange={handleInputChange}
             required
           />
@@ -176,13 +179,20 @@ const GetStartedPage = () => {
             Congratulations! Your account has been created.
           </h3>
           <p className="text-gray-600 mb-6">
-            You're all set to start using PayNDeliver. Let's get you to your dashboard.
+            You're all set to start using PayNDeliver.
+            {accountType === "business"
+              ? "Let's get you to your Dashboard."
+              : ""}
           </p>
           <Link
             className="inline-block bg-green-600 text-white font-semibold py-3 px-6 rounded-md shadow-md hover:bg-green-700 transition duration-200 ease-in-out transform hover:scale-105"
-            href="/signin?redirect=/dashboards/business/setup" // Add redirect here
+            href={
+              accountType === "business"
+                ? "dashboards/business/setup"
+                : "stores"
+            }
           >
-            Go to Dashboard
+            {accountType === "business" ? "Go to Dashboard" : "Explore"}
           </Link>
         </div>
       ),

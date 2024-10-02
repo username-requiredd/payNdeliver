@@ -1,13 +1,6 @@
 import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema({
-  // username: {
-  //   type: String,
-  //   required: [true, 'Please provide a username'],
-  //   unique: true,
-  //   trim: true,
-  //   minlength: [3, 'Username must be at least 3 characters long']
-  // },
   email: {
     type: String,
     required: [true, 'Please provide an email'],
@@ -16,6 +9,16 @@ const UserSchema = new mongoose.Schema({
     lowercase: true,
     match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email']
   },
+  phone:{
+    type:Number,
+    required:false
+  },
+
+  address: { 
+    type: String, 
+    required: false 
+  },
+
   password: {
     type: String,
     required: [true, 'Please provide a password'],
@@ -23,8 +26,7 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin', 'business'],
-    default: 'business'
+    default: 'user'
   }
 }, {
   timestamps: true,

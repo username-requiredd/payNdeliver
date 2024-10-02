@@ -6,7 +6,13 @@ import useLocalStorage from "./uselocalstorage";
 
 const CartContext = createContext();
 
-export const useCart = () => useContext(CartContext);
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error("useCart must be used within a CartProvider");
+  }
+  return context;
+};
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useLocalStorage("cart", []);
@@ -56,19 +62,21 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     if (session?.user?.id) {
       fetchCart();
+    } else {
+      setCart([]);  // Clear cart when user logs out
     }
-  }, [fetchCart, session?.user?.id]);
+  }, [fetchCart, session?.user?.id, setCart]);
 
   // Save cart to the database
   const saveCartToDb = useCallback(async (products) => {
     const userId = session?.user?.id;
-    console.log("userID:", userId);
     if (!userId) {
       console.warn("User not authenticated. Cannot save cart to database.");
       return;
     }
 
     try {
+      setLoading(true);
       console.log("Saving cart to database for user:", userId);
       const response = await fetch(`/api/cart/`, {
         method: "POST",
@@ -97,6 +105,8 @@ export const CartProvider = ({ children }) => {
     } catch (error) {
       console.error("Error updating cart in the database:", error);
       setError("Error updating cart");
+    } finally {
+      setLoading(false);
     }
   }, [session?.user?.id]);
 
@@ -141,6 +151,9 @@ export const CartProvider = ({ children }) => {
 
   // Update product quantity in the cart
   const updateQuantity = useCallback((productId, newQuantity) => {
+    if (newQuantity < 1) {
+      return removeFromCart(productId);
+    }
     setCart((prevCart) => {
       const updatedCart = prevCart.map((item) =>
         item.id === productId ? { ...item, quantity: newQuantity } : item
@@ -150,7 +163,7 @@ export const CartProvider = ({ children }) => {
 
       return updatedCart;
     });
-  }, [setCart, saveCartToDb]);
+  }, [setCart, saveCartToDb, removeFromCart]);
 
   // Memoized context value to avoid unnecessary re-renders
   const contextValue = useMemo(
