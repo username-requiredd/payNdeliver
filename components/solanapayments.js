@@ -4,8 +4,10 @@ import { createQR, encodeURL } from '@solana/pay';
 import { PublicKey, Keypair } from '@solana/web3.js';
 import BigNumber from 'bignumber.js';
 import { CreditCard, Coins } from 'lucide-react';
-
+import { useCart } from '@/contex/cartcontex';
 export default function EnhancedCheckout() {
+const {cart} = useCart()
+// console.log(cart)
   const [reference, setReference] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('crypto');
   const [cardDetails, setCardDetails] = useState({
@@ -29,7 +31,7 @@ export default function EnhancedCheckout() {
 
     const recipient = new PublicKey('a8xbmjRKktM4Np8M2RS6a3nrygQq7aaguNe9n7JFfjE');
     const amount = new BigNumber(0.1);
-    const memo = 'Payment for product XYZ';
+    const memo = 'Payment for Chicken Sharwarma';
 
     const url = encodeURL({ recipient, amount, reference: newReference, memo });
     const qr = createQR(url);
