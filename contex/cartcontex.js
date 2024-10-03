@@ -20,7 +20,6 @@ export const CartProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch cart from the database when the user is authenticated
   const fetchCart = useCallback(async () => {
     const id = session?.user?.id;
     if (!id) {
@@ -43,7 +42,7 @@ export const CartProvider = ({ children }) => {
       console.log("Fetched products from API:", products);
 
       // Update local cart with fetched products
-      setCart(products.map(product => ({
+      setCart(prevCart => products.map(product => ({
         id: product.id,
         name: product.name,
         price: product.price,
@@ -57,17 +56,16 @@ export const CartProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, setCart]);
+  }, [session?.user?.id]); // Removed setCart from dependencies
 
   useEffect(() => {
     if (session?.user?.id) {
       fetchCart();
     } else {
-      setCart([]);  // Clear cart when user logs out
+      setCart([]);
     }
-  }, [fetchCart, session?.user?.id, setCart]);
+  }, [session?.user?.id, fetchCart]);
 
-  // Save cart to the database
   const saveCartToDb = useCallback(async (products) => {
     const userId = session?.user?.id;
     if (!userId) {
@@ -110,7 +108,6 @@ export const CartProvider = ({ children }) => {
     }
   }, [session?.user?.id]);
 
-  // Add a product to the cart
   const addToCart = useCallback((product) => {
     setCart((prevCart) => {
       const productExist = prevCart.find((item) => item.id === product.id);
@@ -131,7 +128,6 @@ export const CartProvider = ({ children }) => {
     });
   }, [setCart, saveCartToDb]);
 
-  // Remove a product from the cart
   const removeFromCart = useCallback((productId) => {
     setCart((prevCart) => {
       const updatedCart = prevCart.filter((item) => item.id !== productId);
@@ -142,14 +138,12 @@ export const CartProvider = ({ children }) => {
     });
   }, [setCart, saveCartToDb]);
 
-  // Clear the cart
   const clearCart = useCallback(() => {
     setCart([]);
     console.log("Cleared cart.");
     saveCartToDb([]);
   }, [setCart, saveCartToDb]);
 
-  // Update product quantity in the cart
   const updateQuantity = useCallback((productId, newQuantity) => {
     if (newQuantity < 1) {
       return removeFromCart(productId);
@@ -165,7 +159,6 @@ export const CartProvider = ({ children }) => {
     });
   }, [setCart, saveCartToDb, removeFromCart]);
 
-  // Memoized context value to avoid unnecessary re-renders
   const contextValue = useMemo(
     () => ({
       cart,

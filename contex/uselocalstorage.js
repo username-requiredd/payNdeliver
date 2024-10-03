@@ -1,40 +1,32 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 
 const useLocalStorage = (key, initialValue) => {
-  // Initialize state with a flag to check if we are on the client
-  const [storedValue, setStoredValue] = useState(initialValue);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-
+  const [storedValue, setStoredValue] = useState(() => {
     if (typeof window === "undefined") {
-      return;
+      return initialValue;
     }
-
     try {
       const item = window.localStorage.getItem(key);
-      if (item) {
-        setStoredValue(JSON.parse(item));
-      }
+      return item ? JSON.parse(item) : initialValue;
     } catch (error) {
       console.error(`Error reading localStorage key "${key}":`, error);
+      return initialValue;
     }
-  }, [key]);
+  });
 
   const setValue = useCallback(
     (value) => {
       try {
         const valueToStore = value instanceof Function ? value(storedValue) : value;
         setStoredValue(valueToStore);
-        if (isClient) {
+        if (typeof window !== "undefined") {
           window.localStorage.setItem(key, JSON.stringify(valueToStore));
         }
       } catch (error) {
         console.error(`Error setting localStorage key "${key}":`, error);
       }
     },
-    [key, storedValue, isClient]
+    [key, storedValue]
   );
 
   return [storedValue, setValue];
