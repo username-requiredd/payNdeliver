@@ -2,7 +2,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import Footer from "@/components/footer";
-import WalletContextProvider from "@/contex/solanacontex";
+import { WalletContextProvider } from "@/components/walletprovider";
+// import WalletContextProvider from "@/contex/solanacontex";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
