@@ -1,152 +1,94 @@
-"use  client"
-import React, { useEffect, useState, useRef } from 'react';
-import { createQR, encodeURL } from '@solana/pay';
-import { PublicKey, Keypair } from '@solana/web3.js';
-import BigNumber from 'bignumber.js';
-import { CreditCard, Coins } from 'lucide-react';
-import { useCart } from '@/contex/cartcontex';
-export default function EnhancedCheckout() {
-const {cart} = useCart()
-// console.log(cart)
+"use client";
+import { useState } from "react";
+import PaymentRequest from "@/components/solanapayments";
+import { CheckCircle, XCircle, Clock, RefreshCw } from "lucide-react";
+export default function CheckoutPage() {
+  const [paymentStatus, setPaymentStatus] = useState("pending");
   const [reference, setReference] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('crypto');
-  const [cardDetails, setCardDetails] = useState({
-    name: '',
-    number: '',
-    expiry: '',
-    cvc: '',
-  });
-  const [shippingDetails, setShippingDetails] = useState({
-    name: '',
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
-  });
-  const qrRef = useRef(null);
-
-  useEffect(() => {
-    const newReference = Keypair.generate().publicKey;
-    setReference(newReference);
-
-    const recipient = new PublicKey('a8xbmjRKktM4Np8M2RS6a3nrygQq7aaguNe9n7JFfjE');
-    const amount = new BigNumber(0.1);
-    const memo = 'Payment for Chicken Sharwarma';
-
-    const url = encodeURL({ recipient, amount, reference: newReference, memo });
-    const qr = createQR(url);
-
-    if (qrRef.current && paymentMethod === 'crypto') {
-      qrRef.current.innerHTML = '';
-      qr.append(qrRef.current);
+  const [isLoading, setIsLoading] = useState(false);
+  const checkPaymentStatus = async () => {
+    if (!reference) {
+      console.error("No reference available");
+      return;
     }
-  }, [paymentMethod]);
-
-  const handleInputChange = (e, setFunction) => {
-    const { name, value } = e.target;
-    setFunction(prev => ({ ...prev, [name]: value }));
+    setIsLoading(true);
+    try {
+      // Call your API endpoint to check the transaction status
+      const response = await fetch("/api/transaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference: reference }),
+      });
+      const data = await response.json();
+      setPaymentStatus(data.message);
+    } catch (error) {
+      console.error("Error checking payment status:", error);
+      setPaymentStatus("error");
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Payment submitted:', { paymentMethod, cardDetails, shippingDetails });
+  const getStatusIcon = () => {
+    switch (paymentStatus) {
+      case "completed":
+        return <CheckCircle className="text-green-500" size={24} />;
+      case "failed":
+        return <XCircle className="text-red-500" size={24} />;
+      case "pending":
+        return <Clock className="text-yellow-500" size={24} />;
+      default:
+        return null;
+    }
   };
-
-  const inputClasses = "mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50 px-4 py-2 bg-white";
-
+  const getStatusColor = () => {
+    switch (paymentStatus) {
+      case "completed":
+        return "text-green-700 bg-green-100";
+      case "failed":
+        return "text-red-700 bg-red-100";
+      case "pending":
+        return "text-yellow-700 bg-yellow-100";
+      default:
+        return "text-gray-700 bg-gray-100";
+    }
+  };
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-green-50 to-teal-100 rounded-2xl shadow-2xl">
-      <h1 className="text-3xl sm:text-4xl font-extrabold mb-6 sm:mb-8 text-center text-green-800 tracking-tight">Secure Checkout</h1>
-      
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-        <div className="flex-1 bg-white p-4 sm:p-6 rounded-xl shadow-lg">
-          <h2 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-green-700">Shipping Information</h2>
-          <form className="space-y-4">
-            {Object.entries(shippingDetails).map(([key, value]) => (
-              <div key={key}>
-                <label htmlFor={key} className="block text-sm font-medium text-gray-700 capitalize mb-1">
-                  {key}
-                </label>
-                <input
-                  type="text"
-                  id={key}
-                  name={key}
-                  value={value}
-                  onChange={(e) => handleInputChange(e, setShippingDetails)}
-                  className={inputClasses}
-                  required
-                />
-              </div>
-            ))}
-          </form>
-        </div>
-
-        <div className="flex-1 bg-white p-4 sm:p-6 rounded-xl shadow-lg">
-          <h2 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-green-700">Payment Method</h2>
-          <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4 mb-6">
-            <button
-              onClick={() => setPaymentMethod('crypto')}
-              className={`flex items-center justify-center px-4 sm:px-6 py-3 rounded-full transition-all duration-300 ${
-                paymentMethod === 'crypto' 
-                  ? 'bg-green-600 text-white shadow-lg' 
-                  : 'bg-white text-green-600 border border-green-600 hover:bg-green-50'
-              }`}
-            >
-              <Coins className="mr-2" size={20} />
-              Pay with Crypto
-            </button>
-            <button
-              onClick={() => setPaymentMethod('card')}
-              className={`flex items-center justify-center px-4 sm:px-6 py-3 rounded-full transition-all duration-300 ${
-                paymentMethod === 'card' 
-                  ? 'bg-green-600 text-white shadow-lg' 
-                  : 'bg-white text-green-600 border border-green-600 hover:bg-green-50'
-              }`}
-            >
-              <CreditCard className="mr-2" size={20} />
-              Pay with Card
-            </button>
-          </div>
-
-          {paymentMethod === 'crypto' ? (
-            <div className="text-center bg-gray-50 p-4 sm:p-6 rounded-lg shadow-inner">
-              <div ref={qrRef} className="inline-block" />
-              {reference && (
-                <p className="mt-4 text-sm text-gray-600">
-                  Reference: {reference.toBase58().substring(0, 8)}...
-                </p>
-              )}
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {Object.entries(cardDetails).map(([key, value]) => (
-                <div key={key}>
-                  <label htmlFor={key} className="block text-sm font-medium text-gray-700 capitalize mb-1">
-                    {key === 'number' ? 'Card Number' : key}
-                  </label>
-                  <input
-                    type={key === 'number' ? 'text' : key === 'expiry' ? 'text' : key === 'cvc' ? 'password' : 'text'}
-                    id={key}
-                    name={key}
-                    value={value}
-                    onChange={(e) => handleInputChange(e, setCardDetails)}
-                    className={inputClasses}
-                    required
-                    placeholder={key === 'expiry' ? 'MM/YY' : ''}
-                  />
-                </div>
-              ))}
-            </form>
-          )}
-        </div>
+    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
+      <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
+        Checkout
+      </h1>
+      <div className="mb-8">
+        <PaymentRequest onReferenceGenerated={setReference} />
       </div>
-
-      <button
-        onClick={handleSubmit}
-        className="mt-8 w-full py-4 px-6 border border-transparent rounded-full shadow-lg text-lg font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 ease-in-out transform hover:scale-105"
-      >
-        Complete Purchase
-      </button>
+      <div className="flex flex-col items-center space-y-4">
+        <button
+          onClick={checkPaymentStatus}
+          disabled={isLoading || !reference}
+          className={`flex items-center justify-center px-6 py-3 rounded-full text-white font-semibold transition-all duration-300 ${
+            isLoading || !reference
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+          }`}
+        >
+          {isLoading ? (
+            <RefreshCw className="animate-spin mr-2" size={20} />
+          ) : (
+            <RefreshCw className="mr-2" size={20} />
+          )}
+          Check Payment Status
+        </button>
+        <div
+          className={`flex items-center space-x-2 px-4 py-2 rounded-full ${getStatusColor()}`}
+        >
+          {getStatusIcon()}
+          <span className="font-medium">Payment Status: {paymentStatus}</span>
+        </div>
+        {reference && (
+          <div className="text-sm text-gray-600 bg-gray-100 px-4 py-2 rounded-full">
+            Transaction Reference: {reference.substring(0, 8)}...
+          </div>
+        )}
+      </div>
     </div>
   );
 }

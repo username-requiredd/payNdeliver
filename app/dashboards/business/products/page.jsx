@@ -1,6 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
+import { Search, SearchX, Eye, Delete, Plus } from "lucide-react";
+import ProductDetailModal from "./productsdetailmodal";
 import {
   Paper,
   Table,
@@ -24,10 +28,6 @@ import {
   DialogTitle,
   Button,
 } from "@mui/material";
-import Image from "next/image";
-import { Search, SearchX, Eye, Delete, Plus } from "lucide-react";
-import ProductDetailModal from "./productsdetailmodal";
-import { useSession } from "next-auth/react";
 
 const columns = [
   {
@@ -72,11 +72,7 @@ export default function ProductTable() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [session]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     if (!session?.user?.id) return;
 
     try {
@@ -84,14 +80,13 @@ export default function ProductTable() {
       const response = await fetch(`/api/products/${session.user.id}`);
 
       if (response.status === 404) {
-        // If no products are found, set an empty array and don't throw an error
         setRows([]);
         return;
       }
 
       if (!response.ok) {
         throw new Error(
-          "Error fetching products! try checking your connection or try again later."
+          "Error fetching products! Please check your connection or try again later."
         );
       }
 
@@ -112,7 +107,11 @@ export default function ProductTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleRequestSort = (property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -144,6 +143,7 @@ export default function ProductTable() {
       setProductToDelete(null);
     } catch (err) {
       console.error("Error deleting product:", err);
+      setError("Failed to delete product. Please try again.");
     }
   };
 
@@ -153,6 +153,7 @@ export default function ProductTable() {
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
+    setPage(0);
   };
 
   const handleChangeRowsPerPage = (event) => {
@@ -177,12 +178,8 @@ export default function ProductTable() {
   };
 
   const descendingComparator = (a, b, orderBy) => {
-    if (b[orderBy] < a[orderBy]) {
-      return -1;
-    }
-    if (b[orderBy] > a[orderBy]) {
-      return 1;
-    }
+    if (b[orderBy] < a[orderBy]) return -1;
+    if (b[orderBy] > a[orderBy]) return 1;
     return 0;
   };
 
@@ -303,7 +300,7 @@ export default function ProductTable() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.length === 0 ? (
+              {filteredRows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} align="center">
                     <Typography variant="subtitle1">
