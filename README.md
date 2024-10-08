@@ -59,77 +59,23 @@ This is a Next.js-based online delivery application that allows businesses to re
    npm run dev
    ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Project Structure
+You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
 
-```
+This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
-├── app/
-│   ├── api/
-│   ├── cart/
-│   ├── checkout/
-│   ├── dashboards/
-│   ├── fonts/
-│   ├── getstarted/
-│   ├── login/
-│   ├── profile/
-│   ├── signin/
-│   ├── stores/
-│   ├── test/
-│   │   ├── globals.css
-│   │   ├── layout.js
-│   │   ├── loading.jsx
-│   │   └── page.js
-│   └── page.js
-├── components/
-├── config/
-├── context/
-├── hooks/
-├── lib/
-├── models/
-├── public/
-├── .env.local
-├── .eslintrc.json
-├── .gitignore
-├── jsconfig.json
-├── next.config.js
-├── package.json
-├── package-lock.json
-├── postcss.config.js
-├── README.md
-└── tailwind.config.js
+## Learn More
 
-```
+To learn more about Next.js, take a look at the following resources:
 
-## Configuration
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-1. Set up your database and update the `DATABASE_URL` in `.env.local`.
-2. Configure your chosen cryptocurrency payment gateway and update the `CRYPTO_PAYMENT_API_KEY`.
-3. Set up your cash payment processor
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
 
-## Deployment
+## Deploy on Vercel
 
-1. Build the application:
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-   ```
-   npm run build
-   ```
-
-2. Deploy to your preferred hosting platform (e.g., Vercel, Netlify, or a custom server).
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/AmazingFeature`
-3. Commit your changes: `git commit -m 'Add some AmazingFeature'`
-4. Push to the branch: `git push origin feature/AmazingFeature`
-5. Open a pull request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
-
-## Support
-
-For support, please open an issue in the GitHub repository or contact our support team at support@example.com.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
