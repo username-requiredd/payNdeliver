@@ -73,9 +73,9 @@ const GetStartedPage = () => {
 
   const handleExploreOrDashboard = () => {
     if (accountType === "business") {
-      router.push("/signin");
+      router.push("/login");
     } else {
-      router.push("/");
+      router.push("/stores");
     }
   };
 

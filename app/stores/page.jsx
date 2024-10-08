@@ -12,6 +12,7 @@ import {
   ShoppingCart,
   Shirt,
 } from "lucide-react";
+import Footer from "@/components/footer";
 
 async function fetchBusiness(category = "All") {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -102,6 +103,7 @@ export default async function Stores({ searchParams }) {
           </Suspense>
         </div>
       </div>
+      <Footer />
     </>
   );
 }

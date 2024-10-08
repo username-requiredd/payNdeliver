@@ -54,9 +54,9 @@ const Sidebar = () => {
       label: "Transactions",
     },
     {
-      href: "/dashboards/business/settings",
+      href: "/dashboards/business/setup",
       icon: Settings,
-      label: "Settings",
+      label: "Setup",
     },
   ];
 

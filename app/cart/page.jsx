@@ -5,6 +5,7 @@ import Header from "@/components/header";
 import { useCart } from "@/contex/cartcontex";
 import CartItem from "@/components/shoppingCart";
 import Link from "next/link";
+import Footer from "@/components/footer";
 const CartPage = () => {
   const { cart, removeFromCart, loading, error } = useCart();
   console.log("cart", cart);
@@ -75,6 +76,7 @@ const CartPage = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </>
   );
 };

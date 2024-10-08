@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
         <Providers>
           <WalletContextProvider>
             {children}
-            <Footer />
+            {/* <Footer /> */}
           </WalletContextProvider>
         </Providers>
       </body>

@@ -12,6 +12,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import Header from "@/components/header";
+import Footer from "@/components/footer";
 
 const AccountPage = () => {
   const { data: session } = useSession();
@@ -63,6 +64,7 @@ const AccountPage = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </>
   );
 };
