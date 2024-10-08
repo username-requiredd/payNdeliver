@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { ShoppingBag, Truck, CreditCard, Bitcoin, Store, User, ChevronDown, ChevronUp, Check, DollarSign, Clock, Shield, Star, StoreIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Footer from '@/components/footer';
 
 const FAQItem = ({ question, answer }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -319,6 +320,7 @@ export default function LandingPage() {
       </Section>
 
       <ScrollToTopButton />
+      <Footer/>
     </div>
   );
 }
