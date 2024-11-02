@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-const CartItem = ({ id, price, image, quantity, description, name, removeItem }) => {
+const CartItem = ({ id, price, image, quantity, dsc, title, removeItem }) => {
   console.log("id",id)
   return (
     <div className="flex px-2 py-6 border-b">

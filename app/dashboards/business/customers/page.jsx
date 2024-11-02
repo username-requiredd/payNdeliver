@@ -1,32 +1,77 @@
 "use client";
 
-import React, { useState } from 'react';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TablePagination from '@mui/material/TablePagination';
-import TableRow from '@mui/material/TableRow';
-import IconButton from '@mui/material/IconButton';
-import Image from 'next/image'; 
-import { Search,SearchX,Trash2,Eye } from 'lucide-react';
-import Link from 'next/link';
+import React, { useState } from "react";
+import Paper from "@mui/material/Paper";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TablePagination from "@mui/material/TablePagination";
+import TableRow from "@mui/material/TableRow";
+import IconButton from "@mui/material/IconButton";
+import Image from "next/image";
+import { Search, SearchX, Trash2, Eye } from "lucide-react";
+import Link from "next/link";
 
 const columns = [
-  { id: 'action', label: 'Action', minWidth: 100, align: 'center', sortable: false },
-  { id: 'customer', label: 'Customer Name', minWidth: 150, sortable: true },
-  { id: 'image', label: 'Image', minWidth: 100, align: 'center', sortable: false },
-  { id: 'email', label: 'Email', minWidth: 100, sortable: true },
-  { id: 'address', label: 'Address', minWidth: 100, align: 'right', sortable: true },
-  { id: 'phone', label: 'Phone Number', minWidth: 100, align: 'right', sortable: true },
+  {
+    id: "action",
+    label: "Action",
+    minWidth: 100,
+    align: "center",
+    sortable: false,
+  },
+  { id: "customer", label: "Customer Name", minWidth: 150, sortable: true },
+  {
+    id: "image",
+    label: "Image",
+    minWidth: 100,
+    align: "center",
+    sortable: false,
+  },
+  { id: "email", label: "Email", minWidth: 100, sortable: true },
+  {
+    id: "address",
+    label: "Address",
+    minWidth: 100,
+    align: "right",
+    sortable: true,
+  },
+  {
+    id: "phone",
+    label: "Phone Number",
+    minWidth: 100,
+    align: "right",
+    sortable: true,
+  },
 ];
 
 const initialRows = [
-  { id: 1, customer: 'John Doe', image: 'https://via.placeholder.com/50', email: 'johndoe@example.com', address: '123 Main St', phone: '(123) 456-7890' },
-  { id: 2, customer: 'Jane Smith', image: 'https://via.placeholder.com/50', email: 'janesmith@example.com', address: '456 Elm St', phone: '(987) 654-3210' },
-  { id: 3, customer: 'Alice Johnson', image: 'https://via.placeholder.com/50', email: 'alicej@example.com', address: '789 Oak St', phone: '(555) 555-5555' },
+  {
+    id: 1,
+    customer: "John Doe",
+    image: "https://via.placeholder.com/50",
+    email: "johndoe@example.com",
+    address: "123 Main St",
+    phone: "(123) 456-7890",
+  },
+  {
+    id: 2,
+    customer: "Jane Smith",
+    image: "https://via.placeholder.com/50",
+    email: "janesmith@example.com",
+    address: "456 Elm St",
+    phone: "(987) 654-3210",
+  },
+  {
+    id: 3,
+    customer: "Alice Johnson",
+    image: "https://via.placeholder.com/50",
+    email: "alicej@example.com",
+    address: "789 Oak St",
+    phone: "(555) 555-5555",
+  },
 ];
 
 export default function ProductTable() {
@@ -54,17 +99,15 @@ export default function ProductTable() {
     setPage(0);
   };
 
-
-
-  const filteredRows = rows.filter(row =>
-    Object.values(row).some(value =>
+  const filteredRows = rows.filter((row) =>
+    Object.values(row).some((value) =>
       value.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
   return (
     <div className="mt-5 p-5 ">
-      <h1 className='text-xl font-semibold'>Customers</h1>
+      <h1 className="text-3xl font-semibold">Customers</h1>
       <div className="flex items-center justify-between">
         <div></div>
         <div className="flex items-center">
@@ -101,7 +144,7 @@ export default function ProductTable() {
         </div>
       </div>
 
-      <Paper className='px-4' sx={{ width: '100%', overflow: 'hidden' }}>
+      <Paper className="px-4" sx={{ width: "100%", overflow: "hidden" }}>
         <TableContainer sx={{ maxHeight: 440 }}>
           <Table stickyHeader aria-label="customized table">
             <TableHead>
@@ -126,18 +169,26 @@ export default function ProductTable() {
                       const value = row[column.id];
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          {column.id === 'image' ? (
-                            <Image className='rounded-full' src={value} alt={row.customer} width={50} height={50} />
-                          ) : column.id === 'action' ? (
-                            <div className='flex items-center justify-center'>
+                          {column.id === "image" ? (
+                            <Image
+                              className="rounded-full"
+                              src={value}
+                              alt={row.customer}
+                              width={50}
+                              height={50}
+                            />
+                          ) : column.id === "action" ? (
+                            <div className="flex items-center justify-center">
                               <Link href={`customers/${row.id}`}>
-                              <IconButton  className='' aria-label="view">
-                                <Eye />
-                              </IconButton>
-
+                                <IconButton className="" aria-label="view">
+                                  <Eye />
+                                </IconButton>
                               </Link>
-                              <IconButton className='text-red-700'  aria-label="delete">
-                                <Trash2 onClick={()=> handleDelete(row.id)} />
+                              <IconButton
+                                className="text-red-700"
+                                aria-label="delete"
+                              >
+                                <Trash2 onClick={() => handleDelete(row.id)} />
                               </IconButton>
                             </div>
                           ) : (
@@ -161,7 +212,6 @@ export default function ProductTable() {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
-
     </div>
   );
 }

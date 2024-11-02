@@ -12,6 +12,7 @@ import {
   ShoppingCart,
   Shirt,
 } from "lucide-react";
+import Footer from "@/components/footer";
 
 async function fetchBusiness(category = "All") {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -102,11 +103,13 @@ export default async function Stores({ searchParams }) {
           </Suspense>
         </div>
       </div>
+      <Footer />
     </>
   );
 }
 
 function ShopCards({ data }) {
+  console.log(data);
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {data?.data?.map(({ _id, coverImage, businessName, cuisineType }) => (

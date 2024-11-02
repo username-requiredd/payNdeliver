@@ -13,6 +13,7 @@ import Productscardskeleton from "@/components/loaders/productskeleton";
 import CartContent from "./cartcontent";
 import Reviews from "./reviews";
 import BackToTopButton from "./backtotop";
+import Footer from "@/components/footer";
 
 const Restaurant = ({ params }) => {
   const { id } = params;
@@ -52,7 +53,7 @@ const Restaurant = ({ params }) => {
         }
       } catch (err) {
         if (err.name !== "AbortError") {
-          console.error(err);
+          console.log(err.message);
           setError("An error occurred while fetching data. Please try again.");
         }
       } finally {
@@ -142,6 +143,7 @@ const Restaurant = ({ params }) => {
         </div>
       </main>
       <BackToTopButton />
+      <Footer />
     </>
   );
 };

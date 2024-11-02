@@ -1,18 +1,63 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## Overview
 
-## Getting Started
+This is a Next.js-based online delivery application that allows businesses to register and sell their products to customers. The app supports both cryptocurrency and cash payments and also offers delivery services , providing flexibility for users.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Business registration and management
+- Product listing and management
+- Customer account creation and management
+- Shopping cart functionality
+- Dual payment options: cryptocurrency and cash
+- Responsive design for mobile and desktop
+
+## Prerequisites
+
+- Node.js (v14.0.0 or later)
+- npm (v6.0.0 or later)
+- A cryptocurrency payment gateway account (e.g., Coinbase Commerce, BitPay)
+- A traditional payment processor account for cash payments (e.g., Stripe, PayPal)
+
+## Installation
+
+1. Clone the repository:
+
+   ```
+   git clone  https://github.com/username-requiredd/payNdeliver.git
+   ```
+
+2. Navigate to the project directory:
+
+   ```
+   cd payNdeliver
+   ```
+
+3. Install dependencies:
+
+   ```
+   npm install
+   ```
+
+4. Create a `.env.local` file in the root directory and add the following environment variables:
+
+   ```
+   MONGODB_URI=mongodb+srv://paul:7LALO9OiprzPkbye@cluster0.5jg43eq.mongodb.net/
+   NEXT_PUBLIC_API_URL=http://localhost:3000
+   NEXTAUTH_SECRET=fhbqlcbeucubwkwkajncnceje
+   AUTH_GOOGLE_ID=688859172556-7gsgptk3igkpq8c6dvisb6m5ppmvgin8.apps.googleusercontent.com
+   AUTH_GOOGLE_SECRET=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
+   NEXT_PUBLIC_PUBLIC_KEY=public_/h0s9G3ODboZO2fiRjz1PmZuyIk=
+   NEXT_PUBLIC_URL_ENDPOINT=https://ik.imagekit.io/7dopg2rpt
+   PRIVATE_KEY=private_/5IYe2PNJu5jRfNuQ5mBGpKuRsk=
+   BASE_URL=http://localhost:3000
+
+   ```
+
+5. Run the development server:
+
+   ```
+   npm run dev
+   ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

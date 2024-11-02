@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,12 +23,12 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex-shrink-0">
             <img
-              src="/images/logo/logo.png"
-              className="h-8 w-auto"
+              src="/images/logo/logo-1.png"
+              className="h-12 w-auto"
               alt="Logo"
             />
           </Link>
-          
+
           <div className="flex items-center space-x-4">
             <Link
               href="/cart"
@@ -43,17 +43,17 @@ const Header = () => {
             </Link>
 
             <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
+              <Link
+                href={"/profile"}
                 className="flex items-center text-gray-600 hover:text-gray-900 focus:outline-none transition-colors duration-200"
               >
                 <User className="h-6 w-6" />
-              </button>
+              </Link>
 
-              {userMenuOpen && (
+              {/* {userMenuOpen && (
                 <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
                   <div
-                    className="py-1"
+                    className="py-1 z-50"
                     role="menu"
                     aria-orientation="vertical"
                     aria-labelledby="user-menu"
@@ -81,7 +81,7 @@ const Header = () => {
                     </button>
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>

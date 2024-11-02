@@ -63,7 +63,8 @@ const SignInForm = () => {
         handleSignInError(result.error);
       } else if (result?.ok) {
         toast.success("Sign in successful, redirecting...");
-        handleSuccessfulSignIn();
+        // handleSuccessfulSignIn();
+        router.push("/dashboards/business/setup");
       } else {
         throw new Error("Unexpected response from server");
       }

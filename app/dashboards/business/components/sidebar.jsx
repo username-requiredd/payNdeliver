@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,47 +13,75 @@ import {
   LogOut,
   Menu,
   X,
-  ArrowRight,
 } from "lucide-react";
 
 const Sidebar = () => {
-  const [navVisible, setNavVisible] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
   const { data: session } = useSession();
 
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setIsOpen(true);
+      }
+    };
+
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
   const toggleNav = () => {
-    setNavVisible(!navVisible);
+    setIsOpen(!isOpen);
   };
 
   const navItems = [
     { href: "/dashboards/business", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/dashboards/business/products", icon: ShoppingBag, label: "Products" },
+    {
+      href: "/dashboards/business/products",
+      icon: ShoppingBag,
+      label: "Products",
+    },
     { href: "/dashboards/business/customers", icon: Users, label: "Customers" },
     { href: "/dashboards/business/sales", icon: Coins, label: "Sales" },
-    { href: "/dashboards/business/transactions", icon: ArrowRightLeft, label: "Transactions" },
-    { href: "/dashboards/business/settings", icon: Settings, label: "Settings" },
+    {
+      href: "/dashboards/business/transactions",
+      icon: ArrowRightLeft,
+      label: "Transactions",
+    },
+    {
+      href: "/dashboards/business/setup",
+      icon: Settings,
+      label: "Setup",
+    },
   ];
 
   return (
     <>
-      <div className="fixed top-0 left-0 h-full z-30">
+      {isMobile && (
         <button
           onClick={toggleNav}
-          className="md:hidden fixed top-20 right-4 z-50 p-2 rounded-full bg-gray-700 text-white hover:bg-gray-600 transition-colors duration-200"
+          className="fixed top-20 right-4 z-50 p-2 rounded-full bg-gray-700 text-white hover:bg-gray-600 transition-colors duration-200"
         >
-          {navVisible ? <X size={24} /> : <Menu size={24} />}
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
+      )}
 
-        <aside
-          className={`flex flex-col w-64 h-screen bg-gray-800 text-gray-100 p-4 shadow-lg transform ${
-            navVisible ? "translate-x-0" : "-translate-x-full"
-          } md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto`}
-        >
+      <aside
+        className={`fixed top-0 left-0 h-full z-40 w-64 bg-gray-800 text-gray-100 shadow-lg transform ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } transition-transform duration-300 ease-in-out overflow-hidden flex flex-col`}
+      >
+        <div className="p-4 flex flex-col h-full">
           <div className="flex items-center justify-center mb-8 mt-4">
             <h2 className="text-lg font-bold">Business Dashboard</h2>
           </div>
 
-          <nav className="flex-grow">
+          <nav className="flex-grow overflow-y-auto">
             <ul className="space-y-2">
               {navItems.map((item) => (
                 <li key={item.href}>
@@ -64,6 +92,7 @@ const Sidebar = () => {
                         ? "bg-blue-600 text-white"
                         : "text-gray-300 hover:bg-gray-700"
                     }`}
+                    onClick={() => isMobile && setIsOpen(false)}
                   >
                     <item.icon className="w-5 h-5 mr-3" />
                     {item.label}
@@ -73,37 +102,17 @@ const Sidebar = () => {
             </ul>
           </nav>
 
-          <div className="mt-auto">
-            {/* {session && (
-              <div className="flex items-center mb-4 p-3 rounded-lg bg-gray-700">
-                <div className="relative w-10 h-10 mr-3">
-                  <img
-                    src={session.user.image || "/images/profile/profile.jpg"}
-                    className="rounded-full"
-                    alt="Profile"
-                    width={40}
-                    height={40}
-                  />
-                </div>
-                <div>
-                  <p className="font-medium">{session.user.name}</p>
-                  <p className="text-sm text-gray-400">{session.user.email}</p>
-                </div>
-              </div>
-            )} */}
+          <div className="mt-auto pt-4">
             <button
               onClick={() => signOut()}
-              className="w-full mb-2 flex items-center  p-3 bg-red-600 text-white hover:bg-red-700 transition-colors duration-200"
+              className="w-full rounded-md flex items-center text-start p-3 px-3 bg-gray-700 text-white hover:bg-gray-600 transition-colors duration-200"
             >
-              Logout 
-             <ArrowRight className=" mx-2" />
+              Logout
+              <LogOut className="ml-2" />
             </button>
           </div>
-        </aside>
-      </div>
-      <div className="md:ml-64">
-        {/* Main content goes here */}
-      </div>
+        </div>
+      </aside>
     </>
   );
 };

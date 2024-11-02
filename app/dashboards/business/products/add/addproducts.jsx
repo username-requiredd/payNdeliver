@@ -1,54 +1,54 @@
 "use client";
-
 import React, { useState } from "react";
 import { useSession } from "next-auth/react";
-import styled from "@emotion/styled";
+import { styled } from "@mui/material/styles";
 import {
-  Autocomplete,
   Box,
   Button,
   Chip,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
   TextField,
   Typography,
   Alert,
+  Paper,
+  Grid,
+  Autocomplete,
 } from "@mui/material";
-import { Camera } from "lucide-react";
+import { Camera, Loader } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
-import { categories } from "./categories";
 
-const UploadBox = styled(Box)({
-  marginTop: 32,
-  height: 200,
-  borderRadius: 8,
+const UploadBox = styled(Box)(({ theme }) => ({
+  height: 250,
+  borderRadius: theme.shape.borderRadius,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   flexDirection: "column",
   borderStyle: "dashed",
   borderWidth: 2,
-  borderColor: "#e0e0e0",
-  backgroundColor: "#f5f5f5",
-  transition: "border-color 0.3s",
+  borderColor: theme.palette.divider,
+  backgroundColor: theme.palette.background.default,
+  transition: "border-color 0.3s, background-color 0.3s",
   "&:hover": {
-    borderColor: "#1976d2",
+    borderColor: theme.palette.primary.main,
+    backgroundColor: theme.palette.action.hover,
   },
-});
+}));
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: theme.shadows[3],
+}));
 
 const AddProduct = () => {
   const { data: session } = useSession();
   const businessId = session?.user?.id;
-
+  const [loading, setLoading] = useState(false);
   const [productData, setProductData] = useState({
     productName: "",
     description: "",
-    category: "",
-    tags: [],
-    brand: "",
+    // category: [],
+    category: [],
     price: "",
     stock: "",
     image: "",
@@ -58,7 +58,6 @@ const AddProduct = () => {
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Handle input changes for form fields
   const handleChange = (field) => (event) => {
     setProductData({ ...productData, [field]: event.target.value });
     if (errors[field]) {
@@ -66,23 +65,19 @@ const AddProduct = () => {
     }
   };
 
-  // Handle image URL update after upload
   const handleImageUpload = (url) => {
     setProductData({ ...productData, image: url });
   };
 
-  // Handle tags change
-  const handleTagsChange = (event, newValue) => {
-    setProductData({ ...productData, tags: newValue });
+  const handleMultipleChange = (field) => (event, newValue) => {
+    setProductData({ ...productData, [field]: newValue });
   };
 
-  // Form validation logic
   const validateForm = () => {
     const newErrors = {};
     if (!productData.productName)
       newErrors.productName = "Product name is required";
     if (!productData.price) newErrors.price = "Price is required";
-    if (!productData.category) newErrors.category = "Category is required";
     if (!productData.stock) newErrors.stock = "Stock is required";
 
     if (productData.price && isNaN(Number(productData.price))) {
@@ -96,7 +91,6 @@ const AddProduct = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Submit product data
   const handleSubmit = async () => {
     setSubmitError("");
     setSubmitSuccess(false);
@@ -108,13 +102,12 @@ const AddProduct = () => {
         name: productData.productName,
         description: productData.description,
         price: Number(productData.price),
-        category: productData.category,
-        image: productData.image, // Make sure image URL is set
+        category: productData.categories,
+        image: productData.image,
         instock: Number(productData.stock),
-        tags: productData.tags,
-        brand: productData.brand,
+        category: productData.category,
       };
-
+      setLoading(true);
       const response = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,23 +120,22 @@ const AddProduct = () => {
           errorData.message || `HTTP error! status: ${response.status}`
         );
       }
-
+      setLoading(false);
       const result = await response.json();
       console.log("Product submitted successfully:", result);
 
       setSubmitSuccess(true);
-      // Reset form data
       setProductData({
         productName: "",
         description: "",
-        category: "",
-        tags: [],
-        brand: "",
+        category: [],
+        category: [],
         price: "",
         stock: "",
         image: "",
       });
     } catch (error) {
+      setLoading(false);
       console.error("Error submitting product:", error);
       setSubmitError(
         error.message || "An error occurred while submitting the product."
@@ -152,182 +144,164 @@ const AddProduct = () => {
   };
 
   return (
-    <Box sx={{ pb: 3, mt: 5 }}>
-      <Typography variant="h4" sx={{ mb: 4, fontWeight: 600 }}>
+    <Box sx={{ maxWidth: 800, mx: "auto", mt: 5, mb: 8 }}>
+      <Typography
+        variant="h4"
+        sx={{ mb: 4, fontWeight: 700, color: "primary.main" }}
+      >
         Add New Product
       </Typography>
 
       {submitSuccess && (
-        <Alert severity="success" sx={{ mb: 2 }}>
+        <Alert severity="success" sx={{ mb: 3 }}>
           Product successfully added!
         </Alert>
       )}
 
       {submitError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
           {submitError}
         </Alert>
       )}
 
-      <Box sx={{ mb: 8 }}>
-        <Typography variant="subtitle1" sx={{ mb: 2 }}>
-          Cover Image
-        </Typography>
-        <UploadBox>
-          {productData.image ? (
-            <img
-              src={productData.image}
-              alt="Cover"
-              style={{
-                maxHeight: "100%",
-                maxWidth: "100%",
-                objectFit: "cover",
-                borderRadius: "8px",
-              }}
-            />
-          ) : (
-            <Camera sx={{ fontSize: 48, color: "text.secondary" }} />
-          )}
-          {/* ImageUpload component with image URL setter */}
-          <ImageUpload onImageUpload={handleImageUpload} />
-          <Typography variant="caption" sx={{ mt: 1, color: "text.secondary" }}>
-            PNG, JPG, GIF up to 10MB
-          </Typography>
-        </UploadBox>
-      </Box>
-
-      <Paper
-        elevation={3}
-        sx={{
-          borderRadius: 2,
-          p: 3,
-          maxWidth: 800,
-          mx: "auto",
-        }}
-      >
-        <TextField
-          label="Product Name"
-          variant="outlined"
-          fullWidth
-          value={productData.productName}
-          onChange={handleChange("productName")}
-          error={!!errors.productName}
-          helperText={errors.productName}
-          sx={{ mb: 3 }}
-          InputLabelProps={{ shrink: true }}
-        />
-
-        <TextField
-          label="Product Description"
-          variant="outlined"
-          fullWidth
-          multiline
-          rows={4}
-          value={productData.description}
-          onChange={handleChange("description")}
-          sx={{ mb: 3 }}
-          InputLabelProps={{ shrink: true }}
-        />
-
-        <FormControl fullWidth sx={{ mb: 3 }} error={!!errors.category}>
-          <InputLabel id="category-label">Category</InputLabel>
-          <Select
-            labelId="category-label"
-            id="category-select"
-            value={productData.category}
-            onChange={handleChange("category")}
-            label="Category"
-          >
-            {categories?.map(({ category_id, name }) => (
-              <MenuItem value={name} key={category_id}>
-                {name}
-              </MenuItem>
-            ))}
-          </Select>
-          {errors.category && (
-            <Typography color="error" variant="caption">
-              {errors.category}
+      <StyledPaper>
+        <Grid container spacing={4}>
+          <Grid item xs={12}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+              Cover Image
             </Typography>
-          )}
-        </FormControl>
+            <UploadBox>
+              {productData.image ? (
+                <img
+                  src={productData.image}
+                  alt="Cover"
+                  style={{
+                    maxHeight: "100%",
+                    maxWidth: "100%",
+                    objectFit: "cover",
+                    borderRadius: "8px",
+                  }}
+                />
+              ) : (
+                <Camera size={48} color="#9e9e9e" />
+              )}
+              <ImageUpload onImageUpload={handleImageUpload} />
+              <Typography
+                variant="caption"
+                sx={{ mt: 1, color: "text.secondary" }}
+              >
+                PNG, JPG, GIF up to 10MB
+              </Typography>
+            </UploadBox>
+          </Grid>
 
-        <Autocomplete
-          multiple
-          options={categories.map((option) => option.name)}
-          value={productData.tags}
-          onChange={handleTagsChange}
-          renderTags={(value, getTagProps) =>
-            value.map((option, index) => (
-              <Chip
-                variant="outlined"
-                label={option}
-                {...getTagProps({ index })}
-                key={option}
-              />
-            ))
-          }
-          renderInput={(params) => (
+          <Grid item xs={12} sm={6}>
             <TextField
-              {...params}
+              label="Product Name"
               variant="outlined"
-              label="Product Tags"
-              placeholder="Product Tags"
-              helperText="Select a tag or type and press enter"
+              fullWidth
+              value={productData.productName}
+              onChange={handleChange("productName")}
+              error={!!errors.productName}
+              helperText={errors.productName}
               InputLabelProps={{ shrink: true }}
             />
-          )}
-          sx={{ mb: 3 }}
-        />
+          </Grid>
 
-        <TextField
-          label="Brand"
-          variant="outlined"
-          fullWidth
-          value={productData.brand}
-          onChange={handleChange("brand")}
-          sx={{ mb: 3 }}
-          InputLabelProps={{ shrink: true }}
-        />
+          <Grid item xs={12}>
+            <TextField
+              label="Product Description"
+              variant="outlined"
+              fullWidth
+              multiline
+              rows={4}
+              value={productData.description}
+              onChange={handleChange("description")}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
 
-        <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-          <TextField
-            label="Price"
-            variant="outlined"
-            fullWidth
-            value={productData.price}
-            onChange={handleChange("price")}
-            type="number"
-            error={!!errors.price}
-            helperText={errors.price}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Stock"
-            variant="outlined"
-            fullWidth
-            value={productData.stock}
-            onChange={handleChange("stock")}
-            type="number"
-            error={!!errors.stock}
-            helperText={errors.stock}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Box>
+          <Grid item xs={12}>
+            <Autocomplete
+              multiple
+              options={[]}
+              freeSolo
+              value={productData.category}
+              onChange={handleMultipleChange("category")}
+              rendercategory={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    variant="outlined"
+                    label={option}
+                    {...getTagProps({ index })}
+                    key={option}
+                  />
+                ))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  variant="outlined"
+                  label="Product category"
+                  placeholder="Add category"
+                  helperText="Type and press enter to add category"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            />
+          </Grid>
 
-        <Box sx={{ display: "flex", justifyContent: "center" }}>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            sx={{
-              borderRadius: 4,
-              px: 4,
-              py: 1,
-            }}
-          >
-            Submit
-          </Button>
-        </Box>
-      </Paper>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Price"
+              variant="outlined"
+              fullWidth
+              value={productData.price}
+              onChange={handleChange("price")}
+              type="number"
+              error={!!errors.price}
+              helperText={errors.price}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Stock"
+              variant="outlined"
+              fullWidth
+              value={productData.stock}
+              onChange={handleChange("stock")}
+              type="number"
+              error={!!errors.stock}
+              helperText={errors.stock}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Button
+                variant="contained"
+                onClick={handleSubmit}
+                sx={{
+                  borderRadius: 2,
+                  px: 4,
+                  py: 1.5,
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                }}
+              >
+                {loading ? (
+                  <Loader className="animate-spin h-5 w-5" />
+                ) : (
+                  "Add Product"
+                )}
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </StyledPaper>
     </Box>
   );
 };

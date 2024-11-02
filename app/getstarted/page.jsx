@@ -3,14 +3,13 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ChevronRight, Loader2, Store, User } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const GetStartedPage = () => {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [accountType, setAccountType] = useState("");
   const [formData, setFormData] = useState({
     name: "",
@@ -22,48 +21,61 @@ const GetStartedPage = () => {
     businessType: "",
   });
 
-  // Handle form input changes
+  const router = useRouter();
+
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if passwords match for business account
     if (
       accountType === "business" &&
       formData.password !== formData.confirmPassword
     ) {
-      return alert("Passwords do not match!");
+      toast.error("Passwords do not match!");
+      return;
     }
 
-    const endpoint = accountType === "business" ? "/api/business" : "/api/users";
+    const endpoint =
+      accountType === "business" ? "/api/business" : "/api/users";
 
     try {
       setLoading(true);
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       const result = await response.json();
-      console.log("Response from server:", result);
 
       if (response.ok) {
-        setLoading(false);
+        if (accountType === "business") {
+          document.cookie = `businessRedirect=${encodeURIComponent(
+            "/dashboards/business/setup"
+          )}; path=/; max-age=3600; SameSite=Strict; Secure`;
+        }
         setStep(step + 1);
       } else {
-        setError(result.message);
-        toast.error(result.message);
+        toast.error(
+          result.message || "An error occurred during account creation."
+        );
       }
     } catch (error) {
-      setLoading(false);
       console.error("Error submitting form:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExploreOrDashboard = () => {
+    if (accountType === "business") {
+      router.push("/login");
+    } else {
+      router.push("/stores");
     }
   };
 
@@ -100,7 +112,9 @@ const GetStartedPage = () => {
           <Input
             label={accountType === "business" ? "Business Name" : "Full Name"}
             name={accountType === "business" ? "businessName" : "name"}
-            value={accountType === "business" ? formData.businessName : formData.name}
+            value={
+              accountType === "business" ? formData.businessName : formData.name
+            }
             onChange={handleInputChange}
             required
           />
@@ -176,14 +190,14 @@ const GetStartedPage = () => {
             Congratulations! Your account has been created.
           </h3>
           <p className="text-gray-600 mb-6">
-            You're all set to start using PayNDeliver. Let's get you to your dashboard.
+            You're all set to start using PayNDeliver.
+            {accountType === "business"
+              ? " Let's complete your profile setup."
+              : ""}
           </p>
-          <Link
-            className="inline-block bg-green-600 text-white font-semibold py-3 px-6 rounded-md shadow-md hover:bg-green-700 transition duration-200 ease-in-out transform hover:scale-105"
-            href="/signin?redirect=/dashboards/business/setup" // Add redirect here
-          >
-            Go to Dashboard
-          </Link>
+          <Button onClick={handleExploreOrDashboard}>
+            {accountType === "business" ? "Continue to Setup" : "Explore"}
+          </Button>
         </div>
       ),
     },
@@ -192,7 +206,6 @@ const GetStartedPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <ToastContainer position="top-right" autoClose={3000} />
-
       <div className="max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -227,7 +240,6 @@ const GetStartedPage = () => {
   );
 };
 
-// Account Type Card Component
 const AccountTypeCard = ({ icon: Icon, title, description, onClick }) => (
   <motion.div
     whileHover={{ scale: 1.05 }}
@@ -242,7 +254,6 @@ const AccountTypeCard = ({ icon: Icon, title, description, onClick }) => (
   </motion.div>
 );
 
-// Input Component
 const Input = ({ label, ...props }) => (
   <div>
     <label
@@ -258,7 +269,6 @@ const Input = ({ label, ...props }) => (
   </div>
 );
 
-// Select Component
 const Select = ({ label, options, ...props }) => (
   <div>
     <label
@@ -281,7 +291,6 @@ const Select = ({ label, options, ...props }) => (
   </div>
 );
 
-// Button Component
 const Button = ({ children, variant = "primary", ...props }) => (
   <motion.button
     whileHover={{ scale: 1.05 }}

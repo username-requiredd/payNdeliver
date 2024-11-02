@@ -39,6 +39,16 @@ const BusinessSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
     },
+    walletAddress: {
+      type: String,
+      // required: [true, 'Please provide a wallet address for this business.'],
+      // unique: true,
+    },
+    accountNumber: {
+      type: String,
+      // required: [true, 'Please provide a wallet address for this business.'],
+      // unique: true,
+    },
     businessType: {
       type: String,
       enum: ["restaurant", "grocery", "retail", "others"], 
@@ -52,7 +62,11 @@ const BusinessSchema = new mongoose.Schema(
       type: String, 
       required: false 
     },
-    openingHours: [OpeningHourSchema] // Adding opening hours field
+    openingHours: [OpeningHourSchema],
+    role: {
+      type: String,
+      default: 'business',
+    },
   },
   {
     timestamps: true,

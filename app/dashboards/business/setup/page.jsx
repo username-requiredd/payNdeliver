@@ -9,33 +9,41 @@ import "react-toastify/dist/ReactToastify.css";
 
 const ProfileSetupPage = () => {
   const { data: session } = useSession();
-  const [image, setImage] = useState(null);
-  const [coverImage, setCoverImage] = useState(null);
-  const [address, setAddress] = useState("");
-  const [openingHours, setOpeningHours] = useState([
-    { day: "Monday", openingTime: "", closingTime: "" },
-    { day: "Tuesday", openingTime: "", closingTime: "" },
-    { day: "Wednesday", openingTime: "", closingTime: "" },
-    { day: "Thursday", openingTime: "", closingTime: "" },
-    { day: "Friday", openingTime: "", closingTime: "" },
-    { day: "Saturday", openingTime: "", closingTime: "" },
-    { day: "Sunday", openingTime: "", closingTime: "" },
-  ]);
-  const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
   const router = useRouter();
 
+  const [formData, setFormData] = useState({
+    image: null,
+    coverImage: null,
+    address: "",
+    walletAddress: "",
+    accountNumber: "",
+    description: "",
+    openingHours: [
+      { day: "Monday", openingTime: "", closingTime: "" },
+      { day: "Tuesday", openingTime: "", closingTime: "" },
+      { day: "Wednesday", openingTime: "", closingTime: "" },
+      { day: "Thursday", openingTime: "", closingTime: "" },
+      { day: "Friday", openingTime: "", closingTime: "" },
+      { day: "Saturday", openingTime: "", closingTime: "" },
+      { day: "Sunday", openingTime: "", closingTime: "" },
+    ],
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
   const handleImageUpload = (url) => {
-    setImage(url);
-    setCoverImage(url);
+    setFormData((prevData) => ({ ...prevData, image: url, coverImage: url }));
   };
 
   const handleOpeningHoursChange = (index, field, value) => {
-    const newOpeningHours = [...openingHours];
+    const newOpeningHours = [...formData.openingHours];
     newOpeningHours[index][field] = value;
-    setOpeningHours(newOpeningHours);
+    setFormData((prevData) => ({ ...prevData, openingHours: newOpeningHours }));
   };
 
   const handleSaveProfile = async () => {
@@ -46,14 +54,6 @@ const ProfileSetupPage = () => {
 
     const businessId = session.user.id;
 
-    const updatedData = {
-      image,
-      coverImage,
-      address,
-      openingHours, // Now structured data
-      description,
-    };
-
     try {
       setLoading(true);
       const response = await fetch(`/api/business/${businessId}`, {
@@ -61,7 +61,7 @@ const ProfileSetupPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedData),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -69,7 +69,6 @@ const ProfileSetupPage = () => {
       }
 
       const result = await response.json();
-      setLoading(false);
       console.log("Profile updated successfully:", result);
 
       toast.success("Account setup completed successfully! Redirecting...", {
@@ -81,14 +80,13 @@ const ProfileSetupPage = () => {
         router.push("products/add");
       }, 2000);
     } catch (error) {
-      setError(error.message);
-      setLoading(false);
       console.error("Error updating profile:", error);
-
       toast.error("Error updating profile: " + error.message, {
         position: "top-right",
         autoClose: 3000,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,9 +104,9 @@ const ProfileSetupPage = () => {
             </label>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
               <div className="space-y-1 text-center">
-                {coverImage ? (
+                {formData.coverImage ? (
                   <img
-                    src={coverImage}
+                    src={formData.coverImage}
                     alt="Cover"
                     className="mx-auto h-48 w-full object-cover rounded-md"
                   />
@@ -125,28 +123,38 @@ const ProfileSetupPage = () => {
             </div>
           </div>
 
-          <div className="mb-6">
-            <label
-              htmlFor="address"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Address
-            </label>
-            <input
-              type="text"
-              id="address"
-              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2"
-              placeholder="Enter your address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-            />
-          </div>
+          {["address", "walletAddress", "accountNumber"].map((field) => (
+            <div key={field} className="mb-6">
+              <label
+                htmlFor={field}
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                {field.charAt(0).toUpperCase() +
+                  field
+                    .slice(1)
+                    .replace(/([A-Z])/g, " $1")
+                    .trim()}
+              </label>
+              <input
+                type="text"
+                id={field}
+                name={field}
+                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2"
+                placeholder={`Enter your ${field
+                  .replace(/([A-Z])/g, " $1")
+                  .toLowerCase()
+                  .trim()}`}
+                value={formData[field]}
+                onChange={handleInputChange}
+              />
+            </div>
+          ))}
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Opening Hours
             </label>
-            {openingHours.map((dayInfo, index) => (
+            {formData.openingHours.map((dayInfo, index) => (
               <div key={index} className="flex items-center space-x-4 mb-4">
                 <span>{dayInfo.day}</span>
                 <input
@@ -188,11 +196,12 @@ const ProfileSetupPage = () => {
             </label>
             <textarea
               id="description"
+              name="description"
               rows="3"
               className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2"
               placeholder="Brief description of your business"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={formData.description}
+              onChange={handleInputChange}
             ></textarea>
           </div>
 

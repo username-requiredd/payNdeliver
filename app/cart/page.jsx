@@ -1,51 +1,25 @@
 "use client";
-import { useEffect, useState } from "react";
 import CartEmpty from "@/components/cartempty";
 import CartSkeleton from "@/components/loaders/cartskeleton";
 import Header from "@/components/header";
 import { useCart } from "@/contex/cartcontex";
 import CartItem from "@/components/shoppingCart";
-// import CartItem from "../components/shoppingCart";
-// import CartEmpty from "../components/cartempty";
-// import { useCart } from "../contex/cartcontex";
-// import CartSkeleton from "../components/loaders/cartskeleton";
-// import Header from "../components/header";
+import Link from "next/link";
+import Footer from "@/components/footer";
 const CartPage = () => {
-//   const [cartItems, setCartItems] = useState([
-//     {
-//       id: 1,
-//       name: "Product 1",
-//       price: 19.99,
-//       image: "https://via.placeholder.com/150",
-//       quantity: 1,
-//     },
-//     {
-//       id: 2,
-//       name: "Product 2",
-//       price: 29.99,
-//       image: "https://via.placeholder.com/150",
-//       quantity: 2,
-//     },
-//     {
-//       id: 3,
-//       name: "Product 3",
-//       price: 39.99,
-//       image: "https://via.placeholder.com/150",
-//       quantity: 1,
-//     },
-//   ]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-  }, []);
-
-  const { cart, removeFromCart } = useCart();
-  console.log("cart",cart)
+  const { cart, removeFromCart, loading, error } = useCart();
+  console.log("cart", cart);
   const totalPrice = cart.reduce((sum, { price, quantity }) => {
     return sum + price * quantity;
   }, 0);
+
+  // if (error)
+  //   return (
+  //     <div className="">
+  //       <Header />
+  //       {/* <p className="text-red-600 mt-5 p-2">{error}</p>; */}
+  //     </div>
+  //   );
 
   return (
     <>
@@ -90,13 +64,19 @@ const CartPage = () => {
                 <span>Total:</span>
                 <span>${(totalPrice + 5).toFixed(2)}</span>
               </div>
-              <button className="w-full bg-green-600 text-white py-2 rounded mt-6 hover:bg-green-700 transition-colors">
-                Proceed to Checkout
-              </button>
+              <div className="mt-5">
+                <Link
+                  href={"/checkout"}
+                  className="w-full p-2 bg-green-600 text-white py-2 rounded mt-6 hover:bg-green-700 transition-colors"
+                >
+                  Proceed to Checkout
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </div>
+      <Footer />
     </>
   );
 };

@@ -1,21 +1,21 @@
-"use client"
-import CartItem from "./cartitem";
-import { useState, useEffect } from "react";
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/contex/cartcontex";
-// import { useCart } from "../../../contex/cartcontex";
+import CartItem from "./cartitem";
 import CartEmpty from "@/components/cartempty";
+import Link from "next/link";
+
 const CartContent = () => {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
-  const [total, setTotal] = useState(0);
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-  useEffect(() => {
-    const newTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    setTotal(newTotal);
+  const total = useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cart]);
 
   if (!hasMounted) {
@@ -23,12 +23,12 @@ const CartContent = () => {
   }
 
   if (cart.length === 0) {
-    return <CartEmpty/>
+    return <CartEmpty />;
   }
 
   return (
-    <div>
-      <div className="space-y-4 mb-4">
+    <div className="space-y-6">
+      <div className="space-y-4">
         {cart.map((item) => (
           <CartItem
             key={item.id}
@@ -43,17 +43,20 @@ const CartContent = () => {
           <span className="font-semibold">Total:</span>
           <span className="font-bold text-green-600">${total.toFixed(2)}</span>
         </div>
-        <button
-          onClick={clearCart}
-          className="w-full bg-red-500 text-white py-2 px-4 rounded-full hover:bg-red-600 transition duration-300"
-        >
-          Clear Cart
-        </button>
-        <button
-          className="w-full mt-2 bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-300"
-        >
-          Checkout
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={clearCart}
+            className="w-full bg-red-500 text-white py-2 px-4 rounded-full hover:bg-red-600 transition duration-300"
+          >
+            Clear Cart
+          </button>
+          <Link
+            href="/checkout"
+            className="block w-full bg-green-600 text-white py-2 px-4 rounded-full text-center hover:bg-green-700 transition duration-300"
+          >
+            Checkout
+          </Link>
+        </div>
       </div>
     </div>
   );
