@@ -1,5 +1,8 @@
 import Link from "next/link";
 const ProductCard = ({ image, name, description, price, onclick, id }) => {
+  const test = () => {
+    console.log("test:", image, name, description, price, id);
+  };
   return (
     <>
       <div
@@ -7,7 +10,10 @@ const ProductCard = ({ image, name, description, price, onclick, id }) => {
         id={id}
         onClick={onclick}
       >
-        <div className="flex bg-white border h-28 border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:border-gray-700 h-30 min-w-0">
+        <div
+          className="flex bg-white border h-28 border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:border-gray-700 h-30 min-w-0"
+          onClick={test}
+        >
           <div className="flex flex-col justify-between p-2 leading-tight w-2/3 max-w-full min-w-0 overflow-hidden">
             <div className="description">
               <h5 className=" font-semibold text-ellipsis truncate text-xs sm:text-sm">
@@ -24,7 +30,7 @@ const ProductCard = ({ image, name, description, price, onclick, id }) => {
           <div className=" h-full  w-1/3 min-w-0">
             <img
               className="object-cover h-full w-full rounded-r-lg"
-              src={image}
+              src={image || "/images/placeholder.jpg"}
               alt=""
             />
           </div>

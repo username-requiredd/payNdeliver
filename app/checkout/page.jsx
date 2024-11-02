@@ -11,15 +11,16 @@ import {
 import { PublicKey, Keypair, Connection, clusterApiUrl } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
 import { CreditCard, Coins, Truck, QrCode, Wallet } from "lucide-react";
-// import { useCart } from "@/contex/cartcontex";
+import { useCart } from "@/contex/cartcontex";
 import { useSession } from "next-auth/react";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
 
 export default function EnhancedCheckout() {
-  // const { cart } = useCart();
+  const { cart } = useCart();
+  console.log("cart", cart);
   const { data: session } = useSession();
-  const [cart, setCart] = useState([]);
+  // const [cart, setCart] = useState([]);
   console.log("session:", session?.user?.id);
   const [wallet, setWallet] = useState(
     "a8xbmjRKktM4Np8M2RS6a3nrygQq7aaguNe9n7JFfjE"
@@ -78,7 +79,7 @@ export default function EnhancedCheckout() {
         }
 
         const crt = await response.json();
-        setCart(crt.data.products);
+        // setCart(crt.data.products);
         console.log(crt.data);
       } catch (err) {
         if (err.name === "AbortError") {

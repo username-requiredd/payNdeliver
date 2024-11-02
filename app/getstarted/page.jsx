@@ -90,6 +90,8 @@ const GetStartedPage = () => {
             description="List products, manage orders, and grow your delivery business."
             onClick={() => {
               setAccountType("business");
+              console.log("account type:", accountType);
+
               setStep(1);
             }}
           />

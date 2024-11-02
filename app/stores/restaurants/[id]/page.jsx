@@ -154,7 +154,7 @@ const HeroSection = ({ loading, profile }) => (
       <div className="h-full w-full bg-gray-300 animate-pulse flex items-center justify-center"></div>
     ) : (
       <img
-        src={profile?.coverImage}
+        src={profile?.coverImage || "/images/placeholder.jpg"}
         className="w-full h-full object-cover"
         alt={profile?.businessName}
       />

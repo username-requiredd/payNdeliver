@@ -315,7 +315,10 @@ export default function LandingPage() {
         <div className="text-center">
           <h2 className="text-4xl font-bold mb-4">Ready to Get Started?</h2>
           <p className="text-xl mb-8">Join our platform today and take your delivery business to the next level.</p>
+          <Link href={"/getstarted"}>
           <CTAButton>Sign Up Now</CTAButton>
+
+          </Link>
         </div>
       </Section>
 

@@ -10,12 +10,12 @@ const FoodDetailsModal = ({
   description,
   image,
   addToCart,
-  saveCartToDatabase,
   id,
 }) => {
   const [quantity, setQuantity] = useState(1);
   const { data: session } = useSession();
   const router = useRouter();
+  console.log(name, price, onClose, description, image);
   const handleAddToCart = () => {
     if (!session) {
       router.push("/signin");
@@ -37,7 +37,11 @@ const FoodDetailsModal = ({
     <div className="fixed z-50 inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-h_idden">
         <div className="relative h-64">
-          <img src={image} alt={name} className="w-full h-full object-cover" />
+          <img
+            src={image || "/images/placeholder.jpg"}
+            alt={name}
+            className="w-full h-full object-cover"
+          />
           <div className="rounded-full" onClick={onClose}>
             <button
               onClick={onClose}
