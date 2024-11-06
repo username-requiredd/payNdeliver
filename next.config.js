@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
   assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
   images: {
     remotePatterns: [
