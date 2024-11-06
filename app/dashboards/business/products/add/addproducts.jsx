@@ -14,7 +14,7 @@ import {
   Autocomplete,
 } from "@mui/material";
 import { Camera, Loader } from "lucide-react";
-import ImageUpload from "@/components/ImageUpload";
+import ImageUpload from "@/components/Imageupload";
 
 const UploadBox = styled(Box)(({ theme }) => ({
   height: 250,

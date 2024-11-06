@@ -10,7 +10,7 @@ import {
   Save,
   XCircle,
 } from "lucide-react";
-import ImageUpload from "@/components/ImageUpload";
+import ImageUpload from "@/components/Imageupload";
 import { useSession } from "next-auth/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
