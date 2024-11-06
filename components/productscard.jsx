@@ -1,7 +1,7 @@
 import Link from "next/link";
 const ProductCard = ({ image, name, description, price, onclick, id }) => {
   const test = () => {
-    console.log("test:", image, name, description, price, id);
+    // console.log("test:", image, name, description, price, id);
   };
   return (
     <>

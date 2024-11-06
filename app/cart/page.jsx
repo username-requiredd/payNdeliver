@@ -11,9 +11,9 @@ import Footer from "@/components/footer";
 const CartPage = () => {
   const [mounted, setMounted] = useState(false);
   const { cart, removeFromCart, loading, error } = useCart();
-  console.log("cart", cart);
+  // console.log("cart", cart);
   const c = cart?.map((item) => item);
-  console.log("c", c);
+  // console.log("c", c);
   useEffect(() => {
     setMounted(true);
   }, []);

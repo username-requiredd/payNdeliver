@@ -9,7 +9,13 @@ import {
   FindReferenceError,
   ValidateTransferError,
 } from "@solana/pay";
-import { PublicKey, Keypair, Connection, clusterApiUrl } from "@solana/web3.js";
+import {
+  PublicKey,
+  Keypair,
+  Connection,
+  clusterApiUrl,
+  LAMPORTS_PER_SOL,
+} from "@solana/web3.js";
 import BigNumber from "bignumber.js";
 import { CreditCard, Coins, Truck, QrCode, Wallet } from "lucide-react";
 // import { useCart } from "@/context/cartcontext";
@@ -17,6 +23,8 @@ import { useCart } from "@/contex/cartcontex";
 import { useSession } from "next-auth/react";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
+import QRCodeStyling from "qr-code-styling";
+import axios from "axios";
 
 export default function EnhancedCheckout() {
   const { cart } = useCart();
@@ -71,10 +79,10 @@ export default function EnhancedCheckout() {
         }
 
         const cartData = await response.json();
-        console.log(cartData.data);
+        // console.log(cartData.data);
       } catch (err) {
         if (err.name === "AbortError") {
-          console.log("Fetch aborted");
+          // console.log("Fetch aborted");
         } else {
           console.error(err);
         }
@@ -88,6 +96,18 @@ export default function EnhancedCheckout() {
     };
   }, [session]);
 
+  async function getSolPrice() {
+    try {
+      const response = await axios.get(
+        "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
+      );
+      const solPrice = await response.data.solana.usd;
+      return solPrice;
+    } catch (error) {
+      return null;
+    }
+  }
+
   useEffect(() => {
     if (!totalCost || !cartItems) return; // Add validation
 
@@ -95,11 +115,24 @@ export default function EnhancedCheckout() {
     setReference(newReference);
 
     const recipient = new PublicKey(wallet);
-    const amount = new BigNumber(totalCost);
+
+    const solPriceInUsd = 188.85;
+
+    // const amount = new BigNumber(totalCost);
+    const amount = new BigNumber(totalCost / solPriceInUsd);
     const memo = cartItems;
 
     const url = encodeURL({ recipient, amount, reference: newReference, memo });
-    const qr = createQR(url);
+    // const qr = createQR(url);
+
+    // console.log(url.href);
+
+    const qrCode = new QRCodeStyling({
+      width: 250,
+      height: 250,
+      type: "svg",
+      data: url.href,
+    });
 
     if (
       qrRef.current &&
@@ -107,7 +140,7 @@ export default function EnhancedCheckout() {
       cryptoPaymentType === "qr"
     ) {
       qrRef.current.innerHTML = "";
-      qr.append(qrRef.current);
+      qrCode.append(qrRef.current);
     }
   }, [paymentMethod, cryptoPaymentType, totalCost, cartItems, wallet]);
 
@@ -126,13 +159,13 @@ export default function EnhancedCheckout() {
     if (paymentMethod === "crypto" && cryptoPaymentType === "wallet") {
       await handleSolanaPayment();
     } else {
-      console.log("Payment submitted:", {
-        paymentMethod,
-        cryptoPaymentType,
-        walletAddress,
-        cardDetails,
-        shippingDetails,
-      });
+      // console.log("Payment submitted:", {
+      //   paymentMethod,
+      //   cryptoPaymentType,
+      //   walletAddress,
+      //   cardDetails,
+      //   shippingDetails,
+      // });
     }
   };
 
@@ -273,20 +306,20 @@ export default function EnhancedCheckout() {
                       <Wallet className="mr-2" size={20} />
                       Enter Wallet
                     </button>
-                    {cryptoPaymentType === "wallet" && (
-                      <SolanaPayment
-                        amount={totalCost}
-                        recipientAddress="your-shop-wallet-address"
-                        onSuccess={(signature) => {
-                          setPaymentStatus("Payment successful!");
-                          // Handle successful payment (e.g., clear cart, redirect to success page)
-                        }}
-                        onError={(error) => {
-                          setPaymentStatus("Payment failed. Please try again.");
-                          // Handle payment error
-                        }}
-                      />
-                    )}
+                    {/* {cryptoPaymentType === "wallet" && (
+                      // <SolanaPayment
+                      //   amount={totalCost}
+                      //   recipientAddress={wallet}
+                      //   onSuccess={(signature) => {
+                      //     setPaymentStatus("Payment successful!");
+                      //     // Handle successful payment (e.g., clear cart, redirect to success page)
+                      //   }}
+                      //   onError={(error) => {
+                      //     setPaymentStatus("Payment failed. Please try again.");
+                      //     // Handle payment error
+                      //   }}
+                      // />
+                    )} */}
                   </div>
 
                   {cryptoPaymentType === "qr" ? (

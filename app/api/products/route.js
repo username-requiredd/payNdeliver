@@ -7,11 +7,11 @@ import ProductModel from "@/models/productsmodel";
 export async function POST(req) {
   try {
     await dbConnect();
-    console.log("Connected to database");
+    // console.log("Connected to database");
 
     const session = await getServerSession(authOptions);
     if (!session) {
-      console.log("No session found");
+      // console.log("No session found");
       return NextResponse.json({ message: "Not authorized" }, { status: 401 });
     }
 
@@ -36,7 +36,7 @@ export async function POST(req) {
       return NextResponse.json({ message: "Instock must be a non-negative number" }, { status: 400 });
     }
 
-    console.log("Product data:", { name, description, price, category, image, instock, tags, brand });
+    // console.log("Product data:", { name, description, price, category, image, instock, tags, brand });
 
     const newProduct = await ProductModel.create({
       businessId: session.user.id,
@@ -50,7 +50,7 @@ export async function POST(req) {
       brand
     });
 
-    console.log("Product created successfully!");
+    // console.log("Product created successfully!");
     return NextResponse.json({ message: "Product successfully created", data: newProduct }, { status: 201 });
 
   } catch (err) {

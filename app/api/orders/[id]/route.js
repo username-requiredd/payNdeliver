@@ -6,9 +6,9 @@ export const GET = async(req,{params})=>{
     try{
         await dbConnect()
         const {id} = params 
-        console.log(id)
+        // console.log(id)
         const getOrder = await Order.findOne({id: new ObjectId(id)})
-        console.log(getOrder)
+        // console.log(getOrder)
         if(getOrder.length === 0){
             return NextResponse.json({message:"order not found!"},{status:404})
         }

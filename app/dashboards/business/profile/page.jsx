@@ -46,7 +46,7 @@ const BusinessProfile = () => {
       } catch (err) {
         if (err.name === "AbortError") return;
         setError(err.message);
-        console.log(err.message);
+        // console.log(err.message);
       } finally {
         setLoading(false);
       }

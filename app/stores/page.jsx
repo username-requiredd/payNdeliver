@@ -52,7 +52,7 @@ const categories = [
 export default async function Stores({ searchParams }) {
   const activeCategory = searchParams.category || "All";
   const data = await fetchBusiness(activeCategory);
-  console.log(data);
+  // console.log(data);
   return (
     <>
       <div className="mb-4">
@@ -109,7 +109,7 @@ export default async function Stores({ searchParams }) {
 }
 
 function ShopCards({ data }) {
-  console.log(data);
+  // console.log(data);
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {data?.data?.map(({ _id, coverImage, businessName, cuisineType }) => (

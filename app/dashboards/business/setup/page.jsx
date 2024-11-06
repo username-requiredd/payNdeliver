@@ -69,7 +69,7 @@ const ProfileSetupPage = () => {
       }
 
       const result = await response.json();
-      console.log("Profile updated successfully:", result);
+      // console.log("Profile updated successfully:", result);
 
       toast.success("Account setup completed successfully! Redirecting...", {
         position: "top-right",

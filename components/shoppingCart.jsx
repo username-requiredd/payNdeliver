@@ -9,7 +9,7 @@ const CartItem = ({
   name,
   removeItem,
 }) => {
-  console.log("id", id);
+  // console.log("id", id);
   return (
     <div className="flex px-2 py-6 border-b">
       <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">

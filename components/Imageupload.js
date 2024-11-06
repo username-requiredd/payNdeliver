@@ -21,7 +21,7 @@ const ImageUpload = ({ onImageUpload }) => {
         const { signature, expire, token } = data;
         return { signature, expire, token };
     } catch (err) {
-        console.log(err.message);
+        // console.log(err.message);
         setError("Authentication failed");
     }
 };
@@ -29,13 +29,13 @@ const ImageUpload = ({ onImageUpload }) => {
 
 
   const onError = (err) => {
-    console.log("error:", err);
+    // console.log("error:", err);
     toast.error("Image upload failed");
     setUploadStatus('error');
   };
 
   const onSuccess = (res) => {
-    console.log("Success", res);
+    // console.log("Success", res);
     setUploadStatus('success');
     setProgress(100);
     onImageUpload(res.url);
@@ -43,7 +43,7 @@ const ImageUpload = ({ onImageUpload }) => {
   };
 
   const onUploadStart = (evt) => {
-    console.log("Start", evt);
+    // console.log("Start", evt);
     setUploadStatus('uploading');
     setProgress(0);
   };

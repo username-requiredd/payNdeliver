@@ -75,7 +75,7 @@ const Restaurant = ({ params }) => {
         }
       } catch (err) {
         if (err.name !== "AbortError") {
-          console.log(err);
+          // console.log(err);
           setError({
             status: err.status || 500,
             message: err.message || "An unexpected error occurred",

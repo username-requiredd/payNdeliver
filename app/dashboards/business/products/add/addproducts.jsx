@@ -122,7 +122,7 @@ const AddProduct = () => {
       }
       setLoading(false);
       const result = await response.json();
-      console.log("Product submitted successfully:", result);
+      // console.log("Product submitted successfully:", result);
 
       setSubmitSuccess(true);
       setProductData({
