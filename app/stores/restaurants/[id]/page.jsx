@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { Star, Phone, LocateIcon, Mail } from "lucide-react";
 
 import Header from "@/components/header";
+import CustomError from "@/app/error";
 import FoodDetailsModal from "@/components/productdetails";
 import ProductCard from "@/components/productscard";
 import Productscardskeleton from "@/components/loaders/productskeleton";
@@ -14,6 +15,7 @@ import CartContent from "./cartcontent";
 import Reviews from "./reviews";
 import BackToTopButton from "./backtotop";
 import Footer from "@/components/footer";
+import GetErrorContent from "@/components/geterror";
 
 const Restaurant = ({ params }) => {
   const { id } = params;
@@ -35,8 +37,22 @@ const Restaurant = ({ params }) => {
         setError(null);
 
         const businessResponse = await fetch(`/api/business/${id}`, { signal });
-        if (!businessResponse.ok)
-          throw new Error("Error fetching business profile");
+
+        // Handle 404 error
+        if (businessResponse.status === 404) {
+          throw {
+            status: 404,
+            message: "Restaurant not found",
+          };
+        }
+
+        // Handle other non-200 responses
+        if (!businessResponse.ok) {
+          throw {
+            status: businessResponse.status,
+            message: "Error fetching business profile",
+          };
+        }
 
         const businessData = await businessResponse.json();
         setProfile(businessData.data);
@@ -46,15 +62,24 @@ const Restaurant = ({ params }) => {
             `/api/products/${businessData.data._id}`,
             { signal }
           );
-          if (!productsResponse.ok) throw new Error("Error fetching products");
+
+          if (!productsResponse.ok) {
+            throw {
+              status: productsResponse.status,
+              message: "Error fetching products",
+            };
+          }
 
           const productsData = await productsResponse.json();
           setProducts(productsData.data);
         }
       } catch (err) {
         if (err.name !== "AbortError") {
-          console.log(err.message);
-          setError("An error occurred while fetching data. Please try again.");
+          console.log(err);
+          setError({
+            status: err.status || 500,
+            message: err.message || "An unexpected error occurred",
+          });
         }
       } finally {
         setLoading(false);
@@ -73,8 +98,13 @@ const Restaurant = ({ params }) => {
     (productId) => {
       const product = products.find((prod) => productId === prod._id);
       if (product) {
-        setSelectedProduct(product);
+        const transformedProduct = {
+          ...product,
+          id: product._id,
+        };
+        setSelectedProduct(transformedProduct);
         setIsModalOpen(true);
+        return transformedProduct;
       }
     },
     [products]
@@ -82,7 +112,12 @@ const Restaurant = ({ params }) => {
 
   const handleAddToCart = useCallback(
     (product) => {
-      addToCart(product);
+      const cartProduct = {
+        ...product,
+        _id: product.id || product._id,
+        quantity: product.quantity || 1,
+      };
+      addToCart(cartProduct);
       toast.success("Added item to cart");
     },
     [addToCart]
@@ -97,9 +132,12 @@ const Restaurant = ({ params }) => {
   );
 
   if (error) {
+    const errorContent = GetErrorContent(error);
     return (
-      <div className="text-center text-red-500 mt-4" role="alert">
-        {error}
+      <div className="pt-5">
+        <Header />
+        <CustomError {...errorContent} />
+        <Footer />
       </div>
     );
   }
@@ -112,6 +150,7 @@ const Restaurant = ({ params }) => {
       {isModalOpen && selectedProduct && (
         <FoodDetailsModal
           {...selectedProduct}
+          _id={selectedProduct._id || selectedProduct.id}
           addToCart={handleAddToCart}
           onClose={() => setIsModalOpen(false)}
         />
@@ -238,7 +277,7 @@ const MenuSection = ({
         Array(4)
           .fill()
           .map((_, index) => <Productscardskeleton key={index} />)
-      ) : products?.length > 0 ? (
+      ) : products && products?.length > 0 ? (
         products?.map((product) => (
           <ProductCard
             key={product._id}

@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { ShoppingBag, User, Menu, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useCart } from "@/contex/cartcontex";
-
 const Header = () => {
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,6 +15,22 @@ const Header = () => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  if (!mounted) {
+    return (
+      <nav className="shadow-sm bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex-shrink-0">
+              <h3 className="text-3xl font-bold text-black italic">
+                PayNDeliver
+              </h3>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -50,8 +65,8 @@ const Header = () => {
               className="relative text-gray-600 hover:text-indigo-600 transition-colors duration-200"
             >
               <ShoppingBag className="h-6 w-6" />
-              {mounted && cart.length > 0 && (
-                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-indigo-600 rounded-full">
+              {cart?.length > 0 && (
+                <span className="absolute -top-2 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-green-600 rounded-full">
                   {cart.length}
                 </span>
               )}

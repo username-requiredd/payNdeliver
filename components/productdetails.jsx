@@ -15,7 +15,6 @@ const FoodDetailsModal = ({
   const [quantity, setQuantity] = useState(1);
   const { data: session } = useSession();
   const router = useRouter();
-  console.log(name, price, onClose, description, image);
   const handleAddToCart = () => {
     if (!session) {
       router.push("/signin");

@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState, useRef } from "react";
 import {
   createQR,
@@ -11,6 +12,7 @@ import {
 import { PublicKey, Keypair, Connection, clusterApiUrl } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
 import { CreditCard, Coins, Truck, QrCode, Wallet } from "lucide-react";
+// import { useCart } from "@/context/cartcontext";
 import { useCart } from "@/contex/cartcontex";
 import { useSession } from "next-auth/react";
 import Footer from "@/components/footer";
@@ -18,26 +20,16 @@ import Header from "@/components/header";
 
 export default function EnhancedCheckout() {
   const { cart } = useCart();
-  console.log("cart", cart);
   const { data: session } = useSession();
-  // const [cart, setCart] = useState([]);
-  console.log("session:", session?.user?.id);
-  const [wallet, setWallet] = useState(
-    "a8xbmjRKktM4Np8M2RS6a3nrygQq7aaguNe9n7JFfjE"
-  );
-  // console.log("cart:", cart);
+  const [wallet] = useState("a8xbmjRKktM4Np8M2RS6a3nrygQq7aaguNe9n7JFfjE");
 
-  const totalCost = 200;
-  // cart.reduce((accumulator, { price, quantity }) => {
-  //   return accumulator + price * quantity;
-  // }, 0);
+  // Calculate total cost from cart
+  const totalCost = cart.reduce((accumulator, { price, quantity }) => {
+    return accumulator + price * quantity;
+  }, 0);
 
-  const cartitems = "sharwama";
-  // cart.map(({ name }) => name);
-  const items = cartitems;
-  //  cartitems.join(" ");
-  console.log(items);
-  console.log(totalCost);
+  // Get cart items
+  const cartItems = cart.map(({ name }) => name).join(" ");
 
   const [reference, setReference] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("crypto");
@@ -78,15 +70,13 @@ export default function EnhancedCheckout() {
           throw new Error("Error fetching cart data!");
         }
 
-        const crt = await response.json();
-        // setCart(crt.data.products);
-        console.log(crt.data);
+        const cartData = await response.json();
+        console.log(cartData.data);
       } catch (err) {
         if (err.name === "AbortError") {
           console.log("Fetch aborted");
         } else {
-          setError(err.message);
-          console.log(err);
+          console.error(err);
         }
       }
     };
@@ -99,12 +89,14 @@ export default function EnhancedCheckout() {
   }, [session]);
 
   useEffect(() => {
+    if (!totalCost || !cartItems) return; // Add validation
+
     const newReference = Keypair.generate().publicKey;
     setReference(newReference);
 
     const recipient = new PublicKey(wallet);
     const amount = new BigNumber(totalCost);
-    const memo = items;
+    const memo = cartItems;
 
     const url = encodeURL({ recipient, amount, reference: newReference, memo });
     const qr = createQR(url);
@@ -117,7 +109,7 @@ export default function EnhancedCheckout() {
       qrRef.current.innerHTML = "";
       qr.append(qrRef.current);
     }
-  }, [paymentMethod, cryptoPaymentType]);
+  }, [paymentMethod, cryptoPaymentType, totalCost, cartItems, wallet]);
 
   const handleInputChange = (e, setFunction) => {
     const { name, value } = e.target;
@@ -126,6 +118,11 @@ export default function EnhancedCheckout() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!cart.length) {
+      setPaymentStatus("Error: Cart is empty");
+      return;
+    }
+
     if (paymentMethod === "crypto" && cryptoPaymentType === "wallet") {
       await handleSolanaPayment();
     } else {
@@ -136,7 +133,6 @@ export default function EnhancedCheckout() {
         cardDetails,
         shippingDetails,
       });
-      // Implement other payment methods here
     }
   };
 
@@ -144,30 +140,19 @@ export default function EnhancedCheckout() {
     setPaymentStatus("Processing...");
 
     try {
-      // Validate the wallet address
       const recipientAddress = new PublicKey(walletAddress);
-
-      // Create the transaction URL
-      const recipient = new PublicKey(
-        "a8xbmjRKktM4Np8M2RS6a3nrygQq7aaguNe9n7JFfjE"
-      );
+      const recipient = new PublicKey(wallet);
       const amount = new BigNumber(totalCost);
-      const memo = "Payment for Chicken Sharwarma";
+      const memo = cartItems;
       const url = encodeURL({ recipient, amount, reference, memo });
 
-      // Simulate sending the URL to the wallet (in a real app, you'd use a wallet adapter)
       console.log("Payment URL:", url.toString());
-
-      // In a real scenario, you'd wait for the user to approve the transaction in their wallet
-      // For this example, we'll simulate waiting for the transaction
       setPaymentStatus("Waiting for transaction...");
 
-      // Poll for the transaction
       const signatureInfo = await findReference(connection, reference, {
         finality: "confirmed",
       });
 
-      // Validate the transaction
       await validateTransfer(
         connection,
         signatureInfo.signature,
@@ -288,6 +273,20 @@ export default function EnhancedCheckout() {
                       <Wallet className="mr-2" size={20} />
                       Enter Wallet
                     </button>
+                    {cryptoPaymentType === "wallet" && (
+                      <SolanaPayment
+                        amount={totalCost}
+                        recipientAddress="your-shop-wallet-address"
+                        onSuccess={(signature) => {
+                          setPaymentStatus("Payment successful!");
+                          // Handle successful payment (e.g., clear cart, redirect to success page)
+                        }}
+                        onError={(error) => {
+                          setPaymentStatus("Payment failed. Please try again.");
+                          // Handle payment error
+                        }}
+                      />
+                    )}
                   </div>
 
                   {cryptoPaymentType === "qr" ? (

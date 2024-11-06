@@ -6,6 +6,28 @@ import useLocalStorage from "./uselocalstorage";
 
 const CartContext = createContext();
 
+// Validation functions
+const validateProduct = (product) => {
+  const required = [ 'name', 'price', 'quantity', 'image'];
+  for (const field of required) {
+    if (!product[field]) {
+      throw new Error(`Missing required field: ${field}`);
+    }
+  }
+
+  return {
+    _id: String(product._id ),
+    name: String(product.name),
+    price: Number(product.price),
+    quantity: Math.max(1, Number(product.quantity)),
+    image: String(product.image)
+  };
+};
+
+const calculateTotal = (products) => {
+  return products.reduce((acc, product) => acc + (product.price * product.quantity), 0);
+};
+
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -21,8 +43,8 @@ export const CartProvider = ({ children }) => {
   const [error, setError] = useState("");
 
   const fetchCart = useCallback(async () => {
-    const id = session?.user?.id;
-    if (!id) {
+    const userId = session?.user?.id;
+    if (!userId) {
       console.warn("User not authenticated. Cannot fetch cart.");
       return;
     }
@@ -30,9 +52,9 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true);
       setError("");
-      console.log("Fetching cart for user:", id);
+      console.log("Fetching cart for user:", userId);
 
-      const response = await fetch(`/api/cart/${id}`);
+      const response = await fetch(`/api/cart/${userId}`);
 
       if (!response.ok) {
         throw new Error("Error fetching cart data!");
@@ -41,14 +63,21 @@ export const CartProvider = ({ children }) => {
       const { products } = await response.json();
       console.log("Fetched products from API:", products);
 
-      // Update local cart with fetched products
-      setCart(prevCart => products.map(product => ({
-        id: product.id,
+      // Validate and transform fetched products
+      // const test = products.map((product)=> product)
+      // console.log("test:", test)
+      const validatedProducts = products.map(product => validateProduct({
+        id: product._id,
         name: product.name,
         price: product.price,
         quantity: product.quantity,
         image: product.image
-      })));
+      }));
+
+
+      console.log("validated products:", validatedProducts)
+
+      setCart(validatedProducts);
 
     } catch (err) {
       console.error("Error fetching cart:", err);
@@ -56,7 +85,7 @@ export const CartProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id]); // Removed setCart from dependencies
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -76,6 +105,11 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true);
       console.log("Saving cart to database for user:", userId);
+
+      // Validate all products before saving
+      const validatedProducts = products.map(validateProduct);
+      const total = calculateTotal(validatedProducts);
+
       const response = await fetch(`/api/cart/`, {
         method: "POST",
         headers: {
@@ -83,80 +117,104 @@ export const CartProvider = ({ children }) => {
         },
         body: JSON.stringify({
           userId,
-          products: products.map(product => ({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            quantity: product.quantity,
-            image: product.image
-          })),
-          total: products.reduce((acc, product) => acc + (product.price * product.quantity), 0)
+          products: validatedProducts,
+          total
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update cart");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update cart");
       }
 
       const data = await response.json();
       console.log("Cart updated successfully in the database:", data);
     } catch (error) {
       console.error("Error updating cart in the database:", error);
-      setError("Error updating cart");
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   }, [session?.user?.id]);
+  
 
   const addToCart = useCallback((product) => {
-    setCart((prevCart) => {
-      const productExist = prevCart.find((item) => item.id === product.id);
-      let updatedCart;
+    // console.log("products form add to cart function", product)
+    try {
+      const validatedProduct = validateProduct(product);
+      console.log("validated products",validateProduct)
+      setCart((prevCart) => {
+        const productExist = prevCart.find((item) => item.id === validatedProduct.id);
+        let updatedCart;
 
-      if (productExist) {
-        updatedCart = prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      } else {
-        updatedCart = [...prevCart, { ...product, quantity: 1 }];
-      }
+        if (productExist) {
+          updatedCart = prevCart.map((item) =>
+            item.id === validatedProduct._id 
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          );
+        } else {
+          updatedCart = [...prevCart, { ...validatedProduct, quantity: 1 }];
+        }
 
-      console.log("Cart after adding product:", updatedCart);
-      saveCartToDb(updatedCart);
+        console.log("Cart after adding product:", updatedCart);
+        saveCartToDb(updatedCart);
 
-      return updatedCart;
-    });
+        return updatedCart;
+      });
+    } catch (error) {
+      console.error("Error adding product to cart:", error);
+      setError(error.message);
+    }
   }, [setCart, saveCartToDb]);
 
   const removeFromCart = useCallback((productId) => {
-    setCart((prevCart) => {
-      const updatedCart = prevCart.filter((item) => item.id !== productId);
-      console.log("Cart after removing product:", updatedCart);
-      saveCartToDb(updatedCart);
+    try {
+      setCart((prevCart) => {
+        const updatedCart = prevCart.filter((item) => item.id !== productId);
+        console.log("Cart after removing product:", updatedCart);
+        saveCartToDb(updatedCart);
 
-      return updatedCart;
-    });
+        return updatedCart;
+      });
+    } catch (error) {
+      console.error("Error removing product from cart:", error);
+      setError(error.message);
+    }
   }, [setCart, saveCartToDb]);
 
   const clearCart = useCallback(() => {
-    setCart([]);
-    console.log("Cleared cart.");
-    saveCartToDb([]);
+    try {
+      setCart([]);
+      console.log("Cleared cart.");
+      saveCartToDb([]);
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      setError(error.message);
+    }
   }, [setCart, saveCartToDb]);
 
   const updateQuantity = useCallback((productId, newQuantity) => {
-    if (newQuantity < 1) {
-      return removeFromCart(productId);
-    }
-    setCart((prevCart) => {
-      const updatedCart = prevCart.map((item) =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      );
-      console.log(`Updated quantity for product ${productId}:`, updatedCart);
-      saveCartToDb(updatedCart);
+    try {
+      if (newQuantity < 1) {
+        return removeFromCart(productId);
+      }
 
-      return updatedCart;
-    });
+      setCart((prevCart) => {
+        const updatedCart = prevCart.map((item) =>
+          item.id === productId
+            ? validateProduct({ ...item, quantity: newQuantity })
+            : item
+        );
+        console.log(`Updated quantity for product ${productId}:`, updatedCart);
+        saveCartToDb(updatedCart);
+
+        return updatedCart;
+      });
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+      setError(error.message);
+    }
   }, [setCart, saveCartToDb, removeFromCart]);
 
   const contextValue = useMemo(
