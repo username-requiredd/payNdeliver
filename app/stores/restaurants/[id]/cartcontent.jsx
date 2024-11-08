@@ -6,6 +6,14 @@ import CartItem from "./cartitem";
 import CartEmpty from "@/components/cartempty";
 import Link from "next/link";
 
+// Currency formatting function
+const formatCurrency = (amount, locale = "en-US", currency = "NGN") => {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: currency,
+  }).format(amount);
+};
+
 const CartContent = () => {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
   const [hasMounted, setHasMounted] = useState(false);
@@ -14,6 +22,7 @@ const CartContent = () => {
     setHasMounted(true);
   }, []);
 
+  // Calculate total price with formatting
   const total = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cart]);
@@ -41,7 +50,10 @@ const CartContent = () => {
       <div className="border-t pt-4">
         <div className="flex justify-between items-center mb-4">
           <span className="font-semibold">Total:</span>
-          <span className="font-bold text-green-600">${total.toFixed(2)}</span>
+          {/* Format total with currency symbol */}
+          <span className="font-bold text-green-600">
+            {formatCurrency(total, "en-NG", "NGN")}
+          </span>
         </div>
         <div className="space-y-2">
           <button

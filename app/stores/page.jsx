@@ -43,16 +43,17 @@ const CategoryLink = ({ children, icon: Icon, isActive, href }) => (
 const categories = [
   { name: "All", icon: ShoppingCart },
   { name: "Restaurants", icon: Utensils },
-  { name: "Pizza", icon: PizzaIcon },
   { name: "Pharmacy", icon: Pill },
   { name: "Provision", icon: ShoppingBag },
   { name: "Fashion", icon: Shirt },
+  { name: "Others", icon: PizzaIcon },
 ];
 
 export default async function Stores({ searchParams }) {
   const activeCategory = searchParams.category || "All";
+  console.log(activeCategory);
   const data = await fetchBusiness(activeCategory);
-  // console.log(data);
+  console.log(data);
   return (
     <>
       <div className="mb-4">

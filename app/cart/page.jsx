@@ -8,12 +8,17 @@ import CartItem from "@/components/shoppingCart";
 import Link from "next/link";
 import Footer from "@/components/footer";
 
+const formatCurrency = (amount, locale = "en-US", currency = "NGN") => {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: currency,
+  }).format(amount);
+};
+
 const CartPage = () => {
   const [mounted, setMounted] = useState(false);
   const { cart, removeFromCart, loading, error } = useCart();
-  // console.log("cart", cart);
-  const c = cart?.map((item) => item);
-  // console.log("c", c);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -31,7 +36,7 @@ const CartPage = () => {
     );
   }
 
-  // Calculate total price safely
+  // Calculate total price with formatting
   const totalPrice =
     cart?.reduce((sum, { price, quantity }) => {
       return sum + (price || 0) * (quantity || 0);
@@ -66,7 +71,6 @@ const CartPage = () => {
                   <CartSkeleton />
                 </>
               ) : (
-                cart &&
                 cart?.map((item) => (
                   <CartItem
                     key={item.id}
@@ -82,15 +86,15 @@ const CartPage = () => {
                 <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
                 <div className="flex justify-between mb-2">
                   <span>Subtotal:</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+                  <span>{formatCurrency(totalPrice, "en-NG", "NGN")}</span>
                 </div>
                 <div className="flex justify-between mb-2">
                   <span>Shipping:</span>
-                  <span>$5.00</span>
+                  <span>{formatCurrency(5, "en-NG", "NGN")}</span>
                 </div>
                 <div className="flex justify-between font-semibold text-lg mt-4">
                   <span>Total:</span>
-                  <span>${(totalPrice + 5).toFixed(2)}</span>
+                  <span>{formatCurrency(totalPrice + 5, "en-NG", "NGN")}</span>
                 </div>
                 <div className="mt-5">
                   <Link

@@ -17,7 +17,7 @@ import BackToTopButton from "./backtotop";
 import Footer from "@/components/footer";
 import GetErrorContent from "@/components/geterror";
 
-const Restaurant = ({ params }) => {
+const ShopDetails = ({ params }) => {
   const { id } = params;
   const { data: session } = useSession();
   const { addToCart } = useCart();
@@ -42,7 +42,7 @@ const Restaurant = ({ params }) => {
         if (businessResponse.status === 404) {
           throw {
             status: 404,
-            message: "Restaurant not found",
+            message: "Business not found",
           };
         }
 
@@ -56,6 +56,7 @@ const Restaurant = ({ params }) => {
 
         const businessData = await businessResponse.json();
         setProfile(businessData.data);
+        console.log(profile);
 
         if (businessData.data?._id) {
           const productsResponse = await fetch(
@@ -127,7 +128,7 @@ const Restaurant = ({ params }) => {
     setCat(category);
   }, []);
 
-  const filteredProducts = products.filter(
+  const filteredProducts = products?.filter(
     (product) => cat === "All" || product.cuisineType === cat
   );
 
@@ -221,13 +222,12 @@ const RestaurantInfo = ({ loading, profile }) => (
     </div>
     <div className="flex justify-between text-sm text-gray-600 mb-6">
       <div>
-        <p className="font-semibold text-gray-800">Opening time</p>
-        <p>9:00am-12:00am</p>
+        {/* <p className="font-semibold text-gray-800">Opening time</p>
+        <p>9:00am-12:00am</p> */}
+        <p className="font-semibold text-gray-800">Category</p>
+        <p className="text-green-600">{profile?.businessType}</p>
       </div>
-      <div>
-        <p className="font-semibold text-gray-800">Cuisine</p>
-        <p className="text-green-600">African</p>
-      </div>
+      <div></div>
     </div>
   </div>
 );
@@ -358,4 +358,4 @@ const OpeningHoursAndContact = ({ loading, profile }) => (
   </div>
 );
 
-export default Restaurant;
+export default ShopDetails;
