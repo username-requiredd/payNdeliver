@@ -195,7 +195,7 @@ const Reviews = ({ businessId }) => {
 
         {error && <p className="text-red-500 mb-4">{error}</p>}
 
-        <div className="flex items-center justify-end">
+        <div className="flex  pb-3 items-center justify-end">
           <button
             className="bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out disabled:opacity-50"
             type="submit"

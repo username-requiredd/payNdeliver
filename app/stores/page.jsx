@@ -43,14 +43,15 @@ const CategoryLink = ({ children, icon: Icon, isActive, href }) => (
 const categories = [
   { name: "All", icon: ShoppingCart },
   { name: "Restaurants", icon: Utensils },
-  { name: "Pizza", icon: PizzaIcon },
   { name: "Pharmacy", icon: Pill },
   { name: "Provision", icon: ShoppingBag },
   { name: "Fashion", icon: Shirt },
+  { name: "Others", icon: PizzaIcon },
 ];
 
 export default async function Stores({ searchParams }) {
   const activeCategory = searchParams.category || "All";
+  console.log(activeCategory);
   const data = await fetchBusiness(activeCategory);
   console.log(data);
   return (
@@ -109,7 +110,7 @@ export default async function Stores({ searchParams }) {
 }
 
 function ShopCards({ data }) {
-  console.log(data);
+  // console.log(data);
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {data?.data?.map(({ _id, coverImage, businessName, cuisineType }) => (

@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 const Header = () => {
   const { data: session } = useSession();
-  console.log(session);
+  // console.log(session);
   return (
     <>
       <header className="fixed z-50 top-0 left-0 right-0 bg-white shadow-sm ">

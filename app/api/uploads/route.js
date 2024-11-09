@@ -8,24 +8,24 @@ import { GridFSBucket } from 'mongodb';
 export async function POST(req) {
   try {
     await dbConnect();
-    console.log("Connected to the database");
+    // console.log("Connected to the database");
 
     const formData = await req.formData();
-    console.log("Received form data", formData);
+    // console.log("Received form data", formData);
 
     const file = formData.get('file');
-    console.log("Received file:", file);
+    // console.log("Received file:", file);
 
     if (!file) {
-      console.log("File not received");
+      // console.log("File not received");
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    console.log("Buffer created");
+    // console.log("Buffer created");
 
     const filename = `${Date.now()}-${file.name}`;
-    console.log("Filename:", filename);
+    // console.log("Filename:", filename);
 
     const conn = mongoose.connection;
     const bucket = new GridFSBucket(conn.db, {
@@ -64,8 +64,8 @@ export async function POST(req) {
   }
 }
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// export const config = {
+//   api: {
+//     bodyParser: false,
+//   },
+// };

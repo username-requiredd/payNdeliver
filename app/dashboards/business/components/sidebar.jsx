@@ -53,11 +53,6 @@ const Sidebar = () => {
       icon: ArrowRightLeft,
       label: "Transactions",
     },
-    {
-      href: "/dashboards/business/setup",
-      icon: Settings,
-      label: "Setup",
-    },
   ];
 
   return (

@@ -6,6 +6,27 @@ import useLocalStorage from "./uselocalstorage";
 
 const CartContext = createContext();
 
+const validateProduct = (product) => {
+  const required = ['id', 'name', 'price', 'quantity', 'image'];
+  for (const field of required) {
+    if (!product[field] && product[field] !== 0) {
+      throw new Error(`Missing required field: ${field}`);
+    }
+  }
+
+  return {
+    id: String(product.id || product._id),
+    name: String(product.name),
+    price: Number(product.price),
+    quantity: Math.max(1, Number(product.quantity)),
+    image: String(product.image)
+  };
+};
+
+const calculateTotal = (products) => {
+  return products.reduce((acc, product) => acc + (product.price * product.quantity), 0);
+};
+
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -16,66 +37,68 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useLocalStorage("cart", []);
-  const { data: session } = useSession();
+  const { data: session, status } = useSession(); // Added status
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const fetchCart = useCallback(async () => {
-    const id = session?.user?.id;
-    if (!id) {
-      console.warn("User not authenticated. Cannot fetch cart.");
-      return;
-    }
+    const userId = session?.user?.id;
+    if (!userId) return;
 
     try {
       setLoading(true);
       setError("");
-      console.log("Fetching cart for user:", id);
 
-      const response = await fetch(`/api/cart/${id}`);
-
+      const response = await fetch(`/api/cart/${userId}`);
       if (!response.ok) {
         throw new Error("Error fetching cart data!");
       }
 
       const { products } = await response.json();
-      console.log("Fetched products from API:", products);
+      
+      if (products && products.length > 0) {
+        const validatedProducts = products.map(product => validateProduct({
+          id: product._id || product.id,
+          name: product.name,
+          price: product.price,
+          quantity: product.quantity,
+          image: product.image
+        }));
 
-      // Update local cart with fetched products
-      setCart(prevCart => products.map(product => ({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: product.quantity,
-        image: product.image
-      })));
-
+        // Only update if there's no existing cart data
+        setCart(prevCart => prevCart.length === 0 ? validatedProducts : prevCart);
+      }
     } catch (err) {
       console.error("Error fetching cart:", err);
       setError(err.message);
     } finally {
       setLoading(false);
+      setIsInitialized(true);
     }
-  }, [session?.user?.id]); // Removed setCart from dependencies
+  }, [session?.user?.id, setCart]);
 
+  // Modified useEffect to handle initialization
   useEffect(() => {
-    if (session?.user?.id) {
+    // Only fetch cart if we're authenticated and not initialized
+    if (status === "authenticated" && !isInitialized) {
       fetchCart();
-    } else {
-      setCart([]);
     }
-  }, [session?.user?.id, fetchCart]);
+    // If we're not authenticated but initialized, keep the local cart
+  }, [status, fetchCart, isInitialized]);
 
   const saveCartToDb = useCallback(async (products) => {
     const userId = session?.user?.id;
     if (!userId) {
-      console.warn("User not authenticated. Cannot save cart to database.");
+      // If not authenticated, just keep in localStorage
       return;
     }
 
     try {
       setLoading(true);
-      console.log("Saving cart to database for user:", userId);
+      const validatedProducts = products.map(validateProduct);
+      const total = calculateTotal(validatedProducts);
+
       const response = await fetch(`/api/cart/`, {
         method: "POST",
         headers: {
@@ -83,81 +106,79 @@ export const CartProvider = ({ children }) => {
         },
         body: JSON.stringify({
           userId,
-          products: products.map(product => ({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            quantity: product.quantity,
-            image: product.image
-          })),
-          total: products.reduce((acc, product) => acc + (product.price * product.quantity), 0)
+          products: validatedProducts,
+          total
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update cart");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update cart");
       }
-
-      const data = await response.json();
-      console.log("Cart updated successfully in the database:", data);
     } catch (error) {
       console.error("Error updating cart in the database:", error);
-      setError("Error updating cart");
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   }, [session?.user?.id]);
 
   const addToCart = useCallback((product) => {
-    setCart((prevCart) => {
-      const productExist = prevCart.find((item) => item.id === product.id);
-      let updatedCart;
+    try {
+      const validatedProduct = validateProduct(product);
+      
+      setCart((prevCart) => {
+        const productExist = prevCart.find((item) => item.id === validatedProduct.id);
+        let updatedCart;
 
-      if (productExist) {
-        updatedCart = prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      } else {
-        updatedCart = [...prevCart, { ...product, quantity: 1 }];
-      }
+        if (productExist) {
+          updatedCart = prevCart.map((item) =>
+            item.id === validatedProduct.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          );
+        } else {
+          updatedCart = [...prevCart, { ...validatedProduct, quantity: 1 }];
+        }
 
-      console.log("Cart after adding product:", updatedCart);
-      saveCartToDb(updatedCart);
-
-      return updatedCart;
-    });
-  }, [setCart, saveCartToDb]);
+        // Save to DB if authenticated
+        if (session?.user?.id) {
+          saveCartToDb(updatedCart);
+        }
+        return updatedCart;
+      });
+    } catch (error) {
+      console.error("Error adding product to cart:", error);
+      setError(error.message);
+    }
+  }, [setCart, saveCartToDb, session?.user?.id]);
 
   const removeFromCart = useCallback((productId) => {
-    setCart((prevCart) => {
-      const updatedCart = prevCart.filter((item) => item.id !== productId);
-      console.log("Cart after removing product:", updatedCart);
-      saveCartToDb(updatedCart);
-
-      return updatedCart;
-    });
-  }, [setCart, saveCartToDb]);
+    try {
+      setCart((prevCart) => {
+        const updatedCart = prevCart.filter((item) => item.id !== productId);
+        if (session?.user?.id) {
+          saveCartToDb(updatedCart);
+        }
+        return updatedCart;
+      });
+    } catch (error) {
+      console.error("Error removing product from cart:", error);
+      setError(error.message);
+    }
+  }, [setCart, saveCartToDb, session?.user?.id]);
 
   const clearCart = useCallback(() => {
-    setCart([]);
-    console.log("Cleared cart.");
-    saveCartToDb([]);
-  }, [setCart, saveCartToDb]);
-
-  const updateQuantity = useCallback((productId, newQuantity) => {
-    if (newQuantity < 1) {
-      return removeFromCart(productId);
+    try {
+      setCart([]);
+      if (session?.user?.id) {
+        saveCartToDb([]);
+      }
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      setError(error.message);
     }
-    setCart((prevCart) => {
-      const updatedCart = prevCart.map((item) =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      );
-      console.log(`Updated quantity for product ${productId}:`, updatedCart);
-      saveCartToDb(updatedCart);
-
-      return updatedCart;
-    });
-  }, [setCart, saveCartToDb, removeFromCart]);
+  }, [setCart, saveCartToDb, session?.user?.id]);
 
   const contextValue = useMemo(
     () => ({
@@ -165,11 +186,10 @@ export const CartProvider = ({ children }) => {
       addToCart,
       removeFromCart,
       clearCart,
-      updateQuantity,
       loading,
       error,
     }),
-    [cart, addToCart, removeFromCart, clearCart, updateQuantity, loading, error]
+    [cart, addToCart, removeFromCart, clearCart, loading, error]
   );
 
   return <CartContext.Provider value={contextValue}>{children}</CartContext.Provider>;

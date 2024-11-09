@@ -7,10 +7,10 @@ import bcrypt from "bcryptjs";
 export const POST = async (req) => {
   try {
     await dbConnect(); // Ensure database connection
-    console.log("Database connected");
+    // console.log("Database connected");
 
     const data = await req.json(); // Parse the request body
-    console.log(data);
+    // console.log(data);
 
     // Check if the business already exists
     const businessExist = await Business.findOne({ email: data.email });
@@ -28,7 +28,7 @@ export const POST = async (req) => {
       password: passwordHash, // Use the hashed password
     });
 
-    console.log("New business created:", newBusiness);
+    // console.log("New business created:", newBusiness);
 
     return NextResponse.json(
       { message: "Business created successfully", data: newBusiness },

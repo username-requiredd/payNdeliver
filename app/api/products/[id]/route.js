@@ -12,7 +12,7 @@ export const GET = async (req, { params }) => {
     const products = await productsmodel.find({ businessId: new ObjectId(id) });
     
     if (products.length === 0) {
-      return NextResponse.json({ message: "No products found for this business." }, { status: 404 });
+      return NextResponse.json({ message: "No products found for this business." }, { status: 200 });
     }
     
     return NextResponse.json({ message: "Success", data: products }, { status: 200 });

@@ -3,6 +3,14 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Plus, Minus } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+const formatCurrency = (amount, locale = "en-US", currency = "NGN") => {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: currency,
+  }).format(amount);
+};
+
 const FoodDetailsModal = ({
   name,
   price,
@@ -10,12 +18,12 @@ const FoodDetailsModal = ({
   description,
   image,
   addToCart,
-  saveCartToDatabase,
   id,
 }) => {
   const [quantity, setQuantity] = useState(1);
   const { data: session } = useSession();
   const router = useRouter();
+
   const handleAddToCart = () => {
     if (!session) {
       router.push("/signin");
@@ -30,14 +38,19 @@ const FoodDetailsModal = ({
       quantity,
     });
   };
+
   const increaseQuantity = () => setQuantity((prev) => prev + 1);
   const decreaseQuantity = () => setQuantity((prev) => Math.max(1, prev - 1));
 
   return (
     <div className="fixed z-50 inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-h_idden">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
         <div className="relative h-64">
-          <img src={image} alt={name} className="w-full h-full object-cover" />
+          <img
+            src={image || "/images/placeholder.jpg"}
+            alt={name}
+            className="w-full h-full object-cover"
+          />
           <div className="rounded-full" onClick={onClose}>
             <button
               onClick={onClose}
@@ -53,7 +66,7 @@ const FoodDetailsModal = ({
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeW_idth={2}
+                  strokeWidth={2}
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
@@ -62,10 +75,12 @@ const FoodDetailsModal = ({
         </div>
 
         <div className="p-6">
-          <h2 className="text-2xl font-bold mb-2 ">{name}</h2>
-          <p className=" text-gray-600 mb-6">{description}</p>
+          <h2 className="text-2xl font-bold mb-2">{name}</h2>
+          <p className="text-gray-600 mb-6">{description}</p>
 
-          <p className="text-xl text-green-600 font-semibold mb-6">${price}</p>
+          <p className="text-xl text-green-600 font-semibold mb-6">
+            {formatCurrency(price, "en-NG", "NGN")}
+          </p>
 
           <div className="flex items-center justify-between mb-6">
             <span className="text-lg font-medium">Quantity:</span>
@@ -85,14 +100,13 @@ const FoodDetailsModal = ({
               </button>
             </div>
           </div>
-          {/* <Link href={"/checkout"}> */}
+
           <button
             onClick={handleAddToCart}
             className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold text-lg hover:bg-green-600 transition-colors"
           >
-            Place Order - ${(price * quantity).toFixed(2)}
+            Place Order - {formatCurrency(price * quantity, "en-NG", "NGN")}
           </button>
-          {/* </Link> */}
         </div>
       </div>
     </div>

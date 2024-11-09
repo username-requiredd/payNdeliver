@@ -27,8 +27,8 @@ export const authOptions = {
       
           if (finduser) {
             const validate = await bcrypt.compare(password, finduser.password);
-            console.log("Incoming Password:", password);
-            console.log("Stored Hash:", validate);
+            // console.log("Incoming Password:", password);
+            // console.log("Stored Hash:", validate);
             if (!validate) {
               throw new Error("Invalid password");
             }

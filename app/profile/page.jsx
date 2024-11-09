@@ -16,7 +16,7 @@ import Footer from "@/components/footer";
 
 const AccountPage = () => {
   const { data: session } = useSession();
-  console.log(session);
+  // console.log(session);
   const router = useRouter();
   if (session?.user?.role === "business") {
     router.push("/dashboards/business");
@@ -70,9 +70,11 @@ const AccountPage = () => {
 };
 
 const ProfileSection = () => {
+  const { data: session } = useSession();
+  // console.log(session);
   // Mock user data
   const user = {
-    email: "john.doe@example.com",
+    email: session?.user?.email,
     phone: "+1 (555) 123-4567",
     address: "123 Main St, Anytown, ST 12345",
     memberSince: "January 2022",

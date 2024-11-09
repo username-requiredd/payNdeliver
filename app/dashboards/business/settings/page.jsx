@@ -1,30 +1,43 @@
-"use client"
-import  { useState } from 'react';
+"use client";
+import { useState } from "react";
 import {
-  Box, Typography, Paper, Grid, TextField, Switch, Button,
-  FormControlLabel, Divider, Avatar, InputAdornment, IconButton,
-  Select, MenuItem, FormControl, InputLabel
-} from '@mui/material';
-// import { Palette } from 'lucide-react'; 
-import { Eye,Save,EyeOff,Palette } from 'lucide-react';
+  Box,
+  Typography,
+  Paper,
+  Grid,
+  TextField,
+  Switch,
+  Button,
+  FormControlLabel,
+  Divider,
+  Avatar,
+  InputAdornment,
+  IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
+// import { Palette } from 'lucide-react';
+import { Eye, Save, EyeOff, Palette } from "lucide-react";
 const SettingsPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [settings, setSettings] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    password: '',
+    firstName: "John",
+    lastName: "Doe",
+    email: "john.doe@example.com",
+    password: "",
     emailNotifications: true,
     pushNotifications: false,
     twoFactorAuth: true,
-    theme: 'light',
+    theme: "light",
   });
 
   const handleChange = (event) => {
     const { name, value, checked } = event.target;
-    setSettings(prevSettings => ({
+    setSettings((prevSettings) => ({
       ...prevSettings,
-      [name]: value !== undefined ? value : checked
+      [name]: value !== undefined ? value : checked,
     }));
   };
 
@@ -33,7 +46,7 @@ const SettingsPage = () => {
   };
 
   const handleSave = () => {
-    console.log('Settings saved:', settings);
+    // console.log('Settings saved:', settings);
     // Here you would typically send the settings to your backend
   };
 
@@ -47,7 +60,7 @@ const SettingsPage = () => {
               Profile
             </Typography>
             <Box display="flex" alignItems="center" mb={2}>
-              <Avatar 
+              <Avatar
                 sx={{ width: 80, height: 80, mr: 2 }}
                 src="/path-to-profile-image.jpg"
                 alt="Profile"
@@ -104,13 +117,16 @@ const SettingsPage = () => {
                   fullWidth
                   label="New Password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={settings.password}
                   onChange={handleChange}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
-                        <IconButton onClick={handleClickShowPassword} edge="end">
+                        <IconButton
+                          onClick={handleClickShowPassword}
+                          edge="end"
+                        >
                           {showPassword ? <EyeOff /> : <Eye />}
                         </IconButton>
                       </InputAdornment>

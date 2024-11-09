@@ -1,12 +1,12 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Loader2, EyeOff, Eye } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const SignInForm = () => {
+const Login = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -212,6 +212,14 @@ const SignInForm = () => {
         </form>
       </div>
     </div>
+  );
+};
+
+const SignInForm = () => {
+  return (
+    <Suspense>
+      <Login />
+    </Suspense>
   );
 };
 

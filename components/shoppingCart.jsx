@@ -1,7 +1,15 @@
 "use client";
 import { useState } from "react";
-const CartItem = ({ id, price, image, quantity, dsc, title, removeItem }) => {
-  console.log("id",id)
+const CartItem = ({
+  id,
+  price,
+  image,
+  quantity,
+  description,
+  name,
+  removeItem,
+}) => {
+  console.log("id", id);
   return (
     <div className="flex px-2 py-6 border-b">
       <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
@@ -12,7 +20,7 @@ const CartItem = ({ id, price, image, quantity, dsc, title, removeItem }) => {
         <div>
           <div className="flex justify-between text-base font-medium text-gray-900">
             <h3>{name}</h3>
-            <p className="ml-4">${price}</p>
+            <p className="ml-4">{formatCurrency(price, "en-NG", "NGN")}</p>
           </div>
           <p className="mt-1 text-sm text-gray-500">{description}</p>
         </div>

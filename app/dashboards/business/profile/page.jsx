@@ -10,7 +10,7 @@ import {
   Save,
   XCircle,
 } from "lucide-react";
-import ImageUpload from "@/components/ImageUpload";
+import ImageUpload from "@/components/Imageupload";
 import { useSession } from "next-auth/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -46,7 +46,7 @@ const BusinessProfile = () => {
       } catch (err) {
         if (err.name === "AbortError") return;
         setError(err.message);
-        console.log(err.message);
+        // console.log(err.message);
       } finally {
         setLoading(false);
       }

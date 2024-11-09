@@ -39,10 +39,10 @@ export async function POST(req) {
 export async function PUT(req, { params }) {
   try {
     await dbConnect();
-    console.log("connected to db")
+    // console.log("connected to db")
     const { id } = params;
     const body = await req.json();
-      console.log("put body:",body)
+      // console.log("put body:",body)
     
     // Update the business document in the database
     const updatedBusiness = await Business.findOneAndUpdate(
@@ -57,7 +57,7 @@ export async function PUT(req, { params }) {
 
     return NextResponse.json({ message: "Business updated successfully!", data: updatedBusiness }, { status: 200 });
   } catch (err) {
-    console.log("error:",err.message)
+    // console.log("error:",err.message)
     return NextResponse.json({ message: err.message }, { status: 500 });
   }
 }
