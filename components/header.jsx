@@ -1,13 +1,14 @@
-"use client";
+"use client"
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingBag, User, Menu, X } from "lucide-react";
+import { ShoppingBag, User, LogOut, Settings } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useCart } from "@/contex/cartcontex";
+
 const Header = () => {
   const [mounted, setMounted] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
   const { cart } = useCart();
   const { data: session } = useSession();
@@ -16,131 +17,78 @@ const Header = () => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return (
-      <nav className="shadow-sm bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex-shrink-0">
-              <h3 className="text-3xl font-bold text-black italic">
-                PayNDeliver
-              </h3>
-            </div>
-          </div>
-        </div>
-      </nav>
-    );
-  }
-
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <nav className="shadow-sm bg-white">
+    <nav className="bg-white shadow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex-shrink-0">
-            <h3 className="text-3xl font-bold text-black italic">
-              PayNDeliver
-            </h3>
+            <img
+              src="/images/logo/logo.png"
+              className="h-8 w-auto"
+              alt="Logo"
+            />
           </Link>
-
-          <div className="hidden md:flex items-center space-x-8">
-            <NavLink href="/" active={pathname === "/"}>
-              Home
-            </NavLink>
-            <NavLink href="/stores" active={pathname === "/stores"}>
-              Stores
-            </NavLink>
-            <NavLink href="/about" active={pathname === "/about"}>
-              About
-            </NavLink>
-            <NavLink href="/contact" active={pathname === "/contact"}>
-              Contact
-            </NavLink>
-          </div>
-
-          <div className="flex items-center space-x-6">
+          
+          <div className="flex items-center space-x-4">
             <Link
               href="/cart"
-              className="relative text-gray-600 hover:text-indigo-600 transition-colors duration-200"
+              className="relative text-gray-600 hover:text-gray-900 transition-colors duration-200"
             >
               <ShoppingBag className="h-6 w-6" />
-              {cart?.length > 0 && (
-                <span className="absolute -top-2 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-green-600 rounded-full">
+              {mounted && (
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
                   {cart.length}
                 </span>
               )}
             </Link>
 
-            <Link
-              href="/profile"
-              className="text-gray-600 hover:text-indigo-600 transition-colors duration-200"
-            >
-              <User className="h-6 w-6" />
-            </Link>
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center text-gray-600 hover:text-gray-900 focus:outline-none transition-colors duration-200"
+              >
+                <User className="h-6 w-6" />
+              </button>
 
-            <button
-              className="text-gray-600 hover:text-indigo-600 focus:outline-none md:hidden"
-              onClick={toggleMenu}
-            >
-              {isMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
+              {userMenuOpen && (
+                <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                  <div
+                    className="py-1"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="user-menu"
+                  >
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      role="menuitem"
+                    >
+                      Profile
+                    </Link>
+                    <Link
+                      href="/settings"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      role="menuitem"
+                    >
+                      Settings
+                    </Link>
+                    <button
+                      onClick={() => signOut()}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      role="menuitem"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-white">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <MobileNavLink href="/" active={pathname === "/"}>
-              Home
-            </MobileNavLink>
-            <MobileNavLink href="/stores" active={pathname === "/stores"}>
-              Stores
-            </MobileNavLink>
-            <MobileNavLink href="/about" active={pathname === "/about"}>
-              About
-            </MobileNavLink>
-            <MobileNavLink href="/contact" active={pathname === "/contact"}>
-              Contact
-            </MobileNavLink>
-          </div>
-        </div>
-      )}
     </nav>
   );
 };
-
-const NavLink = ({ href, active, children }) => (
-  <Link
-    href={href}
-    className={`font-medium transition-colors duration-200 relative ${
-      active ? "text-indigo-600" : "text-gray-600 hover:text-indigo-600"
-    }`}
-  >
-    {children}
-    {active && (
-      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"></span>
-    )}
-  </Link>
-);
-
-const MobileNavLink = ({ href, active, children }) => (
-  <Link
-    href={href}
-    className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
-      active
-        ? "bg-indigo-100 text-indigo-600"
-        : "text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
-    }`}
-  >
-    {children}
-  </Link>
-);
 
 export default Header;
