@@ -4,117 +4,94 @@ const orderItemSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
-    required: true,
+    required: true
   },
   quantity: {
     type: Number,
     required: true,
-    min: 1,
+    min: 1
   },
-  price: {
+  unitPriceUSD: {
     type: Number,
     required: true,
-    min: 0,
+    min: 0
   },
-  name: {
-    type: String,
-    required: true,
-  },
-  subtotal: {
+  subtotalUSD: {
     type: Number,
     required: true,
-    min: 0,
+    min: 0
   }
 });
 
 const orderSchema = new mongoose.Schema({
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
+    ref: 'Customer',
+    required: true
   },
   businessId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Business',
-    required: true,
+    required: true
   },
-  orderItems: {
-    type: [orderItemSchema],
-    required: true,
-    validate: [arrayMinLength, 'Order must contain at least one item']
-  },
-  totalAmount: {
+  items: [orderItemSchema],
+  totalAmountUSD: {
     type: Number,
     required: true,
-    min: 0,
+    min: 0
   },
   status: {
     type: String,
-    enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
-    default: 'Pending',
+    enum: ['pending', 'processing', 'completed', 'cancelled', 'refunded'],
+    default: 'pending'
   },
-  shippingAddress: {
-    street: { type: String, required: true },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    postalCode: { type: String, required: true },
-    country: { type: String, required: true },
+  payment: {
+    type: {
+      type: String,
+      enum: ['crypto', 'cash'],
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'processing', 'completed', 'failed', 'refunded'],
+      default: 'pending'
+    },
+    amountUSD: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    cryptoAmount: {
+      type: Number,
+      required: function () { return this.type === 'crypto'; } // Required if crypto
+    },
+    cryptoCurrency: {
+      type: String,
+      enum: ['BTC', 'ETH', 'USDT', 'SOL', null],
+      required: function () { return this.type === 'crypto'; }
+    },
+    transactionHash: String,
+    statusHistory: [{
+      status: {
+        type: String,
+        required: true
+      },
+      timestamp: {
+        type: Date,
+        default: Date.now
+      },
+      notes: String
+    }]
   },
-  paymentMethod: {
-    type: String,
-    enum: ['Card', 'Crypto', 'PayPal', 'BankTransfer'],
-    required: true,
-  },
-  paymentStatus: {
-    type: String,
-    enum: ['Pending', 'Paid', 'Failed', 'Refunded'],
-    default: 'Pending',
-  },
-  paymentIntentId: {
-    type: String,
-  },
-  paymentDate: {
-    type: Date,
-  },
-  orderDate: {
-    type: Date,
-    default: Date.now,
-  },
-  deliveryDate: {
-    type: Date,
-  },
-  trackingNumber: {
-    type: String,
-  },
-  notes: {
-    type: String,
-  },
+  delivery: {
+    address: String,
+    estimatedDeliveryDate: Date,
+    trackingId: String
+  }
 }, {
   timestamps: true,
+  collection: 'orders',
+
 });
 
-function arrayMinLength(val) {
-  return val.length > 0;
-}
-
-orderSchema.pre('save', function(next) {
-  if (this.isModified('orderItems')) {
-    this.orderItems.forEach(item => {
-      item.subtotal = item.price * item.quantity;
-    });
-    this.totalAmount = this.orderItems.reduce((total, item) => total + item.subtotal, 0);
-  }
-  next();
-});
-
-orderSchema.methods.markAsPaid = function(paymentIntentId) {
-  this.paymentStatus = 'Paid';
-  this.paymentIntentId = paymentIntentId;
-  this.paymentDate = new Date();
-  this.status = 'Processing';
-  return this.save();
-};
-
-const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
-
-export default Order;
+export const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
