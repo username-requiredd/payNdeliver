@@ -11,7 +11,7 @@ export async function POST(req) {
     // console.log("Database connected successfully");
 
     const data = await req.json();
-    // console.log("Cart data:", data);
+    console.log("Cart data:", data);
     
     if (!data || !data.userId || !data.products) {
       // console.log("Invalid data received");
@@ -32,6 +32,7 @@ export async function POST(req) {
     } else {
       // console.log("No existing cart found. Creating new cart...");
       cart = await Cart.create(data);
+      console.log("saved cart data...",cart)
       // console.log("New cart created successfully");
     }
     

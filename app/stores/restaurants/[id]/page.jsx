@@ -56,7 +56,7 @@ const ShopDetails = ({ params }) => {
 
         const businessData = await businessResponse.json();
         setProfile(businessData.data);
-        console.log(profile);
+        // console.log("business profile",businessData.data);
 
         if (businessData.data?._id) {
           const productsResponse = await fetch(
@@ -110,19 +110,38 @@ const ShopDetails = ({ params }) => {
     },
     [products]
   );
+  // console.log("profile",profile? profile._id: "")
 
   const handleAddToCart = useCallback(
     (product) => {
+      // Check if profile data is available
+      if (!profile?._id || !profile?.businessName) {
+        toast.error("Unable to add to cart. Store information is missing.");
+        return;
+      }
+  
       const cartProduct = {
         ...product,
-        _id: product.id || product._id,
+        id: product.id || product._id, // ensure we have an id
+        storeId: profile._id,
+        storeName: profile.businessName,
         quantity: product.quantity || 1,
+        // Add other required fields if they're missing
+        name: product.name,
+        price: product.price,
+        image: product.image
       };
-      addToCart(cartProduct);
-      toast.success("Added item to cart");
+  console.log("cart products:", cartProduct)
+      try {
+        addToCart(cartProduct);
+        toast.success("Added item to cart");
+      } catch (error) {
+        toast.error(error.message || "Failed to add item to cart");
+        console.error("Error adding to cart:", error);
+      }
     },
-    [addToCart]
-  );
+    [addToCart, profile]
+  ); // Added profile to dependency array
 
   const handleCategoryChange = useCallback((category) => {
     setCat(category);

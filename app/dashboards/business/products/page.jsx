@@ -1,163 +1,75 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { useSession } from "next-auth/react";
-import { Search, SearchX, Eye, Delete, Plus } from "lucide-react";
-import ProductDetailModal from "./productsdetailmodal";
-import {
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  IconButton,
-  Typography,
-  Chip,
-  TextField,
-  InputAdornment,
-  TableSortLabel,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Button,
-} from "@mui/material";
-
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Paper from '@mui/material/Paper';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TablePagination from '@mui/material/TablePagination';
+import TableRow from '@mui/material/TableRow';
+import IconButton from '@mui/material/IconButton';
+import Image from 'next/image'; 
+import { Search, SearchX, Eye, Trash2, Plus } from 'lucide-react';
+import ProductDetailModal from './productsdetailmodal';
+import { Typography, Chip, TextField, InputAdornment, TableSortLabel } from '@mui/material';
+import { useSession } from 'next-auth/react';
 const columns = [
-  {
-    id: "action",
-    label: "Action",
-    minWidth: 100,
-    align: "center",
-    sortable: false,
-  },
-  { id: "product", label: "Product", minWidth: 150, sortable: true },
-  {
-    id: "image",
-    label: "Image",
-    minWidth: 100,
-    align: "left",
-    sortable: false,
-  },
-  { id: "category", label: "Category", minWidth: 100, sortable: true },
-  {
-    id: "quantity",
-    label: "Quantity",
-    minWidth: 100,
-    align: "left",
-    sortable: true,
-  },
-  { id: "price", label: "Price", minWidth: 100, align: "left", sortable: true },
+  { id: 'action', label: 'Action', minWidth: 100, align: 'center', sortable: false },
+  { id: 'product', label: 'Product', minWidth: 150, sortable: true },
+  { id: 'image', label: 'Image', minWidth: 100, align: 'left', sortable: false },
+  { id: 'category', label: 'Category', minWidth: 100, sortable: true },
+  { id: 'quantity', label: 'Quantity', minWidth: 100, align: 'left', sortable: true },
+  { id: 'price', label: 'Price', minWidth: 100, align: 'left', sortable: true },
+];
+
+
+
+
+const initialRows = [
+  { id: 1, product: 'Laptop', image: 'https://via.placeholder.com/50', category: 'Electronics', quantity: 3, price: 1500 },
+  { id: 2, product: 'Headphones', image: 'https://via.placeholder.com/50', category: 'Accessories', quantity: 10, price: 300 },
+  { id: 3, product: 'Coffee Mug', image: 'https://via.placeholder.com/50', category: 'Kitchen', quantity: 5, price: 15 },
+  { id: 13, product: 'Coffee Mug', image: 'https://via.placeholder.com/50', category: 'Kitchen', quantity: 5, price: 15 },
+  { id: 32, product: 'Coffee Mug', image: 'https://via.placeholder.com/50', category: 'Kitchen', quantity: 5, price: 15 },
+  { id: 34, product: 'Coffee Mug', image: 'https://via.placeholder.com/50', category: 'Kitchen', quantity: 5, price: 15 },
+  { id: 33, product: 'Coffee Mug', image: 'https://via.placeholder.com/50', category: 'Kitchen', quantity: 5, price: 15 },
 ];
 
 export default function ProductTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isVisible, setIsVisible] = useState(true);
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState(initialRows);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [order, setOrder] = useState("asc");
-  const [orderBy, setOrderBy] = useState("product");
-  const { data: session } = useSession();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState(null);
+  const [order, setOrder] = useState('asc');
+  const [orderBy, setOrderBy] = useState('product');
 
-  const fetchProducts = useCallback(async () => {
-    if (!session?.user?.id) return;
 
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/products/${session.user.id}`);
-
-      if (response.status === 404) {
-        setRows([]);
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          "Error fetching products! Please check your connection or try again later."
-        );
-      }
-
-      const products = await response.json();
-      const formattedProducts = products.data.map((product) => ({
-        id: product._id,
-        product: product.name,
-        image: product.image || "https://via.placeholder.com/50",
-        category: product.category,
-        quantity: product.instock,
-        price: product.price,
-      }));
-
-      setRows(formattedProducts);
-    } catch (err) {
-      setError(err.message);
-      console.error(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [session]);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
-  const handleRequestSort = (property) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
+  const handleRequestSort = (event, property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property);
   };
 
-  const handleDeleteConfirm = (product) => {
-    setProductToDelete(product);
-    setDeleteConfirmOpen(true);
+  const handleDelete = (id) => {
+    const updatedRows = rows.filter((item) => item.id !== id);
+    setRows(updatedRows);
   };
 
-  const handleDelete = async () => {
-    if (!productToDelete) return;
-
-    try {
-      const response = await fetch(`/api/products/${productToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Error deleting product");
-      }
-
-      setRows((prevRows) =>
-        prevRows.filter((row) => row.id !== productToDelete.id)
-      );
-      setDeleteConfirmOpen(false);
-      setProductToDelete(null);
-    } catch (err) {
-      console.error("Error deleting product:", err);
-      setError("Failed to delete product. Please try again.");
-    }
-  };
-
-  const handleChangePage = (event, newPage) => {
+  const handleChangePage = (e, newPage) => {
     setPage(newPage);
   };
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    setPage(0);
   };
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(+event.target.value);
+  const handleChangeRowsPerPage = (e) => {
+    setRowsPerPage(+e.target.value);
     setPage(0);
   };
 
@@ -171,18 +83,6 @@ export default function ProductTable() {
     setSelectedProduct(null);
   };
 
-  const getComparator = (order, orderBy) => {
-    return order === "desc"
-      ? (a, b) => descendingComparator(a, b, orderBy)
-      : (a, b) => -descendingComparator(a, b, orderBy);
-  };
-
-  const descendingComparator = (a, b, orderBy) => {
-    if (b[orderBy] < a[orderBy]) return -1;
-    if (b[orderBy] > a[orderBy]) return 1;
-    return 0;
-  };
-
   const stableSort = (array, comparator) => {
     const stabilizedThis = array.map((el, index) => [el, index]);
     stabilizedThis.sort((a, b) => {
@@ -193,44 +93,38 @@ export default function ProductTable() {
     return stabilizedThis.map((el) => el[0]);
   };
 
+  const getComparator = (order, orderBy) => {
+    return order === 'desc'
+      ? (a, b) => descendingComparator(a, b, orderBy)
+      : (a, b) => -descendingComparator(a, b, orderBy);
+  };
+
+  const descendingComparator = (a, b, orderBy) => {
+    if (b[orderBy] < a[orderBy]) {
+      return -1;
+    }
+    if (b[orderBy] > a[orderBy]) {
+      return 1;
+    }
+    return 0;
+  };
+
   const filteredRows = stableSort(
-    rows.filter((row) =>
-      Object.values(row).some((value) =>
+    rows.filter(row =>
+      Object.values(row).some(value =>
         value.toString().toLowerCase().includes(searchTerm.toLowerCase())
       )
     ),
     getComparator(order, orderBy)
   );
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <CircularProgress />
-        <Typography variant="h6" className="ml-4">
-          Loading products...
-        </Typography>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Typography variant="h6" color="error">
-          Error: {error}
-        </Typography>
-      </div>
-    );
-  }
-
   return (
     <div className="mt-5 mx-auto max-w-7xl px-4 sm:px-2 lg:px-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-bold text-2xl text-gray-800">All Products</h1>
-        <Link
-          href="products/add"
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors duration-300"
-        >
+        <h1 className="font-bold text-2xl text-gray-800">
+          All Products
+        </h1>
+        <Link href="products/add" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors duration-300">
           <Plus className="mr-2" size={20} />
           Add a Product
         </Link>
@@ -259,15 +153,8 @@ export default function ProductTable() {
                   isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
                 }`}
               />
-              <IconButton
-                onClick={() => setIsVisible((prev) => !prev)}
-                className="ml-2"
-              >
-                {isVisible ? (
-                  <SearchX className="text-gray-600" />
-                ) : (
-                  <Search className="text-gray-600" />
-                )}
+              <IconButton onClick={() => setIsVisible((prev) => !prev)} className="ml-2">
+                {isVisible ? <SearchX className="text-gray-600" /> : <Search className="text-gray-600" />}
               </IconButton>
             </div>
           </div>
@@ -287,8 +174,8 @@ export default function ProductTable() {
                     {column.sortable ? (
                       <TableSortLabel
                         active={orderBy === column.id}
-                        direction={orderBy === column.id ? order : "asc"}
-                        onClick={() => handleRequestSort(column.id)}
+                        direction={orderBy === column.id ? order : 'asc'}
+                        onClick={(event) => handleRequestSort(event, column.id)}
                       >
                         {column.label}
                       </TableSortLabel>
@@ -300,73 +187,37 @@ export default function ProductTable() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredRows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} align="center">
-                    <Typography variant="subtitle1">
-                      No products found
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredRows
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((row) => (
-                    <TableRow
-                      hover
-                      role="checkbox"
-                      tabIndex={-1}
-                      key={row.id}
-                      className="transition-colors hover:bg-gray-50"
-                    >
-                      {columns.map((column) => {
-                        const value = row[column.id];
-                        return (
-                          <TableCell key={column.id} align={column.align}>
-                            {column.id === "image" ? (
-                              <Image
-                                src={value}
-                                alt={row.product}
-                                width={70}
-                                height={70}
-                                className="rounded-md shadow-sm"
-                              />
-                            ) : column.id === "action" ? (
-                              <div className="flex items-center justify-center">
-                                <IconButton
-                                  onClick={() => handleView(row)}
-                                  aria-label="view"
-                                  className="text-blue-600 hover:text-blue-800"
-                                >
-                                  <Eye />
-                                </IconButton>
-                                <IconButton
-                                  onClick={() => handleDeleteConfirm(row)}
-                                  aria-label="delete"
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  <Delete />
-                                </IconButton>
-                              </div>
-                            ) : column.id === "category" ? (
-                              <Chip
-                                label={value}
-                                size="small"
-                                className="bg-blue-100 text-blue-800"
-                              />
-                            ) : column.id === "price" ? (
-                              <span className="font-semibold text-green-600">
-                                ${value.toFixed(2)}
-                              </span>
-                            ) : (
-                              value
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))
-              )}
+              {filteredRows
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((row) => (
+                  <TableRow hover role="checkbox" tabIndex={-1} key={row.id} className="transition-colors hover:bg-gray-50">
+                    {columns.map((column) => {
+                      const value = row[column.id];
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          {column.id === 'image' ? (
+                            <Image src={value} alt={row.product} width={70} height={70} className="rounded-md shadow-sm" />
+                          ) : column.id === 'action' ? (
+                            <div className='flex items-center justify-center'>
+                              <IconButton onClick={() => handleView(row)} aria-label="view" className="text-blue-600 hover:text-blue-800">
+                                <Eye />
+                              </IconButton>
+                              <IconButton onClick={() => handleDelete(row.id)} aria-label="delete" className="text-red-600 hover:text-red-800">
+                                <Trash2 />
+                              </IconButton>
+                            </div>
+                          ) : column.id === 'category' ? (
+                            <Chip label={value} size="small" className="bg-blue-100 text-blue-800" />
+                          ) : column.id === 'price' ? (
+                            <span className="font-semibold text-green-600">${value.toFixed(2)}</span>
+                          ) : (
+                            value
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </TableContainer>
@@ -387,29 +238,6 @@ export default function ProductTable() {
         onClose={handleCloseModal}
         product={selectedProduct}
       />
-
-      <Dialog
-        open={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">{"Confirm Delete"}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            Are you sure you want to delete this product? This action cannot be
-            undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleDelete} color="primary" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
     </div>
   );
 }

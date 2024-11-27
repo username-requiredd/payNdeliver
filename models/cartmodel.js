@@ -1,9 +1,9 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
-  _id:{
-    type:String,
-    required:false
+  _id: {
+    type: String,
+    required: false
   },
   name: {
     type: String,
@@ -21,6 +21,15 @@ const productSchema = new mongoose.Schema({
   image: {
     type: String,
     required: true
+  },
+  storeId: {
+    type: mongoose.Schema.Types.ObjectId, 
+    // required: true,
+    ref: "Store"  
+    },
+  storeName: {
+    type: String,
+    // required: true
   }
 }, { _id: false });
 
@@ -43,5 +52,3 @@ const cartSchema = new mongoose.Schema({
 const Cart = mongoose.models.Cart || mongoose.model('Cart', cartSchema);
 
 export default Cart;
-
-

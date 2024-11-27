@@ -1,424 +1,584 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
-import {
-  createQR,
-  encodeURL,
-  findReference,
-  validateTransfer,
-  FindReferenceError,
-  ValidateTransferError,
-} from "@solana/pay";
-import {
-  PublicKey,
-  Keypair,
-  Connection,
-  clusterApiUrl,
-  LAMPORTS_PER_SOL,
-} from "@solana/web3.js";
-import BigNumber from "bignumber.js";
-import { CreditCard, Coins, Truck, QrCode, Wallet } from "lucide-react";
-// import { useCart } from "@/context/cartcontext";
+import React, { useState, useEffect } from "react";
 import { useCart } from "@/contex/cartcontex";
 import { useSession } from "next-auth/react";
-import Footer from "@/components/footer";
-import Header from "@/components/header";
-import QRCodeStyling from "qr-code-styling";
+import { useRouter } from "next/navigation";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { Connection, PublicKey, clusterApiUrl,Transaction, 
+  SystemProgram, 
+  LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { createQR, encodeURL } from "@solana/pay";
+import BigNumber from "bignumber.js";
 import axios from "axios";
+import { CreditCard, Coins, Truck, Calculator, Wallet } from "lucide-react";
 
-export default function EnhancedCheckout() {
-  const { cart } = useCart();
+const TAX_RATES = {
+  CA: 0.0725,
+  NY: 0.08875,
+  TX: 0.0625,
+};
+
+const SHIPPING_RATES = {
+  standard: { base: 5.99, perPound: 0.5 },
+  express: { base: 14.99, perPound: 0.75 },
+};
+
+const Checkout = () => {
+  const router = useRouter();
+  const { cart, clearCart } = useCart();
   const { data: session } = useSession();
-  const [wallet] = useState("a8xbmjRKktM4Np8M2RS6a3nrygQq7aaguNe9n7JFfjE");
+  const { connected, publicKey, sendTransaction } = useWallet();
 
-  // Calculate total cost from cart
-  const totalCost = cart.reduce((accumulator, { price, quantity }) => {
-    return accumulator + price * quantity;
-  }, 0);
+  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [cryptoPaymentType, setCryptoPaymentType] = useState("wallet");
+  const [shippingMethod, setShippingMethod] = useState("standard");
+  const [paymentStatus, setPaymentStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [merchantWallet] = useState(process.env.NEXT_PUBLIC_MERCHANT_WALLET);
 
-  // Get cart items
-  const cartItems = cart.map(({ name }) => name).join(" ");
+  const [shippingDetails, setShippingDetails] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedDetails = localStorage.getItem("shippingDetails");
+      return (
+        savedDetails
+          ? JSON.parse(savedDetails)
+          : {
+              name: "",
+              email: "",
+              address: "",
+              city: "",
+              state: "",
+              zip: "",
+              phone: "",
+            }
+      );
+    }
+    return {
+      name: "",
+      email: "",
+      address: "",
+      city: "",
+      state: "",
+      zip: "",
+      phone: "",
+    };
+  });
 
-  const [reference, setReference] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState("crypto");
-  const [cryptoPaymentType, setCryptoPaymentType] = useState("qr");
-  const [walletAddress, setWalletAddress] = useState("");
   const [cardDetails, setCardDetails] = useState({
-    name: "",
     number: "",
+    name: "",
     expiry: "",
     cvc: "",
   });
-  const [shippingDetails, setShippingDetails] = useState({
-    name: "",
-    address: "",
-    city: "",
-    state: "",
-    zip: "",
-  });
-  const [paymentStatus, setPaymentStatus] = useState("");
-  const qrRef = useRef(null);
-
-  // Solana connection
-  const connection = new Connection(clusterApiUrl("devnet"));
 
   useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
+    localStorage.setItem("shippingDetails", JSON.stringify(shippingDetails));
+  }, [shippingDetails]);
 
-    const fetchCart = async () => {
-      try {
-        const id = session?.user?.id;
-        if (!id) return;
-
-        const url = `/api/cart/${id}`;
-        const response = await fetch(url, { signal });
-
-        if (!response.ok) {
-          throw new Error("Error fetching cart data!");
-        }
-
-        const cartData = await response.json();
-        // console.log(cartData.data);
-      } catch (err) {
-        if (err.name === "AbortError") {
-          // console.log("Fetch aborted");
-        } else {
-          console.error(err);
-        }
-      }
-    };
-
-    fetchCart();
-
-    return () => {
-      controller.abort();
-    };
+  useEffect(() => {
+    if (session?.user) {
+      setShippingDetails((prev) => ({
+        ...prev,
+        email: session.user.email || prev.email,
+        name: session.user.name || prev.name,
+      }));
+    }
   }, [session]);
 
-  async function getSolPrice() {
-    try {
-      const response = await axios.get(
-        "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
-      );
-      const solPrice = await response.data.solana.usd;
-      return solPrice;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  useEffect(() => {
-    if (!totalCost || !cartItems) return; // Add validation
-
-    const newReference = Keypair.generate().publicKey;
-    setReference(newReference);
-
-    const recipient = new PublicKey(wallet);
-
-    const solPriceInUsd = 188.85;
-
-    // const amount = new BigNumber(totalCost);
-    const amount = new BigNumber(totalCost / solPriceInUsd);
-    const memo = cartItems;
-
-    const url = encodeURL({ recipient, amount, reference: newReference, memo });
-    // const qr = createQR(url);
-
-    // console.log(url.href);
-
-    const qrCode = new QRCodeStyling({
-      width: 250,
-      height: 250,
-      type: "svg",
-      data: url.href,
-    });
-
-    if (
-      qrRef.current &&
-      paymentMethod === "crypto" &&
-      cryptoPaymentType === "qr"
-    ) {
-      qrRef.current.innerHTML = "";
-      qrCode.append(qrRef.current);
-    }
-  }, [paymentMethod, cryptoPaymentType, totalCost, cartItems, wallet]);
-
-  const handleInputChange = (e, setFunction) => {
-    const { name, value } = e.target;
-    setFunction((prev) => ({ ...prev, [name]: value }));
+  const calculateSubtotal = () => {
+    return cart.reduce((total, { price, quantity }) => total + price * quantity, 0);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!cart.length) {
-      setPaymentStatus("Error: Cart is empty");
+  const calculateShipping = () => {
+    const rate = SHIPPING_RATES[shippingMethod];
+    const totalWeight = cart.reduce(
+      (weight, item) => weight + (item.weight || 0.5) * item.quantity,
+      0
+    );
+    return rate.base + totalWeight * rate.perPound;
+  };
+
+  const calculateTax = (subtotal) => {
+    const taxRate = TAX_RATES[shippingDetails.state] || 0.06;
+    return subtotal * taxRate;
+  };
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    const shipping = calculateShipping();
+    const tax = calculateTax(subtotal);
+    return subtotal + shipping + tax;
+  };
+
+
+  const getSolPrice = async () => {
+    try {
+      // Fetch current Solana price from a reliable API
+      const response = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+      return response.data.solana.usd;
+    } catch (error) {
+      console.error('Failed to fetch Solana price:', error);
+      // Fallback price if API fails
+      return 100; // Example fallback price
+    }
+  };
+  
+
+  
+const createTransaction = async (
+  publicKey, 
+  recipientPublicKey, 
+  amountInSol
+) => {
+  try {
+    const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+    
+    // Create a transaction
+    const transaction = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: publicKey,
+        toPubkey: recipientPublicKey,
+        lamports: LAMPORTS_PER_SOL * amountInSol.toNumber()
+      })
+    );
+
+    // Get recent blockhash
+    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    transaction.feePayer = publicKey;
+
+    // Send and confirm transaction
+    const signature = await sendTransaction(transaction, connection);
+    
+    return signature;
+  } catch (error) {
+    console.error('Transaction creation failed:', error);
+    throw new Error(`Solana transaction failed: ${error.message}`);
+  }
+};
+
+const updateOrderStatus = async (orderId, updateData) => {
+  try {
+    const response = await axios.put(`/api/orders/${orderId}`, updateData, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000 // 10-second timeout
+    });
+
+    if (response.status !== 200) {
+      throw new Error(`Order update failed with status: ${response.status}`);
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Order update error:', error);
+    
+    // Distinguish between network errors and server errors
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      throw new Error(`Order update server error: ${error.response.data.message || 'Unknown error'}`);
+    } else if (error.request) {
+      // The request was made but no response was received
+      throw new Error('No response received from server. Check your network connection.');
+    } else {
+      // Something happened in setting up the request
+      throw new Error(`Order update error: ${error.message}`);
+    }
+  }
+};
+
+  const validateForms = () => {
+    const requiredShippingFields = ["name", "email", "address", "city", "state", "zip"];
+    const isShippingValid = requiredShippingFields.every(
+      (field) => shippingDetails[field] && shippingDetails[field].trim() !== ""
+    );
+
+    if (!isShippingValid) {
+      setPaymentStatus("Please fill in all shipping details");
+      return false;
+    }
+
+    if (paymentMethod === "card") {
+      const requiredCardFields = ["number", "name", "expiry", "cvc"];
+      const isCardValid = requiredCardFields.every(
+        (field) => cardDetails[field] && cardDetails[field].trim() !== ""
+      );
+
+      if (!isCardValid) {
+        setPaymentStatus("Please fill in all card details");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const createOrder = async (paymentInfo) => {
+    try {
+      const orderData = {
+        customerId: session?.user?.id,
+        businessId: cart[0]?.storeId, // Assuming all items are from the same business
+        items: cart.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+          unitPriceUSD: item.price,
+          subtotalUSD: item.price * item.quantity,
+        })),
+        totalAmountUSD: calculateTotal(),
+        status: "pending",
+        payment: {
+          ...paymentInfo,
+          amountUSD: calculateTotal(),
+        },
+      };
+
+      const response = await axios.post("/api/orders/create", orderData);
+      return response.data.orderId;
+    } catch (error) {
+      console.error("Error creating order:", error);
+      throw new Error("Failed to create order");
+    }
+  };
+
+  const handleSuccessfulPayment = async (orderId) => {
+    try {
+      clearCart();
+      await axios.post("/api/orders/send-confirmation", { orderId });
+      setPaymentStatus("Payment successful!");
+      router.push(`/order/success/${orderId}`);
+    } catch (error) {
+      console.error("Error in post-payment processing:", error);
+    }
+  };
+
+  const handleCardPayment = async () => {
+    try {
+      setLoading(true);
+      setPaymentStatus("Processing payment...");
+
+      if (!validateForms()) throw new Error("Please fill in all required fields");
+
+      const orderId = await createOrder({ type: "card", last4: cardDetails.number.slice(-4) });
+      const paymentResponse = await axios.post("/api/payments/process", {
+        orderId,
+        amount: calculateTotal(),
+        cardDetails,
+        shippingDetails,
+      });
+
+      if (paymentResponse.data.success) {
+        await axios.put(`/api/orders/${orderId}`, {
+          status: "paid",
+          paymentId: paymentResponse.data.paymentId,
+        });
+        await handleSuccessfulPayment(orderId);
+      } else {
+        throw new Error("Payment failed");
+      }
+    } catch (error) {
+      setPaymentStatus(`Payment failed: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCryptoPayment = async () => {
+    if (!connected && cryptoPaymentType === "wallet") {
+      setPaymentStatus("Please connect your wallet first");
       return;
     }
 
-    if (paymentMethod === "crypto" && cryptoPaymentType === "wallet") {
-      await handleSolanaPayment();
-    } else {
-      // console.log("Payment submitted:", {
-      //   paymentMethod,
-      //   cryptoPaymentType,
-      //   walletAddress,
-      //   cardDetails,
-      //   shippingDetails,
-      // });
-    }
-  };
-
-  const handleSolanaPayment = async () => {
-    setPaymentStatus("Processing...");
-
     try {
-      const recipientAddress = new PublicKey(walletAddress);
-      const recipient = new PublicKey(wallet);
-      const amount = new BigNumber(totalCost);
-      const memo = cartItems;
-      const url = encodeURL({ recipient, amount, reference, memo });
+      setLoading(true);
+      setPaymentStatus("Processing payment...");
 
-      console.log("Payment URL:", url.toString());
-      setPaymentStatus("Waiting for transaction...");
+      if (!validateForms()) throw new Error("Please fill in all required fields");
 
-      const signatureInfo = await findReference(connection, reference, {
-        finality: "confirmed",
+      const orderId = await createOrder({ type: "crypto", wallet: publicKey?.toString() });
+      const solPrice = await getSolPrice();
+      const amountInSol = calculateTotal() / solPrice;
+      const recipient = new PublicKey(merchantWallet);
+      const reference = new PublicKey(orderId);
+      const amount = new BigNumber(amountInSol);
+
+      const url = encodeURL({
+        recipient,
+        amount,
+        reference,
+        memo: `Order ${orderId} payment for ${session?.user?.email}`,
       });
 
-      await validateTransfer(
-        connection,
-        signatureInfo.signature,
-        {
-          recipient,
-          amount,
-          reference,
-          memo,
-        },
-        { commitment: "confirmed" }
-      );
 
-      setPaymentStatus("Payment successful!");
+const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+
+      // const connection = new Connection(clusterApiUrl("mainnet-beta"));
+      const signature = await createTransaction(publicKey, recipient, amount);
+      await connection.confirmTransaction(signature);
+
+      await axios.put(`/api/orders/${orderId}`, {
+        status: "paid",
+        paymentSignature: signature,
+      });
+      await handleSuccessfulPayment(orderId);
     } catch (error) {
-      console.error("Error processing Solana payment:", error);
-      if (error instanceof FindReferenceError) {
-        setPaymentStatus("Payment not found. Please try again.");
-      } else if (error instanceof ValidateTransferError) {
-        setPaymentStatus("Payment failed. Please try again.");
-      } else {
-        setPaymentStatus("An error occurred. Please try again.");
-      }
+      setPaymentStatus(`Payment failed: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const inputClasses =
-    "mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50 px-4 py-2 bg-white transition duration-300 ease-in-out";
-
   return (
-    <>
-      <Header />
-      <div className="bg-gray-100">
-        <div className="max-w-6xl mx-auto pt-10 p-4 sm:p-6 lg:p-8 ">
-          <h1 className="text-4xl sm:text-5xl font-extrabold mb-8 sm:mb-12 text-center text-green-800 tracking-tight animate-fade-in-down">
-            Secure Checkout
-          </h1>
+    <div className="checkout-container">
+      {/* Checkout UI Implementation */}
 
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-            <div className="flex-1 bg-white p-6 sm:p-8 rounded-2xl  transition-all duration-300 hover:shadow-xl">
-              <h2 className="text-2xl sm:text-3xl font-semibold mb-6 sm:mb-8 text-green-700 flex items-center">
-                <Truck className="mr-3" size={28} />
+      <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-center mb-8">Checkout</h1>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Column - Forms */}
+        <div className="space-y-8">
+          {/* Shipping Information */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Truck size={24} />
                 Shipping Information
               </h2>
-              <form className="space-y-6">
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.entries(shippingDetails).map(([key, value]) => (
-                  <div key={key} className="animate-fade-in">
-                    <label
-                      htmlFor={key}
-                      className="block text-sm font-medium text-gray-700 capitalize mb-2"
-                    >
+                  <div key={key}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
                       {key}
                     </label>
                     <input
-                      type="text"
-                      id={key}
-                      name={key}
+                      type={key === 'email' ? 'email' : 'text'}
                       value={value}
-                      onChange={(e) => handleInputChange(e, setShippingDetails)}
-                      className={`${inputClasses} transform hover:scale-105`}
-                      required
+                      onChange={(e) => setShippingDetails(prev => ({
+                        ...prev,
+                        [key]: e.target.value
+                      }))}
+                      className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 ))}
-              </form>
-            </div>
+              </div>
 
-            <div className="flex-1 bg-white p-6 sm:p-8 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-xl">
-              <h2 className="text-2xl sm:text-3xl font-semibold mb-6 sm:mb-8 text-green-700">
+              {/* Shipping Method Selection */}
+              <div className="mt-6">
+                <h3 className="text-lg font-medium mb-3">Shipping Method</h3>
+                <div className="space-y-2">
+                  {Object.entries(SHIPPING_RATES).map(([method, rates]) => (
+                    <label key={method} className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="shippingMethod"
+                        value={method}
+                        checked={shippingMethod === method}
+                        onChange={(e) => setShippingMethod(e.target.value)}
+                        className="form-radio"
+                      />
+                      <span className="capitalize">{method}</span>
+                      <span className="text-gray-500">
+                        (${rates.base.toFixed(2)} + ${rates.perPound}/lb)
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Method */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <CreditCard size={24} />
                 Payment Method
               </h2>
-              <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-8">
+            </div>
+            <div className="p-6">
+              <div className="flex gap-4 mb-6">
                 <button
-                  onClick={() => setPaymentMethod("crypto")}
-                  className={`flex items-center justify-center px-6 sm:px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 ${
-                    paymentMethod === "crypto"
-                      ? "bg-green-600 text-white shadow-lg"
-                      : "bg-white text-green-600 border-2 border-green-600 hover:bg-green-50"
+                  onClick={() => setPaymentMethod('card')}
+                  className={`flex-1 py-3 px-4 rounded-lg flex items-center justify-center gap-2 ${
+                    paymentMethod === 'card' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100'
                   }`}
                 >
-                  <Coins className="mr-3" size={24} />
-                  Pay with Crypto
+                  <CreditCard size={20} />
+                  Card
                 </button>
                 <button
-                  onClick={() => setPaymentMethod("card")}
-                  className={`flex items-center justify-center px-6 sm:px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 ${
-                    paymentMethod === "card"
-                      ? "bg-green-600 text-white shadow-lg"
-                      : "bg-white text-green-600 border-2 border-green-600 hover:bg-green-50"
+                  onClick={() => setPaymentMethod('crypto')}
+                  className={`flex-1 py-3 px-4 rounded-lg flex items-center justify-center gap-2 ${
+                    paymentMethod === 'crypto'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100'
                   }`}
                 >
-                  <CreditCard className="mr-3" size={24} />
-                  Pay with Card
+                  <Coins size={20} />
+                  Crypto
                 </button>
               </div>
 
-              {paymentMethod === "crypto" && (
-                <div className="mb-6">
-                  <div className="flex justify-center space-x-4 mb-4">
-                    <button
-                      onClick={() => setCryptoPaymentType("qr")}
-                      className={`flex items-center justify-center px-4 py-2 rounded-full transition-all duration-300 ${
-                        cryptoPaymentType === "qr"
-                          ? "bg-green-600 text-white shadow-md"
-                          : "bg-white text-green-600 border border-green-600 hover:bg-green-50"
-                      }`}
-                    >
-                      <QrCode className="mr-2" size={20} />
-                      Scan QR
-                    </button>
-                    <button
-                      onClick={() => setCryptoPaymentType("wallet")}
-                      className={`flex items-center justify-center px-4 py-2 rounded-full transition-all duration-300 ${
-                        cryptoPaymentType === "wallet"
-                          ? "bg-green-600 text-white shadow-md"
-                          : "bg-white text-green-600 border border-green-600 hover:bg-green-50"
-                      }`}
-                    >
-                      <Wallet className="mr-2" size={20} />
-                      Enter Wallet
-                    </button>
-                    {/* {cryptoPaymentType === "wallet" && (
-                      // <SolanaPayment
-                      //   amount={totalCost}
-                      //   recipientAddress={wallet}
-                      //   onSuccess={(signature) => {
-                      //     setPaymentStatus("Payment successful!");
-                      //     // Handle successful payment (e.g., clear cart, redirect to success page)
-                      //   }}
-                      //   onError={(error) => {
-                      //     setPaymentStatus("Payment failed. Please try again.");
-                      //     // Handle payment error
-                      //   }}
-                      // />
-                    )} */}
-                  </div>
-
-                  {cryptoPaymentType === "qr" ? (
-                    <div className="text-center bg-gray-50 p-6 sm:p-8 rounded-xl shadow-inner transition-all duration-300 animate-fade-in">
-                      <div
-                        ref={qrRef}
-                        className="inline-block transform hover:scale-105 transition-transform duration-300"
-                      />
-                      {reference && (
-                        <p className="mt-6 text-sm text-gray-600 animate-fade-in">
-                          Reference: {reference.toBase58().substring(0, 8)}...
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="animate-fade-in">
-                      <label
-                        htmlFor="walletAddress"
-                        className="block text-sm font-medium text-gray-700 mb-2"
-                      >
-                        Wallet Address
+              {paymentMethod === 'card' && (
+                <div className="space-y-4">
+                  {Object.entries(cardDetails).map(([key, value]) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                        {key}
                       </label>
                       <input
-                        type="text"
-                        id="walletAddress"
-                        name="walletAddress"
-                        value={walletAddress}
-                        onChange={(e) => setWalletAddress(e.target.value)}
-                        className={`${inputClasses} transform hover:scale-105`}
-                        placeholder="Enter your Solana wallet address"
-                        required
+                        type={key === 'cvc' ? 'password' : 'text'}
+                        value={value}
+                        onChange={(e) => setCardDetails(prev => ({
+                          ...prev,
+                          [key]: e.target.value
+                        }))}
+                        className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
                       />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {paymentMethod === 'crypto' && (
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setCryptoPaymentType('wallet')}
+                      className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 ${
+                        cryptoPaymentType === 'wallet'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100'
+                      }`}
+                    >
+                      <Wallet size={20} />
+                      Connect Wallet
+                    </button>
+                  </div>
+                  
+                  {cryptoPaymentType === 'wallet' && (
+                    <div className="text-center">
+                      <WalletMultiButton />
                     </div>
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
 
-              {paymentMethod === "card" && (
-                <form
-                  onSubmit={handleSubmit}
-                  className="space-y-6 animate-fade-in"
-                >
-                  {Object.entries(cardDetails).map(([key, value]) => (
-                    <div key={key}>
-                      <label
-                        htmlFor={key}
-                        className="block text-sm font-medium text-gray-700 capitalize mb-2"
-                      >
-                        {key === "number" ? "Card Number" : key}
-                      </label>
-                      <input
-                        type={
-                          key === "number"
-                            ? "text"
-                            : key === "expiry"
-                            ? "text"
-                            : key === "cvc"
-                            ? "password"
-                            : "text"
-                        }
-                        id={key}
-                        name={key}
-                        value={value}
-                        onChange={(e) => handleInputChange(e, setCardDetails)}
-                        className={`${inputClasses} transform hover:scale-105`}
-                        required
-                        placeholder={key === "expiry" ? "MM/YY" : ""}
-                      />
+        {/* Right Column - Order Summary */}
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Calculator size={24} />
+                Order Summary
+              </h2>
+            </div>
+            <div className="p-6">
+              {/* Cart Items */}
+              <div className="space-y-4 mb-6">
+                {cart.length > 0 ? (
+                  cart.map((item) => (
+                    <div key={item.id} className="flex justify-between items-center">
+                      <div className="flex gap-4">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                        <div>
+                          <h3 className="font-medium">{item.name}</h3>
+                          <p className="text-gray-500">Qty: {item.quantity}</p>
+                        </div>
+                      </div>
+                      <p className="font-medium">
+                        ${(item.price * item.quantity).toFixed(2)}
+                      </p>
                     </div>
-                  ))}
-                </form>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500">
+                    Your cart is empty
+                  </div>
+                )}
+              </div>
+
+              {/* Price Breakdown */}
+              {cart.length > 0 && (
+                <>
+                  <div className="space-y-2 pt-4 border-t">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span>${calculateSubtotal().toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Shipping</span>
+                      <span>${calculateShipping().toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tax</span>
+                      <span>${calculateTax(calculateSubtotal()).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                      <span>Total</span>
+                      <span>${calculateTotal().toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Place Order Button */}
+                  <button
+                    onClick={paymentMethod === 'crypto' ? handleCryptoPayment : handleCardPayment}
+                    disabled={loading || !cart.length}
+                    className="w-full mt-6 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : (
+                      'Place Order'
+                    )}
+                  </button>
+
+                  {/* Payment Status Message */}
+                  {paymentStatus && (
+                    <div className={`mt-4 p-4 rounded-lg border ${
+                      paymentStatus.includes('failed') 
+                        ? 'bg-red-50 border-red-200 text-red-700'
+                        : 'bg-blue-50 border-blue-200 text-blue-700'
+                    }`}>
+                      <p>{paymentStatus}</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
-
-          <button
-            onClick={handleSubmit}
-            className="mt-12 w-full py-5 px-8 border border-transparent rounded-md shadow-xl text-xl font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 "
-          >
-            Complete Purchase
-          </button>
-
-          {paymentStatus && (
-            <div
-              className={`mt-4 p-4 rounded-lg ${
-                paymentStatus.includes("successful")
-                  ? "bg-green-100 text-green-800"
-                  : paymentStatus.includes("Processing")
-                  ? "bg-yellow-100 text-yellow-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {paymentStatus}
-            </div>
-          )}
         </div>
       </div>
+    </div>
 
-      <Footer />
-    </>
+
+    </div>
   );
-}
+};
+
+export default Checkout;
+
+
+
+
+

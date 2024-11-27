@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 const CartItem = ({
   id,
   price,
@@ -9,6 +8,16 @@ const CartItem = ({
   name,
   removeItem,
 }) => {
+
+
+
+  const formatCurrency = (amount, locale = "en-US", currency = "NGN") => {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: currency,
+    }).format(amount);
+  };
+
   console.log("id", id);
   return (
     <div className="flex px-2 py-6 border-b">
