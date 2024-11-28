@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import { useCart } from "@/contex/cartcontex";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -215,11 +215,12 @@ const updateOrderStatus = async (orderId, updateData) => {
     return true;
   };
 
+
   const createOrder = async (paymentInfo) => {
     try {
       const orderData = {
         customerId: session?.user?.id,
-        businessId: cart[0]?.storeId, // Assuming all items are from the same business
+        businessId: cart[0]?.storeId,
         items: cart.map((item) => ({
           productId: item.id,
           quantity: item.quantity,
@@ -234,100 +235,89 @@ const updateOrderStatus = async (orderId, updateData) => {
         },
       };
 
-      const response = await axios.post("/api/orders/create", orderData);
-      return response.data.orderId;
+      const response = await axios.post("/api/orders", orderData);
+      
+      // Extract the order ID
+      const orderId = response.data.orderId || response.data.data._id;
+      console.log(orderId)
+      return orderId;  // Return the order ID
     } catch (error) {
       console.error("Error creating order:", error);
       throw new Error("Failed to create order");
     }
   };
 
+// In your payment handling methods, you can then use it like this:
+const handleCardPayment = async () => {
+  try {
+    setLoading(true);
+    setPaymentStatus("Processing payment...");
+
+    if (!validateForms()) throw new Error("Please fill in all required fields");
+
+    const orderId = await createOrder({ type: "card", last4: cardDetails.number.slice(-4) });
+
+    // Make the put request to update the order
+    await axios.put(`/api/orders/${orderId}`, {
+      status: "paid",
+      // Add any other update information you need
+      paymentDetails: {
+        type: "card",
+        last4: cardDetails.number.slice(-4)
+      }
+    });
+
+    await handleSuccessfulPayment(orderId);
+  } catch (error) {
+    setPaymentStatus(`Payment failed: ${error.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Similarly for crypto payment
+const handleCryptoPayment = async () => {
+  try {
+    setLoading(true);
+    setPaymentStatus("Processing payment...");
+
+    if (!validateForms()) throw new Error("Please fill in all required fields");
+
+    const orderId = await createOrder({ 
+      type: "crypto", 
+      wallet: publicKey?.toString() 
+    });
+
+    // Make the put request to update the order
+    await axios.put(`/api/orders/${orderId}`, {
+      status: "paid",
+      paymentSignature: signature,
+      // Add any other update information you need
+      paymentDetails: {
+        type: "crypto",
+        wallet: publicKey?.toString()
+      }
+    });
+
+    await handleSuccessfulPayment(orderId);
+  } catch (error) {
+    setPaymentStatus(`Payment failed: ${error.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
+
   const handleSuccessfulPayment = async (orderId) => {
     try {
       clearCart();
-      await axios.post("/api/orders/send-confirmation", { orderId });
+      // await axios.post("/api/orders/send-confirmation", { orderId });
       setPaymentStatus("Payment successful!");
-      router.push(`/order/success/${orderId}`);
+      // router.push(`/order/success/${orderId}`);
     } catch (error) {
       console.error("Error in post-payment processing:", error);
     }
   };
 
-  const handleCardPayment = async () => {
-    try {
-      setLoading(true);
-      setPaymentStatus("Processing payment...");
-
-      if (!validateForms()) throw new Error("Please fill in all required fields");
-
-      const orderId = await createOrder({ type: "card", last4: cardDetails.number.slice(-4) });
-      const paymentResponse = await axios.post("/api/payments/process", {
-        orderId,
-        amount: calculateTotal(),
-        cardDetails,
-        shippingDetails,
-      });
-
-      if (paymentResponse.data.success) {
-        await axios.put(`/api/orders/${orderId}`, {
-          status: "paid",
-          paymentId: paymentResponse.data.paymentId,
-        });
-        await handleSuccessfulPayment(orderId);
-      } else {
-        throw new Error("Payment failed");
-      }
-    } catch (error) {
-      setPaymentStatus(`Payment failed: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCryptoPayment = async () => {
-    if (!connected && cryptoPaymentType === "wallet") {
-      setPaymentStatus("Please connect your wallet first");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setPaymentStatus("Processing payment...");
-
-      if (!validateForms()) throw new Error("Please fill in all required fields");
-
-      const orderId = await createOrder({ type: "crypto", wallet: publicKey?.toString() });
-      const solPrice = await getSolPrice();
-      const amountInSol = calculateTotal() / solPrice;
-      const recipient = new PublicKey(merchantWallet);
-      const reference = new PublicKey(orderId);
-      const amount = new BigNumber(amountInSol);
-
-      const url = encodeURL({
-        recipient,
-        amount,
-        reference,
-        memo: `Order ${orderId} payment for ${session?.user?.email}`,
-      });
-
-
-const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-
-      // const connection = new Connection(clusterApiUrl("mainnet-beta"));
-      const signature = await createTransaction(publicKey, recipient, amount);
-      await connection.confirmTransaction(signature);
-
-      await axios.put(`/api/orders/${orderId}`, {
-        status: "paid",
-        paymentSignature: signature,
-      });
-      await handleSuccessfulPayment(orderId);
-    } catch (error) {
-      setPaymentStatus(`Payment failed: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="checkout-container">
@@ -577,6 +567,7 @@ const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 };
 
 export default Checkout;
+
 
 
 
