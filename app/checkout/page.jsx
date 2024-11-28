@@ -36,7 +36,7 @@ const Checkout = () => {
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [paymentStatus, setPaymentStatus] = useState("");
   const [loading, setLoading] = useState(false);
-  const [merchantWallet] = useState(process.env.NEXT_PUBLIC_MERCHANT_WALLET);
+  const [merchantWallet] = useState('GAQakNCAeoKLi5nacP95fUWkTt2BLXRuQSBY5hequ8NU');
 
   const [shippingDetails, setShippingDetails] = useState(() => {
     if (typeof window !== "undefined") {
