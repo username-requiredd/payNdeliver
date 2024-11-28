@@ -126,37 +126,69 @@ const Checkout = () => {
   };
   
 
+  const createTransaction = async (
+    publicKey, 
+    recipientPublicKey, 
+    amountInSol
+  ) => {
+    try {
+      const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+      
+      // Create a transaction
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: recipientPublicKey,
+          lamports: LAMPORTS_PER_SOL * amountInSol.toNumber()
+        })
+      );
   
-const createTransaction = async (
-  publicKey, 
-  recipientPublicKey, 
-  amountInSol
-) => {
-  try {
-    const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-    
-    // Create a transaction
-    const transaction = new Transaction().add(
-      SystemProgram.transfer({
-        fromPubkey: publicKey,
-        toPubkey: recipientPublicKey,
-        lamports: LAMPORTS_PER_SOL * amountInSol.toNumber()
-      })
-    );
+      // Get recent blockhash
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      transaction.feePayer = publicKey;
+  
+      // Send and confirm transaction
+      const signature = await sendTransaction(transaction, connection);
+      
+      return signature;  // Return the signature
+    } catch (error) {
+      console.error('Transaction creation failed:', error);
+      throw new Error(`Solana transaction failed: ${error.message}`);
+    }
+  };
 
-    // Get recent blockhash
-    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-    transaction.feePayer = publicKey;
 
-    // Send and confirm transaction
-    const signature = await sendTransaction(transaction, connection);
+  
+// const createTransaction = async (
+//   publicKey, 
+//   recipientPublicKey, 
+//   amountInSol
+// ) => {
+//   try {
+//     const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
     
-    return signature;
-  } catch (error) {
-    console.error('Transaction creation failed:', error);
-    throw new Error(`Solana transaction failed: ${error.message}`);
-  }
-};
+//     // Create a transaction
+//     const transaction = new Transaction().add(
+//       SystemProgram.transfer({
+//         fromPubkey: publicKey,
+//         toPubkey: recipientPublicKey,
+//         lamports: LAMPORTS_PER_SOL * amountInSol.toNumber()
+//       })
+//     );
+
+//     // Get recent blockhash
+//     transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+//     transaction.feePayer = publicKey;
+
+//     // Send and confirm transaction
+//     const signature = await sendTransaction(transaction, connection);
+    
+//     return signature;
+//   } catch (error) {
+//     console.error('Transaction creation failed:', error);
+//     throw new Error(`Solana transaction failed: ${error.message}`);
+//   }
+// };
 
 const updateOrderStatus = async (orderId, updateData) => {
   try {
@@ -276,6 +308,38 @@ const handleCardPayment = async () => {
 };
 
 // Similarly for crypto payment
+// const handleCryptoPayment = async () => {
+//   try {
+//     setLoading(true);
+//     setPaymentStatus("Processing payment...");
+
+//     if (!validateForms()) throw new Error("Please fill in all required fields");
+
+//     const orderId = await createOrder({ 
+//       type: "crypto", 
+//       wallet: publicKey?.toString() 
+//     });
+
+//     // Make the put request to update the order
+//     await axios.put(`/api/orders/${orderId}`, {
+//       status: "paid",
+//       paymentSignature: signature,
+//       // Add any other update information you need
+//       paymentDetails: {
+//         type: "crypto",
+//         wallet: publicKey?.toString()
+//       }
+//     });
+
+//     await handleSuccessfulPayment(orderId);
+//   } catch (error) {
+//     setPaymentStatus(`Payment failed: ${error.message}`);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+
 const handleCryptoPayment = async () => {
   try {
     setLoading(true);
@@ -283,16 +347,32 @@ const handleCryptoPayment = async () => {
 
     if (!validateForms()) throw new Error("Please fill in all required fields");
 
+    // Verify wallet is connected
+    if (!connected || !publicKey) {
+      throw new Error("Please connect your wallet first");
+    }
+
+    // Get Solana price and convert total to SOL
+    const solPrice = await getSolPrice();
+    const totalUSD = calculateTotal();
+    const amountInSol = new BigNumber(totalUSD).dividedBy(solPrice);
+
+    // Create transaction
+    const signature = await createTransaction(
+      publicKey, 
+      new PublicKey(merchantWallet), 
+      amountInSol
+    );
+
     const orderId = await createOrder({ 
       type: "crypto", 
       wallet: publicKey?.toString() 
     });
 
-    // Make the put request to update the order
+    // Update order with payment signature
     await axios.put(`/api/orders/${orderId}`, {
       status: "paid",
       paymentSignature: signature,
-      // Add any other update information you need
       paymentDetails: {
         type: "crypto",
         wallet: publicKey?.toString()
@@ -301,6 +381,7 @@ const handleCryptoPayment = async () => {
 
     await handleSuccessfulPayment(orderId);
   } catch (error) {
+    console.error("Crypto payment error:", error);
     setPaymentStatus(`Payment failed: ${error.message}`);
   } finally {
     setLoading(false);
