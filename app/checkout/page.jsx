@@ -36,7 +36,7 @@ const Checkout = () => {
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [paymentStatus, setPaymentStatus] = useState("");
   const [loading, setLoading] = useState(false);
-  const [merchantWallet] = useState('GAQakNCAeoKLi5nacP95fUWkTt2BLXRuQSBY5hequ8NU');
+  const [merchantWallet] = useState('EvD8uQJ8Rxa4PSBmasZpQ8VcFN1Z8MkZ94jPiydguqwA');
 
   const [shippingDetails, setShippingDetails] = useState(() => {
     if (typeof window !== "undefined") {
@@ -134,12 +134,15 @@ const Checkout = () => {
     try {
       const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
       
+      // Round to 9 decimal places and convert to lamports
+      const lamports = Math.floor(amountInSol * LAMPORTS_PER_SOL);
+      
       // Create a transaction
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: recipientPublicKey,
-          lamports: LAMPORTS_PER_SOL * amountInSol.toNumber()
+          lamports: lamports
         })
       );
   
@@ -156,7 +159,6 @@ const Checkout = () => {
       throw new Error(`Solana transaction failed: ${error.message}`);
     }
   };
-
 
   
 // const createTransaction = async (
