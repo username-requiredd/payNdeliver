@@ -349,51 +349,66 @@ const handleCryptoPayment = async () => {
 
     if (!validateForms()) throw new Error("Please fill in all required fields");
 
-    // Verify wallet is connected
     if (!connected || !publicKey) {
       throw new Error("Please connect your wallet first");
     }
 
-    // Get Solana price and convert total to SOL
     const solPrice = await getSolPrice();
     const totalUSD = calculateTotal();
     const amountInSol = new BigNumber(totalUSD).dividedBy(solPrice);
 
-    // Create transaction
     const signature = await createTransaction(
       publicKey, 
       new PublicKey(merchantWallet), 
       amountInSol
     );
 
-    const orderId = await createOrder({ 
+    const paymentDetails = { 
       type: "crypto", 
       wallet: publicKey?.toString(),
-      status: "paid",
       cryptoAmount: amountInSol.toString(),
       transactionHash: signature
+    };
+
+    const orderId = await createOrder({
+      ...paymentDetails,
+      status: "paid"
     });
 
-    // Update order with payment details
-    await axios.put(`/api/orders/${orderId}`, {
-      status: "paid",
-      payment: {
-        type: "crypto",
-        wallet: publicKey?.toString(),
-        cryptoAmount: amountInSol.toString(),
-        transactionHash: signature
-      }
-    });
 
-    await handleSuccessfulPayment(orderId);
+    
+
+    try {
+      const updateResponse = await axios.put(`/api/orders/${orderId}`, {
+        status: "paid",
+        payment: {
+          type: "crypto",
+          wallet: publicKey?.toString(),
+          transactionHash: signature
+        }
+      }, {
+        validateStatus: function (status) {
+          return status >= 200 && status < 300;
+        }
+      });
+    
+      console.log('Order update full response:', updateResponse);
+    } catch (error) {
+      console.error('Order update error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+        config: error.config
+      });
+      throw error;
+    }
   } catch (error) {
-    console.error("Crypto payment error:", error);
+    console.error("Crypto payment full error:", error);
     setPaymentStatus(`Payment failed: ${error.message}`);
   } finally {
     setLoading(false);
   }
 };
-
 
   const handleSuccessfulPayment = async (orderId) => {
     try {
