@@ -368,16 +368,20 @@ const handleCryptoPayment = async () => {
 
     const orderId = await createOrder({ 
       type: "crypto", 
-      wallet: publicKey?.toString() 
+      wallet: publicKey?.toString(),
+      status: "paid",
+      cryptoAmount: amountInSol.toString(),
+      transactionHash: signature
     });
 
-    // Update order with payment signature
+    // Update order with payment details
     await axios.put(`/api/orders/${orderId}`, {
       status: "paid",
-      paymentSignature: signature,
-      paymentDetails: {
+      payment: {
         type: "crypto",
-        wallet: publicKey?.toString()
+        wallet: publicKey?.toString(),
+        cryptoAmount: amountInSol.toString(),
+        transactionHash: signature
       }
     });
 
@@ -389,6 +393,7 @@ const handleCryptoPayment = async () => {
     setLoading(false);
   }
 };
+
 
   const handleSuccessfulPayment = async (orderId) => {
     try {
