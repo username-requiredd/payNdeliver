@@ -415,7 +415,7 @@ const handleCryptoPayment = async () => {
       clearCart();
       // await axios.post("/api/orders/send-confirmation", { orderId });
       setPaymentStatus("Payment successful!");
-      // router.push(`/order/success/${orderId}`);
+      router.push(`/orderconfirm/${orderId}`);
     } catch (error) {
       console.error("Error in post-payment processing:", error);
     }

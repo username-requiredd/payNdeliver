@@ -53,7 +53,7 @@ const orderSchema = new mongoose.Schema({
     },
     amountUSD: {
       type: Number,
-      required: true,
+      // required: true,
       min: 0
     },
     cryptoAmount: {
