@@ -59,15 +59,15 @@ const Header = () => {
   {/* Navigation Actions */}
   <div className="flex items-center space-x-4">
     {/* Notifications (Optional) */}
-    <button className="relative text-gray-500 hover:text-emerald-600 transition-colors">
+    <Link href={"/notification"} className="relative text-gray-500 hover:text-emerald-600 transition-colors">
       <Bell className="h-5 w-5" />
       {mounted && (
         <span className="absolute -top-1 -right-1 inline-flex items-center justify-center 
           h-4 w-4 text-xs font-bold text-white bg-red-500 rounded-full">
-          3
+          0
         </span>
       )}
-    </button>
+    </Link>
 
     {/* Shopping Cart */}
     <Link

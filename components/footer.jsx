@@ -20,7 +20,7 @@ const Footer = () => {
           <div className="space-y-4">
             <Link href="/" className="flex-shrink-0">
               <img
-                src="/images/logo/logo-1.png"
+                src="/images/logo/payNdeliver.svg"
                 className="h-12 w-auto"
                 alt="Logo"
               />

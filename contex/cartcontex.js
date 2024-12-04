@@ -157,7 +157,7 @@ export const CartProvider = ({ children }) => {
 
       const response = await fetch(`/api/cart/${userId}`);
       if (!response.ok) {
-        throw new Error("Error fetching cart data!");
+        throw new Error("Error fetching cart data try checking your connection or try again later!");
       }
 
       const { products } = await response.json();

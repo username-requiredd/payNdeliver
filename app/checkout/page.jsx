@@ -390,13 +390,11 @@ const onViewOrders = ()=>{
   return (
     <div className="checkout-container">
 
- {/* Checkout form or other content */}
  {isOrderSuccessModalOpen && (
         <OrderSuccessModal 
         onViewOrders={onViewOrders}
           orderDetails={orderDetails}
           onContinueShopping={onContinueShopping}
-          onClose={() => setIsOrderSuccessModalOpen(false)}
         />
       )}
 
@@ -437,7 +435,7 @@ const onViewOrders = ()=>{
               </div>
 
               {/* Shipping Method Selection */}
-              <div className="mt-6">
+              {/* <div className="mt-6">
                 <h3 className="text-lg font-medium mb-3">Shipping Method</h3>
                 <div className="space-y-2">
                   {Object.entries(SHIPPING_RATES).map(([method, rates]) => (
@@ -457,7 +455,7 @@ const onViewOrders = ()=>{
                     </label>
                   ))}
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -475,7 +473,7 @@ const onViewOrders = ()=>{
                   onClick={() => setPaymentMethod('card')}
                   className={`flex-1 py-3 px-4 rounded-lg flex items-center justify-center gap-2 ${
                     paymentMethod === 'card' 
-                      ? 'bg-blue-600 text-white' 
+                      ? 'bg-green-600 text-white' 
                       : 'bg-gray-100'
                   }`}
                 >
@@ -486,7 +484,7 @@ const onViewOrders = ()=>{
                   onClick={() => setPaymentMethod('crypto')}
                   className={`flex-1 py-3 px-4 rounded-lg flex items-center justify-center gap-2 ${
                     paymentMethod === 'crypto'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-green-600 text-white'
                       : 'bg-gray-100'
                   }`}
                 >
@@ -523,7 +521,7 @@ const onViewOrders = ()=>{
                       onClick={() => setCryptoPaymentType('wallet')}
                       className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 ${
                         cryptoPaymentType === 'wallet'
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-green-600 text-white'
                           : 'bg-gray-100'
                       }`}
                     >
@@ -607,7 +605,7 @@ const onViewOrders = ()=>{
                   <button
                     onClick={paymentMethod === 'crypto' ? handleCryptoPayment : handleCardPayment}
                     disabled={loading || !cart.length}
-                    className="w-full mt-6 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full mt-6 py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
