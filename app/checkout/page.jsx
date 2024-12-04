@@ -383,7 +383,7 @@ const handleSuccessfulPayment = async (orderId) => {
  }
 const onViewOrders = ()=>{
   clearCart()
-  router.push("/orders")
+  router.push("/profile")
 }
 
 

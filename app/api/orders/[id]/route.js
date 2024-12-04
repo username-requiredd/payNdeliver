@@ -14,7 +14,10 @@ export const GET = async (req, { params }) => {
             return NextResponse.json({ message: "Invalid order ID" }, { status: 400 })
         }
 
-        const getOrder = await Order.findById(id)
+        let getOrder = await Order.findById(id)
+        if(!getOrder){
+            getOrder = await Order.find({customerId: new ObjectId(id)}) 
+        }
 
         if (!getOrder) {
             return NextResponse.json({ message: "Order not found!" }, { status: 404 })
