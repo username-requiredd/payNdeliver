@@ -18,7 +18,7 @@ export async function GET(req, { params }) {
     } else {
       return NextResponse.json(
         { message: "No cart found for this user." },
-        { status: 404 }
+        { status:200 }
       );
     }
   } catch (err) {

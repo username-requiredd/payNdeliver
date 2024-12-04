@@ -1,29 +1,36 @@
 import React from 'react';
-import Link from 'next/link';
-import { CheckCircle, Package, Calendar, ShoppingCart, Home } from 'lucide-react';
+import { CheckCircle, Package, Calendar, ShoppingCart, Home, X } from 'lucide-react';
 
-const OrderSuccessPage = ({ params }) => {
-  const { orderId } = params;
-
-  // Sample order details if not provided
-  const sampleOrder = {
-    orderId: orderId || 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-    customerName: 'John Doe',
-    totalAmount: 199.99,
-    items: [
-      { name: 'Premium Widget', quantity: 2, price: 79.99 },
-      { name: 'Deluxe Gadget', quantity: 1, price: 39.99 }
-    ],
-    orderDate: new Date().toLocaleDateString(),
-    estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
+const OrderSuccessModal = ({ 
+  orderDetails, 
+  onClose, 
+  onViewOrders,
+  onContinueShopping
+}) => {
+  // Calculate the total amount by summing up subtotalUSD from items
+  const order = {
+    orderId: orderDetails?.orderId || 'N/A',
+    totalAmount: orderDetails?.items?.reduce(
+      (total, item) => total + (item.subtotalUSD || 0),
+      0
+    ) || 0,
+    items: orderDetails?.items || [],
+    orderDate: orderDetails?.orderDate || new Date().toLocaleDateString(),
+    estimatedDelivery: orderDetails?.estimatedDelivery || 
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
   };
-
-  // Use provided order details or fall back to sample
-  const order = sampleOrder;
-
+console.log(order.items[0])
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-100 transform transition-all hover:scale-[1.02]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-100 relative">
+        {/* Close Button */}
+        {/* <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
+        >
+          <X size={24} />
+        </button> */}
+
         {/* Success Header */}
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-center">
           <div className="flex justify-center mb-4">
@@ -53,7 +60,10 @@ const OrderSuccessPage = ({ params }) => {
             </h3>
             <div className="grid grid-cols-2 gap-3">
               <p className="text-sm text-gray-500">Order ID:</p>
-              <p className="font-medium text-gray-800 truncate max-w-full" title={order.orderId}>
+              <p 
+                className="font-medium text-gray-800 truncate max-w-full" 
+                title={order.orderId}
+              >
                 {order.orderId}
               </p>
               
@@ -64,25 +74,41 @@ const OrderSuccessPage = ({ params }) => {
               </p>
               
               <p className="text-sm text-gray-500">Total Amount:</p>
-              <p className="font-bold text-emerald-600 text-lg">${order.totalAmount.toFixed(2)}</p>
+              <p className="font-bold text-emerald-600 text-lg">
+                ${order.totalAmount.toFixed(2)}
+              </p>
             </div>
           </div>
 
-          {/* Rest of the component remains the same */}
+          {/* Order Items Section */}
           <div className="bg-gray-50 rounded-xl p-5 shadow-sm">
             <h3 className="text-lg font-semibold mb-3 text-gray-700">Order Items</h3>
-            {order.items.map((item, index) => (
-              <div 
-                key={index} 
-                className="flex justify-between border-b border-gray-200 last:border-b-0 py-3 hover:bg-gray-100 rounded-lg px-2 transition-colors"
-              >
-                <div>
-                  <p className="font-medium text-gray-800">{item.name}</p>
-                  <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+            {order.items.length > 0 ? (
+              order.items.map((item, index) => (
+                <div 
+                  key={index} 
+                  className="flex justify-between border-b border-gray-200 last:border-b-0 py-3 hover:bg-gray-100 rounded-lg px-2 transition-colors"
+                >
+                  <div className="flex items-center space-x-4">
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      className="w-16 h-16 object-cover rounded-md border border-gray-200"
+                    />
+                    <div>
+                      <p className="font-medium text-gray-800">{item.name}</p>
+                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                    </div>
+                  </div>
+
+                  <p className="font-semibold text-gray-700">
+                    ${item.subtotalUSD?.toFixed(2) || ((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                  </p>
                 </div>
-                <p className="font-semibold text-gray-700">${(item.quantity * item.price).toFixed(2)}</p>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-center text-gray-500">No items in this order</p>
+            )}
           </div>
 
           {/* Delivery Information */}
@@ -95,18 +121,18 @@ const OrderSuccessPage = ({ params }) => {
 
           {/* Action Buttons */}
           <div className="flex space-x-4 mt-6">
-            <Link 
-              href="/orders" 
+            <button 
+              onClick={onViewOrders}
               className="w-full py-3 px-4 border border-gray-300 rounded-lg text-center 
                          hover:bg-gray-100 transition-all flex items-center justify-center 
                          text-gray-700 hover:text-gray-900 hover:border-gray-400 shadow-sm"
             >
               <ShoppingCart size={16} className="mr-2" strokeWidth={2} />
               View Orders
-            </Link>
+            </button>
             
-            <Link 
-              href="/shops" 
+            <button 
+              onClick={onContinueShopping}
               className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-green-600 
                          text-white rounded-lg hover:from-emerald-700 hover:to-green-700 
                          transition-all text-center flex items-center justify-center 
@@ -114,7 +140,7 @@ const OrderSuccessPage = ({ params }) => {
             >
               <Home size={16} className="mr-2" strokeWidth={2} />
               Continue Shopping
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -122,4 +148,4 @@ const OrderSuccessPage = ({ params }) => {
   );
 };
 
-export default OrderSuccessPage;
+export default OrderSuccessModal;

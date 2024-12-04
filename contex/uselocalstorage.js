@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 
-const useLocalStorage = (key, initialValue) => {
+const useLocalStorage = (key, initialValue, onError = console.error) => {
   const [storedValue, setStoredValue] = useState(() => {
     try {
       if (typeof window === "undefined") {
@@ -8,18 +8,15 @@ const useLocalStorage = (key, initialValue) => {
       }
       
       const item = window.localStorage.getItem(key);
-      // Parse stored json or if none return initialValue
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error);
+      onError(`Error reading localStorage key "${key}":`, error);
       return initialValue;
     }
   });
 
-  // Keep track of whether we've initialized from localStorage
   const initialized = useRef(false);
 
-  // Effect to handle initialization and cross-tab syncing
   useEffect(() => {
     if (!initialized.current) {
       initialized.current = true;
@@ -31,11 +28,17 @@ const useLocalStorage = (key, initialValue) => {
         window.localStorage.setItem(key, JSON.stringify(storedValue));
       }
     } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error);
+      // Check for quota exceeded error
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        onError('localStorage quota exceeded. Clearing storage might help.', error);
+        // Optional: clear some data or oldest entries
+        window.localStorage.clear();
+      } else {
+        onError(`Error setting localStorage key "${key}":`, error);
+      }
     }
-  }, [key, storedValue]);
+  }, [key, storedValue, onError]);
 
-  // Handle storage events from other tabs
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === key && e.newValue !== null) {
@@ -43,7 +46,7 @@ const useLocalStorage = (key, initialValue) => {
           const newValue = JSON.parse(e.newValue);
           setStoredValue(newValue);
         } catch (error) {
-          console.error(`Error parsing storage change for key "${key}":`, error);
+          onError(`Error parsing storage change for key "${key}":`, error);
         }
       }
     };
@@ -52,26 +55,33 @@ const useLocalStorage = (key, initialValue) => {
       window.addEventListener('storage', handleStorageChange);
       return () => window.removeEventListener('storage', handleStorageChange);
     }
-  }, [key]);
+  }, [key, onError]);
 
   const setValue = useCallback(
     (value) => {
       try {
-        // Allow value to be a function so we have same API as useState
         const valueToStore = value instanceof Function ? value(storedValue) : value;
         
-        // Save state
+        // Add basic validation before storing
+        if (valueToStore === undefined) {
+          throw new Error('Cannot store undefined value');
+        }
+
         setStoredValue(valueToStore);
         
-        // Save to localStorage
         if (typeof window !== "undefined") {
           window.localStorage.setItem(key, JSON.stringify(valueToStore));
         }
       } catch (error) {
-        console.error(`Error setting localStorage key "${key}":`, error);
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+          onError('localStorage quota exceeded. Clearing storage might help.', error);
+          window.localStorage.clear();
+        } else {
+          onError(`Error setting localStorage key "${key}":`, error);
+        }
       }
     },
-    [key, storedValue]
+    [key, storedValue, onError]
   );
 
   return [storedValue, setValue];

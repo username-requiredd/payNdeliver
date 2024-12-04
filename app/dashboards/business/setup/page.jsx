@@ -17,6 +17,7 @@ const ProfileSetupPage = () => {
     address: "",
     walletAddress: "",
     accountNumber: "",
+    accountName:"",
     description: "",
     openingHours: [
       { day: "Monday", openingTime: "", closingTime: "" },
@@ -123,7 +124,7 @@ const ProfileSetupPage = () => {
             </div>
           </div>
 
-          {["address", "walletAddress", "accountNumber"].map((field) => (
+          {["address", "walletAddress", "accountNumber","accountName"].map((field) => (
             <div key={field} className="mb-6">
               <label
                 htmlFor={field}

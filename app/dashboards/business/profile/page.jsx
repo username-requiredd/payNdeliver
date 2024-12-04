@@ -1,271 +1,208 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import {
-  Clock,
-  MapPin,
-  Phone,
-  Mail,
-  Building,
-  Edit2,
-  Save,
-  XCircle,
-} from "lucide-react";
-import ImageUpload from "@/components/Imageupload";
 import { useSession } from "next-auth/react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Truck,
+  Heart,
+  CreditCard,
+  Wallet,
+  Hash,
+} from "lucide-react";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
 
-const BusinessProfile = () => {
-  const [image, setImage] = useState(null);
-  const [coverImage, setCoverImage] = useState(null);
+const AccountPage = () => {
   const { data: session } = useSession();
-  const [loading, setLoading] = useState(false);
-  const id = session?.user?.id;
-  const [isEditing, setIsEditing] = useState(false);
-  const [error, setError] = useState("");
-  const [profileData, setProfileData] = useState(null);
-  const [originalData, setOriginalData] = useState(null); // To store original profile data for cancel
+  const router = useRouter();
 
-  const handleImageUpload = (url) => {
-    setImage(url);
-    setCoverImage(url);
-  };
+  if (session?.user?.role === "business") {
+    router.push("/dashboards/business");
+  }
+  if (session?.user?.role === "admin") {
+    router.push("/dashboards/admin");
+  }
 
-  useEffect(() => {
-    const controller = new AbortController();
-    const { signal } = controller;
+  const [activeTab, setActiveTab] = useState("profile");
 
-    const fetchProfile = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/business/${id}`, { signal });
-        if (!response.ok) throw new Error("Error fetching business data!");
-        const data = await response.json();
-        setProfileData(data.data);
-        setOriginalData(data.data); // Store the original data for reverting
-      } catch (err) {
-        if (err.name === "AbortError") return;
-        setError(err.message);
-        // console.log(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-
-    return () => controller.abort();
-  }, [id]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setProfileData({ ...profileData, [name]: value });
-  };
-
-  const handleOpeningHoursChange = (day, field, value) => {
-    const updatedHours = profileData.openingHours.map((hours) =>
-      hours.day === day ? { ...hours, [field]: value } : hours
-    );
-    setProfileData({ ...profileData, openingHours: updatedHours });
-  };
-
-  const handleSave = async () => {
-    try {
-      const updatedProfileData = {
-        ...profileData,
-        coverImage: coverImage,
-      };
-      const response = await fetch(`/api/business/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedProfileData),
-      });
-      if (response.ok) {
-        setIsEditing(false);
-        toast.success("Profile updated successfully!");
-      } else {
-        toast.error(
-          "Failed to update profile. Check your connection or try again later."
-        );
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error("An error occurred while updating the profile.");
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setProfileData(originalData); // Revert to the original data
-    setIsEditing(false); // Exit edit mode
-  };
+  const tabs = [
+    { id: "profile", label: "Profile", icon: User },
+    { id: "orders", label: "Orders", icon: Truck },
+    { id: "wishlist", label: "Wishlist", icon: Heart },
+    { id: "payment", label: "Payment Methods", icon: CreditCard },
+  ];
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      <ToastContainer position="top-right" autoClose={3000} />
-      <div className="relative h-64 rounded-t-lg overflow-hidden mb-6">
-        <img
-          src={profileData?.coverImage || coverImage}
-          alt="Cover"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-end justify-start">
-          <h1 className="text-4xl font-bold text-white px-6 py-4">
-            {profileData?.businessName}
-          </h1>
-        </div>
-      </div>
-      <div className={isEditing ? "block" : "hidden"}>
-        <ImageUpload onImageUpload={handleImageUpload} image={image} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <InfoItem
-            icon={<Building className="w-5 h-5 text-gray-500" />}
-            label="Business Name"
-            value={profileData?.businessName}
-            isEditing={isEditing}
-            name="businessName"
-            onChange={handleInputChange}
-          />
-          <InfoItem
-            icon={<Building className="w-5 h-5 text-gray-500" />}
-            label="Business Type"
-            value={profileData?.businessType}
-            isEditing={isEditing}
-            name="businessType"
-            onChange={handleInputChange}
-          />
-          <InfoItem
-            icon={<Phone className="w-5 h-5 text-gray-500" />}
-            label="Phone"
-            value={profileData?.phone}
-            isEditing={isEditing}
-            name="phone"
-            onChange={handleInputChange}
-          />
-          <InfoItem
-            icon={<Mail className="w-5 h-5 text-gray-500" />}
-            label="Email"
-            value={profileData?.email}
-            isEditing={isEditing}
-            name="email"
-            onChange={handleInputChange}
-          />
-          <InfoItem
-            icon={<MapPin className="w-5 h-5 text-gray-500" />}
-            label="Address"
-            value={profileData?.address}
-            isEditing={isEditing}
-            name="address"
-            onChange={handleInputChange}
-          />
-        </div>
-
-        <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center">
-            <Clock className="w-5 h-5 text-gray-500 mr-2" />
-            Opening Hours
-          </h2>
-          <div className="space-y-2">
-            {profileData?.openingHours.map((hours) => (
-              <div
-                key={hours.day}
-                className="flex justify-between items-center"
-              >
-                <span className="font-medium">{hours.day}</span>
-                {isEditing ? (
-                  <div className="flex space-x-2">
-                    <input
-                      type="time"
-                      value={hours.openingTime || ""}
-                      onChange={(e) =>
-                        handleOpeningHoursChange(
-                          hours.day,
-                          "openingTime",
-                          e.target.value
-                        )
-                      }
-                      className="border rounded-md px-2 py-1"
-                    />
-                    <input
-                      type="time"
-                      value={hours.closingTime || ""}
-                      onChange={(e) =>
-                        handleOpeningHoursChange(
-                          hours.day,
-                          "closingTime",
-                          e.target.value
-                        )
-                      }
-                      className="border rounded-md px-2 py-1"
-                    />
-                  </div>
-                ) : (
-                  <span>
-                    {hours.openingTime && hours.closingTime
-                      ? `${hours.openingTime} - ${hours.closingTime}`
-                      : "Closed"}
-                  </span>
-                )}
-              </div>
-            ))}
+    <>
+      <Header />
+      <div className="min-h-screen bg-gray-100 pt-5 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+            <div className="flex border-b border-gray-200">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 py-4 px-1 text-center text-sm font-medium ${
+                    activeTab === tab.id
+                      ? "text-green-600 border-b-2 border-green-600"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <tab.icon className="w-5 h-5 mx-auto mb-1" />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div className="p-6">
+              {activeTab === "profile" && <ProfileSection />}
+              {activeTab === "orders" && <OrdersSection />}
+              {activeTab === "wishlist" && <WishlistSection />}
+              {activeTab === "payment" && <PaymentSection />}
+            </div>
           </div>
         </div>
       </div>
+      <Footer />
+    </>
+  );
+};
 
-      <div className="mt-8 flex justify-end space-x-4">
-        {isEditing ? (
-          <>
-            <button
-              onClick={handleSave}
-              className="bg-green-500 text-white px-4 py-2 rounded-md flex items-center hover:bg-green-600 transition-colors"
-            >
-              <Save className="w-5 h-5 mr-2" />
-              Save Changes
-            </button>
-            <button
-              onClick={handleCancelEdit}
-              className="bg-red-500 text-white px-4 py-2 rounded-md flex items-center hover:bg-red-600 transition-colors"
-            >
-              <XCircle className="w-5 h-5 mr-2" />
-              Cancel
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-600 transition-colors"
-          >
-            <Edit2 className="w-5 h-5 mr-2" />
-            Edit Profile
-          </button>
-        )}
+const ProfileSection = () => {
+  const { data: session } = useSession();
+  
+  const user = {
+    name: session?.user?.name || "John Doe",
+    email: session?.user?.email || "john.doe@example.com",
+    phone: "+1 (555) 123-4567",
+    address: "123 Main St, Anytown, ST 12345",
+    memberSince: "January 2022",
+    accountName: "Primary Checking",
+    accountNumber: "1234567890",
+    walletAddress: "0x1234567890abcdef1234567890abcdef"
+  };
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <InfoItem icon={User} label="Name" value={user.name} />
+          <InfoItem icon={Mail} label="Email" value={user.email} />
+          <InfoItem icon={Phone} label="Phone" value={user.phone} />
+          <InfoItem icon={MapPin} label="Address" value={user.address} />
+          <InfoItem icon={User} label="Member Since" value={user.memberSince} />
+        </div>
+        
+        <div className="border-t pt-4 mt-4">
+          <h3 className="text-lg font-semibold mb-4">Account Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InfoItem
+              icon={Hash}
+              label="Account Name"
+              value={user.accountName}
+            />
+            <InfoItem
+              icon={Hash}
+              label="Account Number"
+              value={user.accountNumber}
+            />
+            <InfoItem
+              icon={Wallet}
+              label="Wallet Address"
+              value={user.walletAddress}
+              className="col-span-full"
+            />
+          </div>
+        </div>
+      </div>
+      <div className="mt-6 space-x-4">
+        <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          Edit Profile
+        </button>
+        <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Edit Account Details
+        </button>
       </div>
     </div>
   );
 };
 
-const InfoItem = ({ icon, label, value, isEditing, name, onChange }) => (
-  <div className="flex items-start mb-4">
-    <div className="mr-4 mt-1">{icon}</div>
+const InfoItem = ({ icon: Icon, label, value, className = "" }) => (
+  <div className={`flex items-center ${className}`}>
+    <Icon className="w-5 h-5 text-gray-400 mr-3" />
     <div>
-      <h3 className="font-medium text-gray-700">{label}</h3>
-      {isEditing ? (
-        <input
-          type="text"
-          name={name}
-          value={value}
-          onChange={onChange}
-          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2"
-        />
-      ) : (
-        <p className="text-gray-600">{value}</p>
-      )}
+      <p className="text-sm font-medium text-gray-500">{label}</p>
+      <p className="text-sm text-gray-900 break-words">{value}</p>
     </div>
   </div>
 );
 
-export default BusinessProfile;
+const OrdersSection = () => (
+  <div>
+    <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
+    <div className="space-y-4">
+      {[1, 2, 3].map((order) => (
+        <div key={order} className="border border-gray-200 rounded-md p-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-medium">Order #{order}</span>
+            <span className="text-sm text-gray-500">Date: 2023-09-{order}</span>
+          </div>
+          <div className="text-sm text-gray-600">Status: Shipped</div>
+          <div className="mt-2">
+            <a href="#" className="text-indigo-600 hover:text-indigo-800">
+              View Details
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const WishlistSection = () => (
+  <div>
+    <h2 className="text-xl font-semibold mb-4">My Wishlist</h2>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {[1, 2, 3, 4].map((item) => (
+        <div
+          key={item}
+          className="border border-gray-200 rounded-md p-4 flex items-center"
+        >
+          <div className="flex-shrink-0 h-16 w-16 bg-gray-300 rounded-md mr-4"></div>
+          <div>
+            <h3 className="text-sm font-medium">Product Name {item}</h3>
+            <p className="text-sm text-gray-500">$99.99</p>
+            <button className="mt-2 text-xs text-indigo-600 hover:text-indigo-800">
+              Add to Cart
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const PaymentSection = () => (
+  <div>
+    <h2 className="text-xl font-semibold mb-4">Payment Methods</h2>
+    <div className="space-y-4">
+      <div className="border border-gray-200 rounded-md p-4 flex items-center">
+        <CreditCard className="w-8 h-8 text-gray-400 mr-3" />
+        <div>
+          <div className="font-medium">Visa ending in 1234</div>
+          <div className="text-sm text-gray-500">Expires 12/2025</div>
+        </div>
+      </div>
+      <button className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        Add New Payment Method
+      </button>
+    </div>
+  </div>
+);
+
+export default AccountPage;

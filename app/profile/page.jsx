@@ -18,9 +18,9 @@ const AccountPage = () => {
   const { data: session } = useSession();
   // console.log(session);
   const router = useRouter();
-  if (session?.user?.role === "business") {
-    router.push("/dashboards/business");
-  }
+  // if (session?.user?.role === "business") {
+  //   router.push("/dashboards/business/profile");
+  // }
   if (session?.user?.role === "admin") {
     router.push("/dashboards/admin");
   }

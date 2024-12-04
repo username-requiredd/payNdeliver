@@ -1,5 +1,5 @@
 "use client";
-
+import OrderSuccessModal from "./ordersuccess";
 import  { useState, useEffect } from "react";
 import { useCart } from "@/contex/cartcontex";
 import { useSession } from "next-auth/react";
@@ -72,6 +72,13 @@ const Checkout = () => {
     expiry: "",
     cvc: "",
   });
+
+
+  const [isOrderSuccessModalOpen, setIsOrderSuccessModalOpen] = useState(false);
+  const [orderDetails, setOrderDetails] = useState(null);
+
+
+console.log("cart",cart)
 
   useEffect(() => {
     localStorage.setItem("shippingDetails", JSON.stringify(shippingDetails));
@@ -161,36 +168,6 @@ const Checkout = () => {
   };
 
   
-// const createTransaction = async (
-//   publicKey, 
-//   recipientPublicKey, 
-//   amountInSol
-// ) => {
-//   try {
-//     const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-    
-//     // Create a transaction
-//     const transaction = new Transaction().add(
-//       SystemProgram.transfer({
-//         fromPubkey: publicKey,
-//         toPubkey: recipientPublicKey,
-//         lamports: LAMPORTS_PER_SOL * amountInSol.toNumber()
-//       })
-//     );
-
-//     // Get recent blockhash
-//     transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-//     transaction.feePayer = publicKey;
-
-//     // Send and confirm transaction
-//     const signature = await sendTransaction(transaction, connection);
-    
-//     return signature;
-//   } catch (error) {
-//     console.error('Transaction creation failed:', error);
-//     throw new Error(`Solana transaction failed: ${error.message}`);
-//   }
-// };
 
 const updateOrderStatus = async (orderId, updateData) => {
   try {
@@ -309,37 +286,6 @@ const handleCardPayment = async () => {
   }
 };
 
-// Similarly for crypto payment
-// const handleCryptoPayment = async () => {
-//   try {
-//     setLoading(true);
-//     setPaymentStatus("Processing payment...");
-
-//     if (!validateForms()) throw new Error("Please fill in all required fields");
-
-//     const orderId = await createOrder({ 
-//       type: "crypto", 
-//       wallet: publicKey?.toString() 
-//     });
-
-//     // Make the put request to update the order
-//     await axios.put(`/api/orders/${orderId}`, {
-//       status: "paid",
-//       paymentSignature: signature,
-//       // Add any other update information you need
-//       paymentDetails: {
-//         type: "crypto",
-//         wallet: publicKey?.toString()
-//       }
-//     });
-
-//     await handleSuccessfulPayment(orderId);
-//   } catch (error) {
-//     setPaymentStatus(`Payment failed: ${error.message}`);
-//   } finally {
-//     setLoading(false);
-//   }
-// };
 
 
 const handleCryptoPayment = async () => {
@@ -370,60 +316,90 @@ const handleCryptoPayment = async () => {
       transactionHash: signature
     };
 
+    // Create order first and get the orderId
     const orderId = await createOrder({
       ...paymentDetails,
       status: "paid"
     });
 
+    // Update order status
+    await updateOrderStatus(orderId, {
+      status: "paid",
+      payment: {
+        type: "crypto",
+        wallet: publicKey?.toString(),
+        transactionHash: signature
+      }
+    });
 
-    
+    // Ensure successful payment handling
+    await handleSuccessfulPayment(orderId);
 
-    try {
-      const updateResponse = await axios.put(`/api/orders/${orderId}`, {
-        status: "paid",
-        payment: {
-          type: "crypto",
-          wallet: publicKey?.toString(),
-          transactionHash: signature
-        }
-      }, {
-        validateStatus: function (status) {
-          return status >= 200 && status < 300;
-        }
-      });
-    
-      console.log('Order update full response:', updateResponse);
-    } catch (error) {
-      console.error('Order update error details:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-        config: error.config
-      });
-      throw error;
-    }
   } catch (error) {
     console.error("Crypto payment full error:", error);
     setPaymentStatus(`Payment failed: ${error.message}`);
+    
+    // Optional: Add more specific error handling
+    if (error.message.includes("wallet")) {
+      // Specific wallet connection error
+      setPaymentStatus("Please connect your Solana wallet");
+    }
   } finally {
     setLoading(false);
   }
 };
 
-  const handleSuccessfulPayment = async (orderId) => {
-    try {
-      clearCart();
-      // await axios.post("/api/orders/send-confirmation", { orderId });
-      setPaymentStatus("Payment successful!");
-      router.push(`/orderconfirm/${orderId}`);
-    } catch (error) {
-      console.error("Error in post-payment processing:", error);
-    }
-  };
+const handleSuccessfulPayment = async (orderId) => {
+  try {
+    console.log("Handling successful payment for order:", orderId);
+    setPaymentStatus("Payment successful!");
+
+    setOrderDetails({
+      items: cart.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity,
+        image:item.image,
+        name:item.name,
+        price:item.price,
+        subtotalUSD: item.price * item.quantity,
+      })),
+      orderId:orderId
+    });
+    console.log("orderDetails: ",orderDetails)
+      setIsOrderSuccessModalOpen(true);
+
+  } catch (error) {
+    console.error("Error in post-payment processing:", error);
+    // Optionally show an error toast or message
+    setPaymentStatus("Payment successful, but navigation failed");
+  }
+};
+
+
+ const  onContinueShopping = ()=>{
+  clearCart()
+  router.push("/stores")
+
+ }
+const onViewOrders = ()=>{
+  clearCart()
+  router.push("/orders")
+}
 
 
   return (
     <div className="checkout-container">
+
+ {/* Checkout form or other content */}
+ {isOrderSuccessModalOpen && (
+        <OrderSuccessModal 
+        onViewOrders={onViewOrders}
+          orderDetails={orderDetails}
+          onContinueShopping={onContinueShopping}
+          onClose={() => setIsOrderSuccessModalOpen(false)}
+        />
+      )}
+
       {/* Checkout UI Implementation */}
 
       <div className="max-w-7xl mx-auto px-4 py-8">

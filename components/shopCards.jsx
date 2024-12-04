@@ -17,10 +17,10 @@ const ShopCard = ({ image, title, deliverytime, rating, categories, id }) => {
           <div className="w-full mt-3">
             <div className="flex justify-between items-center">
               <p className="font-semibold text-xl">{title}</p>
-              <span className="px-2 text-xs flex justify-center items-center">
+              {/* <span className="px-2 text-xs flex justify-center items-center">
                 {rating}
                 <Star fontSize="13px" className="mx-1 text-yellow-500" />
-              </span>
+              </span> */}
             </div>
             <div>
               <div className="time flex items-center text-sm my-2">

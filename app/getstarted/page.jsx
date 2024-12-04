@@ -159,10 +159,10 @@ const GetStartedPage = () => {
               onChange={handleInputChange}
               required
               options={[
-                { value: "restaurant", label: "Restaurant" },
-                { value: "grocery", label: "Grocery" },
-                { value: "retail", label: "Retail" },
-                { value: "others", label: "Others" },
+                { value: "Restaurant", label: "Restaurant" },
+                { value: "Grocery", label: "Grocery" },
+                { value: "Retail", label: "Retail" },
+                { value: "Others", label: "Others" },
               ]}
             />
           )}

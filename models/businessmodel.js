@@ -49,9 +49,14 @@ const BusinessSchema = new mongoose.Schema(
       // required: [true, 'Please provide a wallet address for this business.'],
       // unique: true,
     },
+    accountName: {
+      type: String,
+      // required: [true, 'Please provide a wallet address for this business.'],
+      // unique: true,
+    },
     businessType: {
       type: String,
-      enum: ["restaurant", "grocery", "retail", "others"], 
+      enum: ["Restaurant", "Grocery", "Retail","Fashion", "Others"], 
       required: true
     },
     coverImage: { 
