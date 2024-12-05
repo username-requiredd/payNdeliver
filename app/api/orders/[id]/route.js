@@ -22,7 +22,7 @@ export const GET = async (req, { params }) => {
         if (!getOrder) {
             return NextResponse.json({ message: "Order not found!" }, { status: 404 })
         }
-
+            console.log(getOrder)
         return NextResponse.json({
             message: "Order retrieved successfully!", 
             data: getOrder

@@ -99,13 +99,13 @@ export default function LandingPage() {
       <nav className={`fixed w-full z-10 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-transparent'}`}>
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-          <h3 className="text-2xl font-bold mb-4">PayNDeliver</h3>
+          {/* <h3 className="text-2xl font-bold mb-4">PayNDeliver</h3> */}
 
-            {/* <img
-              src="/images/logo/logo.png"
+            <img
+              src="/images/logo/payNdeliver.svg"
               className="h-10 w-auto"
               alt="PayNDeliver Logo"
-            /> */}
+            />
             <div className="hidden md:flex space-x-6">
               {['Features', 'Pricing', 'Testimonials', 'FAQ'].map((item) => (
                 <a key={item} href={`#${item.toLowerCase()}`} className="text-gray-600 hover:text-green-500 transition-colors duration-300">{item}</a>

@@ -5,6 +5,7 @@ import { useCart } from "@/contex/cartcontex";
 import CartItem from "./cartitem";
 import CartEmpty from "@/components/cartempty";
 import Link from "next/link";
+import { ShoppingBag } from "lucide-react";
 
 // Currency formatting function
 const formatCurrency = (amount, locale = "en-US", currency = "NGN") => {
@@ -32,7 +33,10 @@ const CartContent = () => {
   }
 
   if (cart.length === 0) {
-    return <CartEmpty />;
+    return  <div className="text-center py-12 text-gray-500">
+    <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+    <p>Your cart is empty</p>
+  </div>
   }
 
   return (

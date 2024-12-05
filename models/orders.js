@@ -78,11 +78,19 @@ const orderSchema = new mongoose.Schema({
       notes: String
     }]
   },
+
   delivery: {
-    address: String,
+    name:String,
+    email:String,
+    address:String,
+    city:String,
+    state:String,
+    zip:String,
+    phone:String,
     estimatedDeliveryDate: Date,
     trackingId: String
   }
+
 }, {
   timestamps: true,
   collection: 'orders',

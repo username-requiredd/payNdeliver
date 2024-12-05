@@ -22,6 +22,7 @@ export async function POST(req) {
         // Create the order
         const newOrder = await Order.create(data);
         console.log("order created sucessfully!...")
+        console.log("new order", newOrder)
 
         // return NextResponse.json(
         //     { message: "Order created successfully", data: newOrder },

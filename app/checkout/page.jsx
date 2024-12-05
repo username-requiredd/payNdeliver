@@ -227,36 +227,49 @@ const updateOrderStatus = async (orderId, updateData) => {
   };
 
 
+
   const createOrder = async (paymentInfo) => {
     try {
-      const orderData = {
-        customerId: session?.user?.id,
-        businessId: cart[0]?.storeId,
-        items: cart.map((item) => ({
-          productId: item.id,
-          quantity: item.quantity,
-          unitPriceUSD: item.price,
-          subtotalUSD: item.price * item.quantity,
-        })),
-        totalAmountUSD: calculateTotal(),
-        status: "pending",
-        payment: {
-          ...paymentInfo,
-          amountUSD: calculateTotal(),
-        },
-      };
+        const orderData = {
+            customerId: session?.user?.id,
+            businessId: cart[0]?.storeId,
+            items: cart.map((item) => ({
+                productId: item.id,
+                quantity: item.quantity,
+                unitPriceUSD: item.price,
+                subtotalUSD: item.price * item.quantity,
+            })),
+            totalAmountUSD: calculateTotal(),
+              delivery:{
+                name:shippingDetails.name,
+                email:shippingDetails.email,
+                address:shippingDetails.address,
+                city:shippingDetails.city,
+                state:shippingDetails.state,
+                zip:shippingDetails.zip,
+                phone:shippingDetails.phone,
+                // trackingId:orderId
+              }, 
+            status: "pending",
+            payment: {
+                ...paymentInfo,
+                amountUSD: calculateTotal(),
+            },
+        };
 
-      const response = await axios.post("/api/orders", orderData);
-      
-      // Extract the order ID
-      const orderId = response.data.orderId || response.data.data._id;
-      console.log(orderId)
-      return orderId;  // Return the order ID
+        const response = await axios.post("/api/orders", orderData);
+
+        // Extract the order ID
+        const orderId = response.data.orderId || response.data.data._id;
+        console.log(orderId);
+        return orderId; // Return the order ID
     } catch (error) {
-      console.error("Error creating order:", error);
-      throw new Error("Failed to create order");
+        console.error("Error creating order:", error);
+        throw new Error("Failed to create order");
     }
-  };
+};
+
+
 
 // In your payment handling methods, you can then use it like this:
 const handleCardPayment = async () => {

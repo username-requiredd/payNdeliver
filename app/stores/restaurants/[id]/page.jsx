@@ -293,7 +293,7 @@ const MenuSection = ({
     </div>
     <div className="grid md:grid-cols-2 gap-6">
       {loading ? (
-        Array(4)
+        Array(1)
           .fill()
           .map((_, index) => <Productscardskeleton key={index} />)
       ) : products && products?.length > 0 ? (

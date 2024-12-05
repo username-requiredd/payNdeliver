@@ -69,11 +69,11 @@ const AccountPage = () => {
 
 const ProfileSection = ({ session }) => {
   const user = {
-    name: session?.user?.name || "Unknown User",
+    // name: session?.user?.name || "Unknown User",
     email: session?.user?.email,
-    phone: "+1 (555) 123-4567",
-    address: "123 Main St, Anytown, ST 12345",
-    memberSince: "January 2022",
+    phone: "N/A",
+    address: "N/A",
+    // memberSince: "January 2022",
   };
 
   return (
@@ -118,6 +118,7 @@ const OrdersSection = ({ session }) => {
         }
 
         const data = await response.json();
+        console.log("order data:",data)
         setOrders(data.data || []);
       } catch (err) {
         console.error("Error fetching orders:", err);
@@ -167,7 +168,7 @@ const OrdersSection = ({ session }) => {
                 </span>
               </div>
               <div className="text-sm text-gray-600">
-                Status: {order.status || "Pending"}
+                Status: {order.payment.status}
               </div>
               <div className="mt-2">
                 <button

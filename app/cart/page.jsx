@@ -7,6 +7,7 @@ import { useCart } from "@/contex/cartcontex";
 import CartItem from "@/components/shoppingCart";
 import Link from "next/link";
 import Footer from "@/components/footer";
+import { ShoppingBag } from "lucide-react";
 
 const formatCurrency = (amount, locale = "en-US", currency = "NGN") => {
   return new Intl.NumberFormat(locale, {
@@ -64,7 +65,11 @@ const CartPage = () => {
           <div className="flex flex-col w-full justify-center lg:flex-row gap-8">
             <div className="lg:w-1/2 w-full">
               {!cart?.length ? (
-                <CartEmpty />
+                      <div className="text-center py-12 text-gray-500">
+                      <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <p>Your cart is empty</p>
+                    </div>
+            
               ) : loading ? (
                 <>
                   <CartSkeleton />
