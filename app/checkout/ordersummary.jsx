@@ -1,5 +1,5 @@
 import React from "react";
-
+import { formatCurrency } from "@/hooks/formatcurrency";
 const OrderSummary = ({ cart, total }) => {
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-6">
@@ -8,18 +8,19 @@ const OrderSummary = ({ cart, total }) => {
         {cart.map((item) => (
           <div key={item.id} className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <img
+              {/* <img
                 src={item.image}
                 alt={item.name}
-                className="w-16 h-16 object-cover rounded-md"
-              />
-              <div>
+                className="w-16 h-16 object-cover rounded-md" */}
+              {/* /> */}
+              {/* <div>
                 <h3 className="text-lg font-medium">{item.name}</h3>
                 <p className="text-gray-500">Qty: {item.quantity}</p>
-              </div>
+              </div> */}
             </div>
             <p className="text-lg font-medium">
-              ${(item.price * item.quantity).toFixed(2)}
+              {formatCurrency(item.price * item.quantity, "en-NG", "NGN")}
+              {/* ${(item.price * item.quantity).toFixed(2)} */}
             </p>
           </div>
         ))}

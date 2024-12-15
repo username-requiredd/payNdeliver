@@ -6,6 +6,9 @@ const orderItemSchema = new mongoose.Schema({
     ref: 'Product',
     required: true
   },
+  productImage:{
+    type:String
+  },
   quantity: {
     type: Number,
     required: true,
@@ -33,6 +36,9 @@ const orderSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Business',
     required: true
+  },
+  storeName:{
+    type:String
   },
   items: [orderItemSchema],
   totalAmountUSD: {

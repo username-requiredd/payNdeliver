@@ -1,5 +1,7 @@
 import React from 'react';
 import { CheckCircle, Package, Calendar, ShoppingCart, Home, X } from 'lucide-react';
+import { formatCurrency } from '@/hooks/formatcurrency';
+
 
 const OrderSuccessModal = ({ 
   orderDetails, 
@@ -68,7 +70,7 @@ const OrderSuccessModal = ({
                 
                 <p className="text-sm text-gray-500">Total Amount:</p>
                 <p className="font-bold text-emerald-600 text-lg">
-                  ${order.totalAmount.toFixed(2)}
+                  {formatCurrency(order.totalAmount.toFixed(2), "en-NG", "NGN")}
                 </p>
               </div>
             </div>
@@ -95,7 +97,8 @@ const OrderSuccessModal = ({
                     </div>
 
                     <p className="font-semibold text-gray-700">
-                      ${item.subtotalUSD?.toFixed(2) || ((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                    {formatCurrency(item.subtotalUSD?.toFixed(2) || ((item.price || 0) * (item.quantity || 0)).toFixed(2), "en-NG", "NGN")}
+
                     </p>
                   </div>
                 ))

@@ -1,4 +1,3 @@
-import React from "react";
 import Link from "next/link";
 import {
   Facebook,
@@ -26,7 +25,7 @@ const Footer = () => {
               />
             </Link>
             <p className="text-gray-300">
-              Revolutionizing the delivery industry
+            Bridging businesses to the future with crypto payments and efficient deliveries.
             </p>
             <div className="flex space-x-4">
               <a

@@ -8,13 +8,7 @@ import CartItem from "@/components/shoppingCart";
 import Link from "next/link";
 import Footer from "@/components/footer";
 import { ShoppingBag } from "lucide-react";
-
-const formatCurrency = (amount, locale = "en-US", currency = "NGN") => {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: currency,
-  }).format(amount);
-};
+import { formatCurrency } from "@/hooks/formatcurrency";
 
 const CartPage = () => {
   const [mounted, setMounted] = useState(false);
@@ -65,11 +59,10 @@ const CartPage = () => {
           <div className="flex flex-col w-full justify-center lg:flex-row gap-8">
             <div className="lg:w-1/2 w-full">
               {!cart?.length ? (
-                      <div className="text-center py-12 text-gray-500">
-                      <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                      <p>Your cart is empty</p>
-                    </div>
-            
+                <div className="text-center py-12 text-gray-500">
+                  <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p>Your cart is empty</p>
+                </div>
               ) : loading ? (
                 <>
                   <CartSkeleton />
