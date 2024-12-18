@@ -36,7 +36,6 @@ const validateProduct = (product) => {
   if (!product) {
     throw new Error('Product is undefined or null');
   }
-
   const required = ['id', 'name', 'price', 'quantity', 'image', 'storeId', 'storeName'];
   
   for (const field of required) {
@@ -46,10 +45,11 @@ const validateProduct = (product) => {
   }
 
   return {
-    id: String(product.id || product._id),
+    id: String(product.id),
     storeId: String(product.storeId),
     storeName: String(product.storeName),
     name: String(product.name),
+    description: String(product.description),
     price: Math.round(Number(product.price) * 100) / 100,
     quantity: Math.min(Math.max(1, Number(product.quantity)), MAX_QUANTITY),
     image: String(product.image),
@@ -81,24 +81,6 @@ export const CartProvider = ({ children }) => {
   const [isFetching, setIsFetching] = useState(false);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState(null);
 
-  // Validate cart consistency
-  const validateCartConsistency = useCallback((cartItems = []) => {
-    if (!Array.isArray(cartItems)) return [];
-    
-    const seenStoreIds = new Set();
-    const validItems = cartItems.filter(item => {
-      if (!item || !item.storeId || !item.storeName) return false;
-      seenStoreIds.add(item.storeId);
-      return !isExpired(item.timestamp);
-    });
-    
-    if (seenStoreIds.size > 1) {
-      throw new Error('Items from multiple stores not allowed in same cart');
-    }
-
-    return validItems;
-  }, []);
-
   // Save cart to database with retry logic
   const saveCartToDb = useCallback(async (products, retryCount = MAX_RETRIES) => {
     const userId = session?.user?.id;
@@ -112,8 +94,7 @@ export const CartProvider = ({ children }) => {
         
       if (validatedProducts.length === 0) return;
 
-      const consistentProducts = validateCartConsistency(validatedProducts);
-      const total = calculateTotal(consistentProducts);
+      const total = calculateTotal(validatedProducts);
 
       const response = await fetch(`/api/cart/`, {
         method: "POST",
@@ -122,7 +103,7 @@ export const CartProvider = ({ children }) => {
         },
         body: JSON.stringify({
           userId,
-          products: consistentProducts,
+          products: validatedProducts,
           total
         }),
       });
@@ -143,7 +124,7 @@ export const CartProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, validateCartConsistency]);
+  }, [session?.user?.id]);
 
   // Fetch cart from database
   const fetchCart = useCallback(async () => {
@@ -171,18 +152,14 @@ export const CartProvider = ({ children }) => {
             price: product.price,
             quantity: product.quantity,
             image: product.image,
+            description:product.description,
             storeId: product.storeId,
             storeName: product.storeName
           }));
 
-
-          console.log("validated products:",validatedProducts)
-
-        const consistentProducts = validateCartConsistency(validatedProducts);
-        
         setCart({
           version: CART_VERSION,
-          items: consistentProducts
+          items: validatedProducts
         });
       }
     } catch (err) {
@@ -194,7 +171,7 @@ export const CartProvider = ({ children }) => {
       setIsInitialized(true);
       setLastSyncTimestamp(Date.now());
     }
-  }, [session?.user?.id, setCart, isFetching, validateCartConsistency]);
+  }, [session?.user?.id, setCart, isFetching]);
 
   // Initialize cart
   useEffect(() => {
@@ -223,10 +200,6 @@ export const CartProvider = ({ children }) => {
               : item
           );
         } else {
-          if (existingItems.length > 0 && 
-              existingItems[0].storeId !== validatedProduct.storeId) {
-            throw new Error("Cannot add items from different stores");
-          }
           updatedItems = [...existingItems, { ...validatedProduct, quantity: 1 }];
         }
 

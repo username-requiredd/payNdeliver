@@ -16,6 +16,7 @@ import Reviews from "./reviews";
 import BackToTopButton from "./backtotop";
 import Footer from "@/components/footer";
 import GetErrorContent from "@/components/geterror";
+import { Description } from "@mui/icons-material";
 
 const ShopDetails = ({ params }) => {
   const { id } = params;
@@ -119,21 +120,40 @@ const ShopDetails = ({ params }) => {
         toast.error("Unable to add to cart. Store information is missing.");
         return;
       }
-  
+
       const cartProduct = {
         ...product,
-        id: product.id || product._id, // ensure we have an id
+        id: product.id || product._id, // Ensure we have an id
         storeId: profile._id,
         storeName: profile.businessName,
-        quantity: product.quantity || 1,
-        // Add other required fields if they're missing
+        quantity: product.quantity || 1, // Default to 1 if not provided
+        description: product.description,
         name: product.name,
         price: product.price,
-        image: product.image
+        image: product.image,
       };
-  console.log("cart products:", cartProduct)
+
+      console.log("Attempting to add to cart:", cartProduct);
+
       try {
-        addToCart(cartProduct);
+        addToCart((prevCart) => {
+          const existingProduct = prevCart.find(
+            (item) => item.id === cartProduct.id
+          );
+
+          if (existingProduct) {
+            // Increment quantity if product already exists in cart
+            return prevCart.map((item) =>
+              item.id === cartProduct.id
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+            );
+          } else {
+            // Add new product to cart
+            return [...prevCart, cartProduct];
+          }
+        });
+
         toast.success("Added item to cart");
       } catch (error) {
         toast.error(error.message || "Failed to add item to cart");
@@ -141,7 +161,7 @@ const ShopDetails = ({ params }) => {
       }
     },
     [addToCart, profile]
-  ); // Added profile to dependency array
+  );
 
   const handleCategoryChange = useCallback((category) => {
     setCat(category);

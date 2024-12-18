@@ -1,266 +1,312 @@
 "use client";
-import React, { useState } from "react";
-import { Copy, Check } from "lucide-react";
 
-const OrderDetailsModal = ({ productOrder, isOpen, onClose }) => {
+import React, { useState, useEffect, useCallback } from "react";
+import { X, Copy, Loader2 } from "lucide-react";
+import { formatCurrency } from "@/hooks/formatcurrency";
+
+const OrderDetailsModal = ({ id, onClose }) => {
+  const [order, setOrder] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [copiedField, setCopiedField] = useState(null);
-  const [data, setData] = useState("wi");
+
+  // Utility Functions
   const formatDate = (dateString) => {
-    try {
-      return new Date(dateString).toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (error) {
-      console.error("Invalid date format:", error);
-      return "N/A";
-    }
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
-  const formatCurrency = (amount) => {
-    if (amount == null) return "N/A";
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+  const shortenText = (text, maxLength = 10) => {
+    if (!text) return "N/A";
+    return text.length > maxLength
+      ? `${text.slice(0, 5)}...${text.slice(-5)}`
+      : text;
   };
 
-  const copyToClipboard = (text, field) => {
-    if (!text) return;
-    try {
+  // Clipboard Copy Function
+  const copyToClipboard = useCallback((text, fieldName) => {
+    if (text) {
       navigator.clipboard.writeText(text);
-      setCopiedField(field);
+      setCopiedField(fieldName);
       setTimeout(() => setCopiedField(null), 2000);
-    } catch (error) {
-      console.error("Copy to clipboard failed:", error);
     }
-  };
+  }, []);
 
-  const truncateString = (str, maxLength = 10) => {
-    if (!str) return "N/A";
-    return str.length > maxLength
-      ? `${str.slice(0, maxLength / 2)}...${str.slice(-maxLength / 2)}`
-      : str;
-  };
+  // Fetch Order Details
+  useEffect(() => {
+    const fetchOrderDetails = async () => {
+      if (!id) {
+        setError("No Order ID provided");
+        setIsLoading(false);
+        return;
+      }
 
-  if (!isOpen || !productOrder) return null;
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/orders/${id}`);
 
+        if (!response.ok) {
+          throw new Error("Failed to fetch order details");
+        }
+
+        const data = await response.json();
+        setOrder(data.data || null);
+        setError(null);
+      } catch (err) {
+        console.error("Order fetch error:", err);
+        setError(err.message || "An unexpected error occurred");
+        setOrder(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrderDetails();
+  }, [id]);
+
+  // Render Helpers
+  const renderCopyableField = (value, fieldName) => (
+    <div className="flex items-center relative group">
+      <span className="mr-2 text-gray-700">{shortenText(value)}</span>
+      <button
+        onClick={() => copyToClipboard(value, fieldName)}
+        className="text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
+        title={`Copy ${fieldName}`}
+      >
+        <Copy size={14} />
+      </button>
+      {copiedField === fieldName && (
+        <span className="absolute -top-5 left-0 text-xs text-green-600 animate-bounce">
+          Copied!
+        </span>
+      )}
+    </div>
+  );
+
+  // Render Loading or Error State
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+        <Loader2 className="animate-spin text-white" size={48} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+        <div className="bg-white p-8 rounded-2xl shadow-2xl text-center">
+          <h2 className="text-red-600 text-2xl font-bold mb-4">Error</h2>
+          <p className="text-gray-700 mb-6">{error}</p>
+          <button
+            onClick={onClose}
+            className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main Render
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 rounded-t-2xl">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-white">
-              Order #{truncateString(productOrder._id?.$oid)}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto relative">
+        {/* Modal Header */}
+        <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-6 border-b">
+          <h2 className="text-3xl font-bold text-gray-800">Order Details</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-800 hover:rotate-90 transition-all"
+          >
+            <X size={28} />
+          </button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 p-6">
-          <div className="md:col-span-2 space-y-6">
-            <div className="bg-gray-50 rounded-xl p-6 shadow-sm">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                Order Items
+        {/* Modal Content */}
+        <div className="p-6 space-y-6">
+          {/* Product and Order Information */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Product Details */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4 text-gray-700">
+                Product Information
               </h3>
-              <div className="flex items-center space-x-4 pb-4">
-                <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center">
-                  {productOrder.productImage ? (
-                    <img
-                      src={productOrder.productImage}
-                      alt="Product"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-10 w-10 text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                  )}
-                </div>
-
-                <div className="flex-grow">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-800">
-                      {productOrder.productName ||
-                        `Product ${truncateString(
-                          productOrder.productId?.$oid
-                        )}`}
-                    </span>
-                    <span className="text-gray-600">
-                      Qty: {productOrder.quantity || 0}
-                    </span>
+              <div className="bg-gray-50 p-5 rounded-xl space-y-6">
+                {order.items?.map((item) => (
+                  <div
+                    key={item._id}
+                    className="bg-white p-4 rounded-lg shadow-sm"
+                  >
+                    <div className="flex items-center mb-4">
+                      <div className="w-24 h-24 mr-4 flex-shrink-0 overflow-hidden rounded-lg">
+                        <img
+                          src={item.productImage || "/api/placeholder/400/400"}
+                          alt={item.productName || "Product"}
+                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-lg mb-1">
+                          {item.productName || "N/A"}
+                        </p>
+                        <p className="text-gray-500 text-sm">
+                          {item.description || "No description"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 border-t pt-2">
+                      <div>
+                        <span className="text-xs text-gray-500">Quantity</span>
+                        <p className="font-medium">{item.quantity || 0}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500">
+                          Unit Price
+                        </span>
+                        <p className="font-medium text-green-600">
+                          {formatCurrency(item.unitPriceUSD)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-gray-600">
-                      {formatCurrency(productOrder.unitPriceUSD)} each
-                    </span>
-                    <span className="font-semibold text-gray-800">
-                      {formatCurrency(productOrder.subtotalUSD)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-between mt-4 pt-4 border-t font-bold text-lg">
-                <span>Total Amount:</span>
-                <span>{formatCurrency(productOrder.subtotalUSD)}</span>
+                ))}
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-xl p-6 shadow-sm">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                Payment Details
+            {/* Order Details */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4 text-gray-700">
+                Order Information
               </h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Payment Type:</span>
-                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm uppercase">
-                    {productOrder.payment?.type || "N/A"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 mr-2">Transaction Hash:</span>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-sm bg-gray-200 rounded px-2 py-1">
-                      {truncateString(
-                        productOrder.payment?.transactionHash,
-                        20
-                      )}
+              <div className="bg-gray-50 p-5 rounded-xl space-y-4">
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <div className="mb-3">
+                    <span className="text-xs text-gray-500 block mb-1">
+                      Order ID
                     </span>
-                    <button
-                      onClick={() =>
-                        copyToClipboard(
-                          productOrder.payment?.transactionHash,
-                          "transactionHash"
-                        )
-                      }
-                      className="text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                      {copiedField === "transactionHash" ? (
-                        <Check className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <Copy className="h-5 w-5" />
-                      )}
-                    </button>
+                    {renderCopyableField(order._id, "id")}
+                  </div>
+                  <div className="mb-3">
+                    <span className="text-xs text-gray-500 block mb-1">
+                      Total Amount
+                    </span>
+                    <p className="font-bold text-2xl text-green-600">
+                      {formatCurrency(order.totalAmountUSD)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 block mb-1">
+                      Created At
+                    </span>
+                    <p className="text-gray-700">
+                      {formatDate(order.createdAt)}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-xl p-6 shadow-sm space-y-4">
-            <h3 className="text-xl font-semibold text-gray-800">
-              Order Information
+          {/* Payment Details */}
+          <div>
+            <h3 className="text-xl font-semibold mb-4 text-gray-700">
+              Payment Details
             </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Order ID:</span>
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium">
-                    {truncateString(productOrder._id?.$oid)}
-                  </span>
-                  <button
-                    onClick={() =>
-                      copyToClipboard(productOrder._id?.$oid, "orderId")
-                    }
-                    className="text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    {copiedField === "orderId" ? (
-                      <Check className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <Copy className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
+            <div className="bg-blue-50 p-5 rounded-xl grid md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <p className="text-xs text-gray-500 mb-1">Payment Type</p>
+                <p className="font-medium capitalize">
+                  {order.payment?.type || "N/A"}
+                </p>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Customer ID:</span>
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium">
-                    {truncateString(productOrder.customerId?.$oid)}
-                  </span>
-                  <button
-                    onClick={() =>
-                      copyToClipboard(
-                        productOrder.customerId?.$oid,
-                        "customerId"
-                      )
-                    }
-                    className="text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    {copiedField === "customerId" ? (
-                      <Check className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <Copy className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
+              <div
+                className={`bg-white p-4 rounded-lg shadow-sm ${
+                  order.payment?.type === "cash" ? "block" : " hidden"
+                }`}
+              >
+                <p className="text-xs text-gray-500 mb-1">Card</p>
+                <p className="font-medium">
+                  **** **** **** {order.payment?.cardLastFour || "0000"}
+                </p>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Business ID:</span>
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium">
-                    {truncateString(productOrder.businessId?.$oid)}
-                  </span>
-                  <button
-                    onClick={() =>
-                      copyToClipboard(
-                        productOrder.businessId?.$oid,
-                        "businessId"
-                      )
-                    }
-                    className="text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    {copiedField === "businessId" ? (
-                      <Check className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <Copy className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <p className="text-xs text-gray-500 mb-1">Transaction Hash</p>
+                <p className="font-medium text-sm truncate">
+                  {renderCopyableField(
+                    order.payment?.transactionHash,
+                    "Transaction Hash"
+                  )}
+                </p>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Created:</span>
-                <span className="font-medium">
-                  {formatDate(productOrder.createdAt?.$date)}
-                </span>
+            </div>
+          </div>
+
+          {/* Shipping Details */}
+          <div>
+            <h3 className="text-xl font-semibold mb-4 text-gray-700">
+              Shipping Details
+            </h3>
+            <div className="bg-green-50 p-5 rounded-xl grid md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <p className="text-xs text-gray-500 mb-1">Shipping Method</p>
+                <p className="font-medium">
+                  {order.shipping?.method || "Standard"}
+                </p>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <p className="text-xs text-gray-500 mb-1">Tracking Number</p>
+                <p className="font-medium">
+                  {renderCopyableField(order._id, "id")}
+                </p>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <p className="text-xs text-gray-500 mb-1">Estimated Delivery</p>
+                <p className="font-medium">
+                  {order.shipping?.estimatedDelivery
+                    ? new Date(
+                        order.shipping.estimatedDelivery
+                      ).toLocaleDateString()
+                    : "1 hrs"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Address */}
+          <div>
+            <h3 className="text-xl font-semibold mb-4 text-gray-700">
+              Delivery Address
+            </h3>
+            <div className="bg-gray-50 p-5 rounded-xl">
+              <div className="bg-white p-5 rounded-lg shadow-sm">
+                <p className="font-semibold text-lg mb-2">
+                  {order.delivery?.name || "N/A"}
+                </p>
+                <p className="text-gray-600 mb-1">
+                  {order.delivery?.address || "N/A"}
+                </p>
+                <p className="text-gray-600 mb-1">
+                  {order.delivery?.city || "N/A"},{" "}
+                  {order.delivery?.state || "N/A"} {order.delivery?.zip || ""}
+                </p>
+                <div className="mt-3 pt-3 border-t">
+                  <p className="mb-1">
+                    <span className="text-xs text-gray-500 mr-2">Email:</span>
+                    {order.delivery?.email || "N/A"}
+                  </p>
+                  <p>
+                    <span className="text-xs text-gray-500 mr-2">Phone:</span>
+                    {order.delivery?.phone || "N/A"}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
