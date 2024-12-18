@@ -16,27 +16,63 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 
 const AccountPage = () => {
-  const dummyProductOrderData = {
-    productId: "64D5E6F7G8H9",
-    productName: "Wireless Noise-Cancelling Headphones",
-    productImage: "/api/placeholder/300/300",
-    quantity: 3,
-    unitPriceUSD: 49.99,
-    subtotalUSD: 149.97,
-    orderId: "67C9F1E2D3B4",
-    customerId: "65B8E0F4D1C2",
-    businessId: "67A9B1C2D3E4",
-    payment: {
-      type: "credit_card",
-      transactionHash:
-        "3NYECGDH3y3fMh4BFe73SnWE1yhwNVkjLejeVUT7ZMoGioyqWrv4MpzWKGmPoWEV3DUQzDT2J1W4G7vmnH5hrfoN",
-    },
-    createdAt: "2024-07-15T14:30:45.123Z",
-  };
+  // const dummyOrderData = {
+  //   _id: {
+  //     $oid: "65AB7C23D456E89F12345678",
+  //   },
+  //   customerId: {
+  //     $oid: "65AB7C23D456E89F87654321",
+  //   },
+  //   businessId: {
+  //     $oid: "65AB7C23D456E89F24681357",
+  //   },
+  //   product: {
+  //     productId: {
+  //       $oid: "65AB7C23D456E89F13579246",
+  //     },
+  //     name: "Premium Wireless Noise-Canceling Headphones",
+  //     description:
+  //       "Advanced noise-canceling technology with 40-hour battery life and premium sound quality",
+  //     quantity: 1,
+  //     unitPriceUSD: 34900,
+  //     subtotalUSD: 34900,
+  //     productImage: "/api/placeholder/400/400?text=Headphones",
+  //     _id: {
+  //       $oid: "65AB7C23D456E89F98765432",
+  //     },
+  //   },
+  //   totalAmountUSD: 39900,
+  //   payment: {
+  //     type: "credit_card",
+  //     cardLastFour: "4321",
+  //     transactionHash: "0x1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9S0T",
+  //   },
+  //   delivery: {
+  //     name: "Emily Rodriguez",
+  //     email: "emily.rodriguez@example.com",
+  //     address: "456 Innovation Street",
+  //     city: "San Francisco",
+  //     state: "California",
+  //     zip: "94105",
+  //     phone: "415-555-7890",
+  //   },
+  //   shipping: {
+  //     method: "Express Delivery",
+  //     trackingNumber: "1Z999AA1012345678",
+  //     estimatedDelivery: "2024-01-20",
+  //   },
+  //   createdAt: {
+  //     $date: "2024-01-15T14:30:22.317Z",
+  //   },
+  //   updatedAt: {
+  //     $date: "2024-01-15T14:30:22.617Z",
+  //   },
+  //   __v: 0,
+  // };
 
   const { data: session } = useSession();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [orderId, setOrderId] = useState("");  // Correct state initialization
   const router = useRouter();
 
   useEffect(() => {
@@ -55,7 +91,7 @@ const AccountPage = () => {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-100 pt-5 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-100  py-5  px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white shadow-sm rounded-lg overflow-hidden">
             <div className="flex border-b border-gray-200">
@@ -77,9 +113,8 @@ const AccountPage = () => {
             <div className="p-6">
               {isOpen && (
                 <OrderDetailsModal
-                  orderID={orderId}  // Correctly passing orderId
+                  productOrder={dummyProductOrderData}
                   isOpen={isOpen}
-                  setOrderId={setOrderId}  // Correctly passing setOrderId
                   onClose={() => setIsOpen(false)}
                 />
               )}
@@ -102,6 +137,7 @@ const AccountPage = () => {
 
 const ProfileSection = ({ session }) => {
   const user = {
+    name: session?.user?.name || "Unknown User",
     email: session?.user?.email || "N/A",
     phone: "N/A",
     address: "N/A",
@@ -145,10 +181,12 @@ const ProfileSection = ({ session }) => {
   );
 };
 
-const OrdersSection = ({ session, setIsOpen, setOrderId }) => {
+const OrdersSection = ({ session, setIsOpen }) => {
   const [orders, setOrders] = useState([]);
+  const [orderId, setOrderID] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -174,6 +212,13 @@ const OrdersSection = ({ session, setIsOpen, setOrderId }) => {
     fetchOrders();
   }, [session?.user?.id]);
 
+  const handleViewOrder = (id) => {
+    console.log("order id", id);
+    setOrderID(id);
+
+    setIsOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div>
@@ -194,6 +239,13 @@ const OrdersSection = ({ session, setIsOpen, setOrderId }) => {
 
   return (
     <div>
+      {isOpen && (
+        <OrderDetailsModal
+          id={orderId}
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+        />
+      )}
       <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
       {orders.length === 0 ? (
         <p>No orders found.</p>
@@ -213,14 +265,11 @@ const OrdersSection = ({ session, setIsOpen, setOrderId }) => {
                 </span>
               </div>
               <div className="text-sm text-gray-600">
-                Status: {order.payment.status}
+                Status: awaiting delivery
               </div>
               <div className="mt-2">
                 <button
-                  onClick={() => {
-                    setOrderId(order._id);  // Correctly setting orderId
-                    setIsOpen(true);  // Correctly opening modal
-                  }}
+                  onClick={() => setIsOpen(true)}
                   className="text-indigo-600 hover:text-indigo-800"
                 >
                   View Details

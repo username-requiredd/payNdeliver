@@ -18,6 +18,9 @@ const productSchema = new mongoose.Schema({
     required: true,
     min: 1
   },
+  description:{
+    type:String
+  },
   image: {
     type: String,
     required: true
@@ -25,7 +28,7 @@ const productSchema = new mongoose.Schema({
   storeId: {
     type: mongoose.Schema.Types.ObjectId, 
     // required: true,
-    ref: "Store"  
+    ref: "business"  
     },
   storeName: {
     type: String,

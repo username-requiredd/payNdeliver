@@ -265,6 +265,7 @@ const Checkout = () => {
         items: cart.map((item) => ({
           productId: item.id,
           productImage: item.image,
+          productName: item.name,
           storeName: item.storeName,
           quantity: item.quantity,
           unitPriceUSD: item.price,

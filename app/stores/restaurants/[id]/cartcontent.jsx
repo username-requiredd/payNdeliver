@@ -19,6 +19,8 @@ const CartContent = () => {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
   const [hasMounted, setHasMounted] = useState(false);
 
+  console.log("cart:", cart);
+
   useEffect(() => {
     setHasMounted(true);
   }, []);
@@ -33,10 +35,12 @@ const CartContent = () => {
   }
 
   if (cart.length === 0) {
-    return  <div className="text-center py-12 text-gray-500">
-    <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-    <p>Your cart is empty</p>
-  </div>
+    return (
+      <div className="text-center py-12 text-gray-500">
+        <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+        <p>Your cart is empty</p>
+      </div>
+    );
   }
 
   return (
