@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import OrderDetailsModal from "./orderdetails";
@@ -9,79 +9,21 @@ import {
   Phone,
   MapPin,
   Truck,
-  Heart,
-  CreditCard,
 } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 
 const AccountPage = () => {
-  // const dummyOrderData = {
-  //   _id: {
-  //     $oid: "65AB7C23D456E89F12345678",
-  //   },
-  //   customerId: {
-  //     $oid: "65AB7C23D456E89F87654321",
-  //   },
-  //   businessId: {
-  //     $oid: "65AB7C23D456E89F24681357",
-  //   },
-  //   product: {
-  //     productId: {
-  //       $oid: "65AB7C23D456E89F13579246",
-  //     },
-  //     name: "Premium Wireless Noise-Canceling Headphones",
-  //     description:
-  //       "Advanced noise-canceling technology with 40-hour battery life and premium sound quality",
-  //     quantity: 1,
-  //     unitPriceUSD: 34900,
-  //     subtotalUSD: 34900,
-  //     productImage: "/api/placeholder/400/400?text=Headphones",
-  //     _id: {
-  //       $oid: "65AB7C23D456E89F98765432",
-  //     },
-  //   },
-  //   totalAmountUSD: 39900,
-  //   payment: {
-  //     type: "credit_card",
-  //     cardLastFour: "4321",
-  //     transactionHash: "0x1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9S0T",
-  //   },
-  //   delivery: {
-  //     name: "Emily Rodriguez",
-  //     email: "emily.rodriguez@example.com",
-  //     address: "456 Innovation Street",
-  //     city: "San Francisco",
-  //     state: "California",
-  //     zip: "94105",
-  //     phone: "415-555-7890",
-  //   },
-  //   shipping: {
-  //     method: "Express Delivery",
-  //     trackingNumber: "1Z999AA1012345678",
-  //     estimatedDelivery: "2024-01-20",
-  //   },
-  //   createdAt: {
-  //     $date: "2024-01-15T14:30:22.317Z",
-  //   },
-  //   updatedAt: {
-  //     $date: "2024-01-15T14:30:22.617Z",
-  //   },
-  //   __v: 0,
-  // };
-
   const { data: session } = useSession();
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("profile");
 
+  // Admin redirect
   useEffect(() => {
     if (session?.user?.role === "admin") {
       router.push("/dashboards/admin");
     }
   }, [session, router]);
-
-  const [activeTab, setActiveTab] = useState("profile");
 
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
@@ -91,7 +33,7 @@ const AccountPage = () => {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-100  py-5  px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-100 py-5 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white shadow-sm rounded-lg overflow-hidden">
             <div className="flex border-b border-gray-200">
@@ -110,22 +52,9 @@ const AccountPage = () => {
                 </button>
               ))}
             </div>
-            <div className="p-6">
-              {isOpen && (
-                <OrderDetailsModal
-                  productOrder={dummyProductOrderData}
-                  isOpen={isOpen}
-                  onClose={() => setIsOpen(false)}
-                />
-              )}
+            <div className="p-6 my-5">
               {activeTab === "profile" && <ProfileSection session={session} />}
-              {activeTab === "orders" && (
-                <OrdersSection
-                  session={session}
-                  setIsOpen={setIsOpen}
-                  setOrderId={setOrderId}  // Pass setOrderId to OrdersSection
-                />
-              )}
+              {activeTab === "orders" && <OrdersSection />}
             </div>
           </div>
         </div>
@@ -137,22 +66,16 @@ const AccountPage = () => {
 
 const ProfileSection = ({ session }) => {
   const user = {
-    name: session?.user?.name || "Unknown User",
+    name: session?.user?.name || "N/A",
     email: session?.user?.email || "N/A",
-    phone: "N/A",
-    address: "N/A",
+    phone: session?.user?.phone || "N/A",
+    address: session?.user?.address || "N/A",
   };
 
   return (
     <div>
       <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
       <div className="lg:flex sm:block items-center justify-around">
-        {/* <InfoItem
-          icon={User}
-          label="Name"
-          value={user.name}
-          className="sm:p-4"
-        /> */}
         <InfoItem
           icon={Mail}
           label="Email"
@@ -181,53 +104,64 @@ const ProfileSection = ({ session }) => {
   );
 };
 
-const OrdersSection = ({ session, setIsOpen }) => {
+const OrdersSection = () => {
+  const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
-  const [orderId, setOrderID] = useState("");
+  const [orderId, setOrderId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!session?.user?.id) return;
+  // Fetch orders
+  const fetchOrders = useCallback(async () => {
+    if (!session?.user?.id) {
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/orders/${session.user.id}`);
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/orders/${session.user.id}`);
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch orders");
-        }
-
-        const data = await response.json();
-        setOrders(data.data || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch orders. Status: ${response.status}`);
       }
-    };
 
-    fetchOrders();
+      const data = await response.json();
+      setOrders(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : "An unexpected error occurred while fetching orders"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }, [session?.user?.id]);
 
-  const handleViewOrder = (id) => {
-    console.log("order id", id);
-    setOrderID(id);
+  // Fetch orders on component mount or when user ID changes
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
+  // Handle viewing order details
+  const handleViewOrder = (id) => {
+    setOrderId(id);
     setIsOpen(true);
   };
 
+  // Render loading state
   if (isLoading) {
     return (
       <div>
         <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
-        <p>Loading orders...</p>
+        <p className="animate-pulse text-gray-500">Loading orders...</p>
       </div>
     );
   }
 
+  // Render error state
   if (error) {
     return (
       <div>
@@ -248,7 +182,7 @@ const OrdersSection = ({ session, setIsOpen }) => {
       )}
       <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
       {orders.length === 0 ? (
-        <p>No orders found.</p>
+        <p className="text-gray-500">No orders found.</p>
       ) : (
         <div className="space-y-4">
           {orders.map((order) => (
@@ -261,7 +195,7 @@ const OrdersSection = ({ session, setIsOpen }) => {
                   Order #{order._id.slice(-6)}
                 </span>
                 <span className="text-sm text-gray-500">
-                  Date: {new Date(order.createdAt).toLocaleDateString()}
+                  {new Date(order.createdAt).toLocaleDateString()}
                 </span>
               </div>
               <div className="text-sm text-gray-600">
@@ -269,7 +203,7 @@ const OrdersSection = ({ session, setIsOpen }) => {
               </div>
               <div className="mt-2">
                 <button
-                  onClick={() => setIsOpen(true)}
+                  onClick={() => handleViewOrder(order._id)}
                   className="text-indigo-600 hover:text-indigo-800"
                 >
                   View Details
