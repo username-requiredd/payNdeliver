@@ -36,6 +36,7 @@ const AccountPage = () => {
 
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+  const [orderId, setOrderId] = useState("");  // Correct state initialization
   const router = useRouter();
 
   useEffect(() => {
@@ -76,14 +77,19 @@ const AccountPage = () => {
             <div className="p-6">
               {isOpen && (
                 <OrderDetailsModal
-                  productOrder={dummyProductOrderData}
+                  orderID={orderId}  // Correctly passing orderId
                   isOpen={isOpen}
+                  setOrderId={setOrderId}  // Correctly passing setOrderId
                   onClose={() => setIsOpen(false)}
                 />
               )}
               {activeTab === "profile" && <ProfileSection session={session} />}
               {activeTab === "orders" && (
-                <OrdersSection session={session} setIsOpen={setIsOpen} />
+                <OrdersSection
+                  session={session}
+                  setIsOpen={setIsOpen}
+                  setOrderId={setOrderId}  // Pass setOrderId to OrdersSection
+                />
               )}
             </div>
           </div>
@@ -96,7 +102,6 @@ const AccountPage = () => {
 
 const ProfileSection = ({ session }) => {
   const user = {
-    name: session?.user?.name || "Unknown User",
     email: session?.user?.email || "N/A",
     phone: "N/A",
     address: "N/A",
@@ -106,12 +111,12 @@ const ProfileSection = ({ session }) => {
     <div>
       <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
       <div className="lg:flex sm:block items-center justify-around">
-        <InfoItem
+        {/* <InfoItem
           icon={User}
           label="Name"
           value={user.name}
           className="sm:p-4"
-        />
+        /> */}
         <InfoItem
           icon={Mail}
           label="Email"
@@ -140,7 +145,7 @@ const ProfileSection = ({ session }) => {
   );
 };
 
-const OrdersSection = ({ session, setIsOpen }) => {
+const OrdersSection = ({ session, setIsOpen, setOrderId }) => {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -212,7 +217,10 @@ const OrdersSection = ({ session, setIsOpen }) => {
               </div>
               <div className="mt-2">
                 <button
-                  onClick={() => setIsOpen(true)}
+                  onClick={() => {
+                    setOrderId(order._id);  // Correctly setting orderId
+                    setIsOpen(true);  // Correctly opening modal
+                  }}
                   className="text-indigo-600 hover:text-indigo-800"
                 >
                   View Details
