@@ -34,26 +34,26 @@ const initialNotifications = [
     isRead: true,
     status: 'success'
   },
-  {
-    id: 3,
-    type: 'stock',
-    icon: AlertCircle,
-    title: 'Low StockAlert',
-    description: 'Some items in your wishlist are running low on stock.',
-    date: '3 days ago',
-    isRead: false,
-    status: 'warning'
-  },
-  {
-    id: 4,
-    type: 'return',
-    icon: XCircle,
-    title: 'Return Request Rejected',
-    description: 'Your return request for order #12340 was not approved.',
-    date: '5 days ago',
-    isRead: true,
-    status: 'error'
-  }
+  // {
+  //   id: 3,
+  //   type: 'stock',
+  //   icon: AlertCircle,
+  //   title: 'Low StockAlert',
+  //   description: 'Some items in your wishlist are running low on stock.',
+  //   date: '3 days ago',
+  //   isRead: false,
+  //   status: 'warning'
+  // },
+  // {
+  //   id: 4,
+  //   type: 'return',
+  //   icon: XCircle,
+  //   title: 'Return Request Rejected',
+  //   description: 'Your return request for order #12340 was not approved.',
+  //   date: '5 days ago',
+  //   isRead: true,
+  //   status: 'error'
+  // }
 ];
 
 const NotificationPage = () => {

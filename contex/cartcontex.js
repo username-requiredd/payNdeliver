@@ -32,24 +32,29 @@ const isExpired = (timestamp) => {
   return Date.now() - timestamp > expiryTime;
 };
 
+
 const validateProduct = (product) => {
+  console.log("Product being validated:", product);
+  
   if (!product) {
     throw new Error('Product is undefined or null');
   }
+  
   const required = ['id', 'name', 'price', 'quantity', 'image', 'storeId', 'storeName'];
   
   for (const field of required) {
-    if (!product[field] && product[field] !== 0) {
+    if (product[field] === undefined || product[field] === null) {
+      console.error(`Missing required field: ${field}`, product);
       throw new Error(`Missing required field: ${field}`);
     }
   }
 
   return {
-    id: String(product.id),
+    id: String(product.id || product._id || product.productId),
     storeId: String(product.storeId),
     storeName: String(product.storeName),
     name: String(product.name),
-    description: String(product.description),
+    description: String(product.description || ''),
     price: Math.round(Number(product.price) * 100) / 100,
     quantity: Math.min(Math.max(1, Number(product.quantity)), MAX_QUANTITY),
     image: String(product.image),
@@ -157,6 +162,8 @@ export const CartProvider = ({ children }) => {
             storeName: product.storeName
           }));
 
+          console.log("validated products from cart contex;",validatedProducts)
+
         setCart({
           version: CART_VERSION,
           items: validatedProducts
@@ -183,31 +190,41 @@ export const CartProvider = ({ children }) => {
   // Cart operations
   const addToCart = useCallback((product) => {
     if (!product) return;
-
+  
     try {
       const validatedProduct = validateProduct(product);
-      
+  
       setCart((prevCart) => {
         const existingItems = Array.isArray(prevCart.items) ? prevCart.items : [];
         const productExist = existingItems.find((item) => item.id === validatedProduct.id);
         let updatedItems;
-
+  
         if (productExist) {
-          const newQuantity = Math.min(productExist.quantity + 1, MAX_QUANTITY);
+          const newQuantity = Math.min(
+            productExist.quantity + (validatedProduct.quantity || 1), 
+            MAX_QUANTITY
+          );
           updatedItems = existingItems.map((item) =>
             item.id === validatedProduct.id
               ? { ...item, quantity: newQuantity, timestamp: Date.now() }
               : item
           );
         } else {
-          updatedItems = [...existingItems, { ...validatedProduct, quantity: 1 }];
+          // Use the quantity from the product, or default to 1
+          updatedItems = [
+            ...existingItems, 
+            { 
+              ...validatedProduct, 
+              quantity: validatedProduct.quantity || 1 
+            }
+          ];
         }
-
+  
         // Save to DB if authenticated
         if (session?.user?.id && Array.isArray(updatedItems)) {
           saveCartToDb(updatedItems);
         }
-
+  
         return {
           version: CART_VERSION,
           items: updatedItems
@@ -218,6 +235,10 @@ export const CartProvider = ({ children }) => {
       setError(error.message);
     }
   }, [setCart, saveCartToDb, session?.user?.id]);
+
+
+
+
 
   const removeFromCart = useCallback((productId) => {
     if (!productId) return;

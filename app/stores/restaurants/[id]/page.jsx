@@ -120,10 +120,10 @@ const ShopDetails = ({ params }) => {
         toast.error("Unable to add to cart. Store information is missing.");
         return;
       }
-
+  
       const cartProduct = {
         ...product,
-        id: product.id || product._id, // Ensure we have an id
+        id: product.id,
         storeId: profile._id,
         storeName: profile.businessName,
         quantity: product.quantity || 1, // Default to 1 if not provided
@@ -132,28 +132,11 @@ const ShopDetails = ({ params }) => {
         price: product.price,
         image: product.image,
       };
-
+  
       console.log("Attempting to add to cart:", cartProduct);
-
+  
       try {
-        addToCart((prevCart) => {
-          const existingProduct = prevCart.find(
-            (item) => item.id === cartProduct.id
-          );
-
-          if (existingProduct) {
-            // Increment quantity if product already exists in cart
-            return prevCart.map((item) =>
-              item.id === cartProduct.id
-                ? { ...item, quantity: item.quantity + 1 }
-                : item
-            );
-          } else {
-            // Add new product to cart
-            return [...prevCart, cartProduct];
-          }
-        });
-
+        addToCart(cartProduct); // Directly pass the cartProduct
         toast.success("Added item to cart");
       } catch (error) {
         toast.error(error.message || "Failed to add item to cart");
@@ -162,7 +145,6 @@ const ShopDetails = ({ params }) => {
     },
     [addToCart, profile]
   );
-
   const handleCategoryChange = useCallback((category) => {
     setCat(category);
   }, []);
