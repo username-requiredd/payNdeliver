@@ -14,7 +14,7 @@ import {
   SystemProgram,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
-import { createQR, encodeURL } from "@solana/pay";
+import createNotification from "./sendNotification";
 import BigNumber from "bignumber.js";
 import axios from "axios";
 import { CreditCard, Coins, Truck, Calculator, Wallet } from "lucide-react";
@@ -301,7 +301,6 @@ const Checkout = () => {
     }
   };
 
-  // In your payment handling methods, you can then use it like this:
   const handleCardPayment = async () => {
     try {
       setLoading(true);
@@ -381,6 +380,14 @@ const Checkout = () => {
       // Ensure successful payment handling
       await handleSuccessfulPayment(orderId);
     } catch (error) {
+      const message = {
+        title: "Payment Failed",
+        message: `Unfortunately, your payment for order #${orderId} could not be processed. Please try again or contact support for assistance.`,
+        userId: session?.user?.id,
+        type: "in-app",
+      };
+      createNotification(message);
+
       console.error("Crypto payment full error:", error);
       setPaymentStatus(`Payment failed: ${error.message}`);
 
@@ -410,6 +417,17 @@ const Checkout = () => {
         })),
         orderId: orderId,
       });
+
+      const newNotification = {
+        title: "Payment Successful",
+        message: `Your payment for order #${orderId} has been successfully processed.`,
+        userId: session?.user?.id,
+        status: "success",
+        type: "in-app",
+      };
+
+      createNotification(newNotification);
+
       console.log("orderDetails: ", orderDetails);
       setIsOrderSuccessModalOpen(true);
     } catch (error) {
