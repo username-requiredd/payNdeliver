@@ -3,10 +3,17 @@ import { useState, useEffect } from 'react';
 import { ShoppingBag, Truck, CreditCard, Bitcoin, Store, User, ChevronDown, ChevronUp, Check, DollarSign, Clock, Shield, Star, StoreIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import Footer from '@/components/footer';
 
+import Footer from '@/components/footer';
+import { formatCurrency } from '@/hooks/formatcurrency';
+import { useRouter } from 'next/navigation';
 const FAQItem = ({ question, answer }) => {
   const [isOpen, setIsOpen] = useState(false);
+
+
+
+
+
 
   return (
     <motion.div 
@@ -52,7 +59,14 @@ const PricingTier = ({ name, price, features, recommended }) => (
     )}
     <div className="p-6">
       <h3 className="text-2xl font-bold mb-4">{name}</h3>
-      <p className="text-4xl font-bold mb-6">${price}<span className="text-xl text-gray-500">/mo</span></p>
+      <p className="text-4xl font-bold mb-6">
+      {formatCurrency(
+                           price,
+                            "en-NG",
+                            "NGN"
+                          )}
+
+        <span className="text-xl text-gray-500">/mo</span></p>
       <ul className="space-y-2 mb-6">
         {features.map((feature, index) => (
           <li key={index} className="flex items-center">
@@ -87,6 +101,22 @@ const Section = ({ id, className, children }) => (
 
 export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const router = useRouter();
+
+
+  useEffect(() => {
+    // Check if user has visited before
+    const hasVisited = localStorage.getItem('hasVisitedBefore');
+    
+    if (hasVisited === 'true') {
+      // Redirect returning users to store page
+      router.push('/stores');
+    } else {
+      // Mark new users as having visited
+      localStorage.setItem('hasVisitedBefore', 'true');
+    }
+  }, [router]);
+
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -206,7 +236,7 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <PricingTier
             name="Starter"
-            price={29}
+            price={20000}
             features={[
               "List up to 50 products",
               "Basic analytics",
@@ -216,7 +246,7 @@ export default function LandingPage() {
           />
           <PricingTier
             name="Growth"
-            price={79}
+            price={70000}
             features={[
               "List up to 500 products",
               "Advanced analytics",
@@ -227,7 +257,7 @@ export default function LandingPage() {
           />
           <PricingTier
             name="Enterprise"
-            price={199}
+            price={200000}
             features={[
               "Unlimited products",
               "Custom analytics",
@@ -291,7 +321,7 @@ export default function LandingPage() {
             },
             {
               question: "What cryptocurrencies do you support?",
-              answer: "We currently support Bitcoin, Ethereum, and several other major cryptocurrencies. We're always working on expanding our supported currencies."
+              answer: "Currently, we support Solana. However, we are actively working on adding more cryptocurrencies to provide a broader range of options for our users"
             },
             {
               question: "How does the delivery process work?",
@@ -301,10 +331,10 @@ export default function LandingPage() {
               question: "Are there any transaction fees?",
               answer: "We charge a small transaction fee on each order. The exact fee depends on your chosen plan. Check our pricing section for more details."
             },
-            {
-              question: "Can I integrate PayNDeliver with my existing e-commerce platform?",
-              answer: "Yes, we offer API integrations for popular e-commerce platforms. Our team can assist you with the integration process to ensure a smooth transition."
-            }
+            // {
+            //   question: "Can I integrate PayNDeliver with my existing e-commerce platform?",
+            //   answer: "Yes, we offer API integrations for popular e-commerce platforms. Our team can assist you with the integration process to ensure a smooth transition."
+            // }
           ].map((faq, index) => (
             <FAQItem key={index} question={faq.question} answer={faq.answer} />
           ))}

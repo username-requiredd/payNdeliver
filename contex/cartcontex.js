@@ -187,6 +187,32 @@ export const CartProvider = ({ children }) => {
     }
   }, [status, fetchCart, isInitialized, isFetching]);
 
+  const updateQuantity = useCallback(
+    (productId, newQuantity) => {
+      if (!productId || typeof newQuantity !== "number") return;
+
+      setCart((prevCart) => {
+        const existingItems = Array.isArray(prevCart.items) ? prevCart.items : [];
+        const updatedItems = existingItems.map((item) =>
+          item.id === productId
+            ? { ...item, quantity: Math.min(Math.max(newQuantity, 1), MAX_QUANTITY) }
+            : item
+        );
+
+        if (session?.user?.id) {
+          saveCartToDb(updatedItems);
+        }
+
+        return {
+          version: CART_VERSION,
+          items: updatedItems,
+        };
+      });
+    },
+    [setCart, saveCartToDb, session?.user?.id]
+  );
+
+
   // Cart operations
   const addToCart = useCallback((product) => {
     if (!product) return;
@@ -282,6 +308,7 @@ export const CartProvider = ({ children }) => {
       removeFromCart,
       clearCart,
       loading,
+      updateQuantity,
       error,
       total: calculateTotal(cart?.items)
     }),
