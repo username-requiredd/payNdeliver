@@ -17,7 +17,7 @@ const Footer = () => {
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="space-y-4">
-            <Link href="/" className="flex-shrink-0">
+            <Link href="/?skipRedirect=true" className="flex-shrink-0">
               <img
                 src="/images/logo/payNdeliver.svg"
                 className="h-12 w-auto"
@@ -25,7 +25,8 @@ const Footer = () => {
               />
             </Link>
             <p className="text-gray-300">
-            Bridging businesses to the future with crypto payments and efficient deliveries.
+              Bridging businesses to the future with crypto payments and
+              efficient deliveries.
             </p>
             <div className="flex space-x-4">
               <a

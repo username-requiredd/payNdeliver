@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { ShoppingBag, Truck, CreditCard, Bitcoin, Store, User, ChevronDown, ChevronUp, Check, DollarSign, Clock, Shield, Star, StoreIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-
+import useReturnUserRedirect from '@/hooks/useredirect';
 import Footer from '@/components/footer';
 import { formatCurrency } from '@/hooks/formatcurrency';
 import { useRouter } from 'next/navigation';
@@ -103,19 +103,7 @@ export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
 
-
-  useEffect(() => {
-    // Check if user has visited before
-    const hasVisited = localStorage.getItem('hasVisitedBefore');
-    
-    if (hasVisited === 'true') {
-      // Redirect returning users to store page
-      router.push('/stores');
-    } else {
-      // Mark new users as having visited
-      localStorage.setItem('hasVisitedBefore', 'true');
-    }
-  }, [router]);
+  useReturnUserRedirect()
 
 
   useEffect(() => {

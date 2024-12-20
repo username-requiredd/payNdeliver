@@ -47,7 +47,7 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link
-            href="/"
+            href="/?skipRedirect=true"
             className="flex-shrink-0 flex items-center space-x-2 group"
           >
             <img
