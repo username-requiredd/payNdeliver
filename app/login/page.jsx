@@ -63,6 +63,17 @@ const Login = () => {
         handleSignInError(result.error);
       } else if (result?.ok) {
         toast.success("Sign in successful, redirecting...");
+        const welcomeNotification = {
+          title: "Welcome to payNdeliver!",
+          message: `Hi ${
+            session?.user?.name || "there"
+          }, we're excited to have you on board! Start exploring amazing deals and enjoy seamless shopping with both cash and crypto payments.`,
+          userId: session?.user?.id,
+          status: "info",
+          type: "in-app",
+          timestamp: new Date().toISOString(), // Optional: Add timestamp for better tracking
+        };
+
         // handleSuccessfulSignIn();
         router.push("/dashboards/business/setup");
       } else {

@@ -1,208 +1,331 @@
 "use client";
+import React, { useEffect, useState } from "react";
+import { Camera, Loader2, Edit2, Save, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
-import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Truck,
-  Heart,
-  CreditCard,
-  Wallet,
-  Hash,
-} from "lucide-react";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import ImageUpload from "@/components/Imageupload";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-const AccountPage = () => {
+const ProfilePage = () => {
   const { data: session } = useSession();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
 
-  if (session?.user?.role === "business") {
-    router.push("/dashboards/business");
-  }
-  if (session?.user?.role === "admin") {
-    router.push("/dashboards/admin");
-  }
-
-  const [activeTab, setActiveTab] = useState("profile");
-
-  const tabs = [
-    { id: "profile", label: "Profile", icon: User },
-    { id: "orders", label: "Orders", icon: Truck },
-    { id: "wishlist", label: "Wishlist", icon: Heart },
-    { id: "payment", label: "Payment Methods", icon: CreditCard },
-  ];
-
-  return (
-    <>
-      <Header />
-      <div className="min-h-screen bg-gray-100 pt-5 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-            <div className="flex border-b border-gray-200">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 py-4 px-1 text-center text-sm font-medium ${
-                    activeTab === tab.id
-                      ? "text-green-600 border-b-2 border-green-600"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  <tab.icon className="w-5 h-5 mx-auto mb-1" />
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            <div className="p-6">
-              {activeTab === "profile" && <ProfileSection />}
-              {activeTab === "orders" && <OrdersSection />}
-              {activeTab === "wishlist" && <WishlistSection />}
-              {activeTab === "payment" && <PaymentSection />}
-            </div>
-          </div>
-        </div>
-      </div>
-      <Footer />
-    </>
-  );
-};
-
-const ProfileSection = () => {
-  const { data: session } = useSession();
-  
-  const user = {
-    name: session?.user?.name || "John Doe",
-    email: session?.user?.email || "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main St, Anytown, ST 12345",
-    memberSince: "January 2022",
-    accountName: "Primary Checking",
-    accountNumber: "1234567890",
-    walletAddress: "0x1234567890abcdef1234567890abcdef"
+  const initialFormState = {
+    image: null,
+    coverImage: null,
+    address: "",
+    walletAddress: "",
+    accountNumber: "",
+    accountName: "",
+    description: "",
+    openingHours: [
+      { day: "Monday", openingTime: "", closingTime: "" },
+      { day: "Tuesday", openingTime: "", closingTime: "" },
+      { day: "Wednesday", openingTime: "", closingTime: "" },
+      { day: "Thursday", openingTime: "", closingTime: "" },
+      { day: "Friday", openingTime: "", closingTime: "" },
+      { day: "Saturday", openingTime: "", closingTime: "" },
+      { day: "Sunday", openingTime: "", closingTime: "" },
+    ],
   };
 
+  const [formData, setFormData] = useState(initialFormState);
+  const [originalData, setOriginalData] = useState(initialFormState);
+
+  const fetchProfile = async (api, signal) => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await fetch(api, { signal });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch profile data");
+      }
+
+      const profile = await response.json();
+      console.log(profile);
+      const profileData = {
+        ...initialFormState,
+        ...profile.data,
+        openingHours:
+          profile.data.openingHours || initialFormState.openingHours,
+      };
+
+      setFormData(profileData);
+      setOriginalData(profileData);
+      setIsEditing(false);
+    } catch (err) {
+      if (err.name === "AbortError") return;
+      setError("Failed to load profile data");
+      toast.error("Failed to load profile data. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const controller = new AbortController();
+    fetchProfile(`/api/business/${session.user.id}`, controller.signal);
+    return () => controller.abort();
+  }, [session?.user?.id]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setFormData(originalData);
+    setIsEditing(false);
+  };
+
+  const handleOpeningHoursChange = (index, field, value) => {
+    const newOpeningHours = [...formData.openingHours];
+    newOpeningHours[index][field] = value;
+    setFormData((prevData) => ({ ...prevData, openingHours: newOpeningHours }));
+  };
+
+  const handleSaveProfile = async () => {
+    if (!session?.user?.id) {
+      toast.error("Please sign in to update your profile");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(`/api/business/${session.user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update profile");
+      }
+
+      setOriginalData(formData);
+      setIsEditing(false);
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      setError("Failed to update profile");
+      toast.error("Failed to update profile. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const InputField = ({ label, name, type = "text", value, disabled }) => (
+    <div className="mb-6">
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        {label}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value || ""}
+        onChange={handleInputChange}
+        disabled={!isEditing || disabled}
+        className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm 
+          border-gray-300 rounded-md p-3 transition-colors duration-200
+          ${!isEditing ? "bg-gray-50" : "bg-white"}
+          ${disabled ? "cursor-not-allowed" : ""}`}
+      />
+    </div>
+  );
+
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <InfoItem icon={User} label="Name" value={user.name} />
-          <InfoItem icon={Mail} label="Email" value={user.email} />
-          <InfoItem icon={Phone} label="Phone" value={user.phone} />
-          <InfoItem icon={MapPin} label="Address" value={user.address} />
-          <InfoItem icon={User} label="Member Since" value={user.memberSince} />
-        </div>
-        
-        <div className="border-t pt-4 mt-4">
-          <h3 className="text-lg font-semibold mb-4">Account Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InfoItem
-              icon={Hash}
-              label="Account Name"
-              value={user.accountName}
-            />
-            <InfoItem
-              icon={Hash}
-              label="Account Number"
-              value={user.accountNumber}
-            />
-            <InfoItem
-              icon={Wallet}
-              label="Wallet Address"
-              value={user.walletAddress}
-              className="col-span-full"
-            />
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="relative h-48 bg-gradient-to-r from-blue-500 to-indigo-600">
+            {formData.coverImage && (
+              <img
+                src={formData.coverImage}
+                alt="Cover"
+                className="w-full h-full object-cover"
+              />
+            )}
+            <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+            <div className="absolute bottom-4 left-6">
+              <h1 className="text-3xl font-bold text-white">
+                Business Profile
+              </h1>
+            </div>
+            {!loading && (
+              <div className="absolute top-4 right-4 space-x-2">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={handleCancel}
+                      className="inline-flex items-center px-4 py-2 bg-white text-gray-700 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveProfile}
+                      className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={handleEdit}
+                    className="inline-flex items-center px-4 py-2 bg-white text-gray-700 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="px-6 py-8">
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+              </div>
+            ) : (
+              <>
+                {isEditing && (
+                  <div className="mb-8">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Update Cover Image
+                    </label>
+                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                      <div className="space-y-1 text-center">
+                        <Camera className="mx-auto h-12 w-12 text-gray-400" />
+                        <div className="flex text-sm text-gray-600">
+                          <ImageUpload
+                            onImageUpload={(url) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                coverImage: url,
+                              }))
+                            }
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          PNG, JPG, GIF up to 10MB
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputField
+                    label="Business Address"
+                    name="address"
+                    value={formData.address}
+                  />
+                  <InputField
+                    label="Wallet Address"
+                    name="walletAddress"
+                    value={formData.walletAddress}
+                  />
+                  <InputField
+                    label="Account Number"
+                    name="accountNumber"
+                    value={formData.accountNumber}
+                  />
+                  <InputField
+                    label="Account Name"
+                    name="accountName"
+                    value={formData.accountName}
+                  />
+                </div>
+
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-4">
+                    Opening Hours
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    {formData.openingHours.map((dayInfo, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center space-x-4 p-3 bg-gray-50 rounded-md"
+                      >
+                        <span className="w-24 font-medium">{dayInfo.day}</span>
+                        <input
+                          type="time"
+                          className={`border rounded-md p-2 ${
+                            !isEditing ? "bg-gray-100" : "bg-white"
+                          }`}
+                          value={dayInfo.openingTime}
+                          onChange={(e) =>
+                            handleOpeningHoursChange(
+                              index,
+                              "openingTime",
+                              e.target.value
+                            )
+                          }
+                          disabled={!isEditing}
+                        />
+                        <span>to</span>
+                        <input
+                          type="time"
+                          className={`border rounded-md p-2 ${
+                            !isEditing ? "bg-gray-100" : "bg-white"
+                          }`}
+                          value={dayInfo.closingTime}
+                          onChange={(e) =>
+                            handleOpeningHoursChange(
+                              index,
+                              "closingTime",
+                              e.target.value
+                            )
+                          }
+                          disabled={!isEditing}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Business Description
+                  </label>
+                  <textarea
+                    name="description"
+                    rows="4"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm 
+                      border-gray-300 rounded-md p-3 transition-colors duration-200
+                      ${!isEditing ? "bg-gray-50" : "bg-white"}`}
+                  ></textarea>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
-      <div className="mt-6 space-x-4">
-        <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-          Edit Profile
-        </button>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-          Edit Account Details
-        </button>
-      </div>
+
+      <ToastContainer />
     </div>
   );
 };
 
-const InfoItem = ({ icon: Icon, label, value, className = "" }) => (
-  <div className={`flex items-center ${className}`}>
-    <Icon className="w-5 h-5 text-gray-400 mr-3" />
-    <div>
-      <p className="text-sm font-medium text-gray-500">{label}</p>
-      <p className="text-sm text-gray-900 break-words">{value}</p>
-    </div>
-  </div>
-);
-
-const OrdersSection = () => (
-  <div>
-    <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
-    <div className="space-y-4">
-      {[1, 2, 3].map((order) => (
-        <div key={order} className="border border-gray-200 rounded-md p-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="font-medium">Order #{order}</span>
-            <span className="text-sm text-gray-500">Date: 2023-09-{order}</span>
-          </div>
-          <div className="text-sm text-gray-600">Status: Shipped</div>
-          <div className="mt-2">
-            <a href="#" className="text-indigo-600 hover:text-indigo-800">
-              View Details
-            </a>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const WishlistSection = () => (
-  <div>
-    <h2 className="text-xl font-semibold mb-4">My Wishlist</h2>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {[1, 2, 3, 4].map((item) => (
-        <div
-          key={item}
-          className="border border-gray-200 rounded-md p-4 flex items-center"
-        >
-          <div className="flex-shrink-0 h-16 w-16 bg-gray-300 rounded-md mr-4"></div>
-          <div>
-            <h3 className="text-sm font-medium">Product Name {item}</h3>
-            <p className="text-sm text-gray-500">$99.99</p>
-            <button className="mt-2 text-xs text-indigo-600 hover:text-indigo-800">
-              Add to Cart
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const PaymentSection = () => (
-  <div>
-    <h2 className="text-xl font-semibold mb-4">Payment Methods</h2>
-    <div className="space-y-4">
-      <div className="border border-gray-200 rounded-md p-4 flex items-center">
-        <CreditCard className="w-8 h-8 text-gray-400 mr-3" />
-        <div>
-          <div className="font-medium">Visa ending in 1234</div>
-          <div className="text-sm text-gray-500">Expires 12/2025</div>
-        </div>
-      </div>
-      <button className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-        Add New Payment Method
-      </button>
-    </div>
-  </div>
-);
-
-export default AccountPage;
+export default ProfilePage;

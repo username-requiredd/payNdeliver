@@ -103,7 +103,7 @@ export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
 
-  useReturnUserRedirect()
+  // useReturnUserRedirect()
 
 
   useEffect(() => {

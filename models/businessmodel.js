@@ -1,43 +1,57 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const OpeningHourSchema = new mongoose.Schema({
   day: {
     type: String,
-    enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    enum: [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ],
     required: false,
   },
   openingTime: {
-    type: String, 
+    type: String,
     required: false,
   },
   closingTime: {
-    type: String, 
+    type: String,
     required: false,
   },
 });
 
 const BusinessSchema = new mongoose.Schema(
   {
-    businessName: { 
-      type: String, 
-      required: true, 
-      trim: true 
+    businessName: {
+      type: String,
+      required: true,
+      trim: true,
     },
-    phone: { 
-      type: String, 
-      required: true, 
-      trim: true 
+    description: {
+      type: String,
     },
-    password: { 
-      type: String, 
-      required: true, 
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
     },
-    email: { 
-      type: String, 
-      required: true, 
-      trim: true, 
+    password: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
       lowercase: true,
-      match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
+      match: [
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+        "Please fill a valid email address",
+      ],
     },
     walletAddress: {
       type: String,
@@ -56,29 +70,30 @@ const BusinessSchema = new mongoose.Schema(
     },
     businessType: {
       type: String,
-      enum: ["Restaurant", "Grocery", "Retail","Fashion", "Others"], 
-      required: true
+      enum: ["Restaurant", "Grocery", "Retail", "Fashion", "Others"],
+      required: true,
     },
-    coverImage: { 
-      type: String, 
-      required: false
+    coverImage: {
+      type: String,
+      required: false,
     },
-    address: { 
-      type: String, 
-      required: false 
+    address: {
+      type: String,
+      required: false,
     },
     openingHours: [OpeningHourSchema],
     role: {
       type: String,
-      default: 'business',
+      default: "business",
     },
   },
   {
     timestamps: true,
-    collection: 'business'
+    collection: "business",
   }
 );
 
-const Business = mongoose.models.Business || mongoose.model('Business', BusinessSchema);
+const Business =
+  mongoose.models.Business || mongoose.model("Business", BusinessSchema);
 
 export default Business;

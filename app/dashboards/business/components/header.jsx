@@ -12,11 +12,14 @@ const Header = () => {
           <p className="font-semibold">{session?.user?.businessName} Admin</p>
           {/* <h1 className="text-2xl font-bold text-gray-900">Admin</h1> */}
           <div className="flex items-center space-x-4">
-            <button className="text-gray-500 hover:text-gray-700">
-              <Bell className="h-6 w-6" />
-            </button>
             <Link
-              href={"profile"}
+              href={"/dashboards/business/notifications"}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <Bell className="h-6 w-6" />
+            </Link>
+            <Link
+              href={"/dashboards/business/profile"}
               className="text-gray-500 hover:text-gray-700"
             >
               <User className="h-6 w-6" />

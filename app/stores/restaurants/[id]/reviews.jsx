@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Star, UserCircle2, MessageCircle } from "lucide-react";
+import { Star, UserCircle2, MessageCircle, CalendarDays } from "lucide-react";
 import { useSession } from "next-auth/react";
 
-// Separated StarRating component with enhanced design
 const StarRating = ({
   rating,
   onRatingChange,
@@ -28,9 +27,11 @@ const StarRating = ({
           <Star
             size={size}
             className={`
-              ${star <= (hoveredRating || rating)
-                ? "text-amber-500 fill-amber-500" 
-                : "text-gray-300 group-hover:text-amber-300"}
+              ${
+                star <= (hoveredRating || rating)
+                  ? "text-yellow-400 fill-yellow-400"
+                  : "text-gray-200 group-hover:text-yellow-200"
+              }
               transition-all duration-200 transform 
               ${!disabled && "hover:scale-110"}
             `}
@@ -44,31 +45,26 @@ const StarRating = ({
 const Reviews = ({ businessId }) => {
   const { data: session } = useSession();
   const [reviews, setReviews] = useState([]);
-  const [newReview, setNewReview] = useState({
-    rating: 0,
-    comment: "",
-  });
+  const [newReview, setNewReview] = useState({ rating: 0, comment: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Safe date formatting function
   const formatDate = useCallback((dateString) => {
     try {
       const date = new Date(dateString);
-      return !isNaN(date.getTime()) 
-        ? date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-          }) 
-        : 'Invalid Date';
+      return !isNaN(date.getTime())
+        ? date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
+        : "Invalid Date";
     } catch (error) {
-      return 'Invalid Date';
+      return "Invalid Date";
     }
   }, []);
 
-  // Fetch reviews with improved date handling
   const fetchReviews = useCallback(async () => {
     if (!businessId) return;
 
@@ -81,13 +77,15 @@ const Reviews = ({ businessId }) => {
         throw new Error("Error fetching reviews");
       }
       const data = await res.json();
-      
-      const processedReviews = (data.data || []).map(review => ({
-        ...review,
-        reviewDate: review.reviewDate 
-          ? new Date(review.reviewDate).toISOString() 
-          : new Date().toISOString()
-      })).sort((a, b) => new Date(b.reviewDate) - new Date(a.reviewDate));
+
+      const processedReviews = (data.data || [])
+        .map((review) => ({
+          ...review,
+          reviewDate: review.reviewDate
+            ? new Date(review.reviewDate).toISOString()
+            : new Date().toISOString(),
+        }))
+        .sort((a, b) => new Date(b.reviewDate) - new Date(a.reviewDate));
 
       setReviews(processedReviews);
     } catch (err) {
@@ -156,93 +154,108 @@ const Reviews = ({ businessId }) => {
     }
   };
 
+  // ... [Previous fetch and submit handlers remain the same] ...
+
   return (
-    <div className="mx-auto max-w-3xl p-6 mb-5 bg-white rounded-xl shadow-sm">
-      <div className="flex items-center mb-6 border-b pb-4">
-        <MessageCircle className="mr-3 text-green-600" size={32} />
-        <h2 className="text-3xl font-extrabold text-gray-800">Customer Reviews</h2>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between border-b border-gray-100 pb-6">
+        <h2 className="text-3xl font-bold">Reviews & Ratings</h2>
+        <div className="flex items-center space-x-2">
+          <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+          <span className="text-2xl font-bold">4.5</span>
+          <span className="text-gray-500">({reviews.length})</span>
+        </div>
       </div>
-      
+
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md shadow-sm">
-          <p>{error}</p>
+        <div className="bg-red-50 px-4 py-3 rounded-2xl text-sm text-red-600">
+          {error}
         </div>
       )}
 
       {loading ? (
-        <div className="animate-pulse space-y-4">
+        <div className="space-y-6">
           {[1, 2, 3].map((item) => (
-            <div key={item} className="bg-gray-100 p-4 rounded-lg">
-              <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-              <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+            <div key={item} className="animate-pulse">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/6"></div>
+                </div>
+              </div>
+              <div className="h-16 bg-gray-200 rounded"></div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="space-y-4 mb-8">
+        <div className="space-y-6">
           {reviews.length > 0 ? (
             reviews.map((review, index) => (
-              <div 
-                key={index} 
-                className="bg-gray-50 p-4 rounded-lg border-l-4 border-green-500 hover:shadow-md transition-all duration-300"
-              >
-                <div className="flex items-center mb-2">
-                  <UserCircle2 
-                    className="w-10 h-10 text-green-500 mr-3" 
-                    strokeWidth={1.5} 
-                  />
-                  <div>
-                    <h3 className="text-gray-800 font-semibold">{review.customerName}</h3>
+              <div key={index} className="group">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                      <UserCircle2 className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{review.customerName}</h3>
+                      <div className="flex items-center space-x-3 text-sm text-gray-500">
+                        <StarRating
+                          rating={review.rating}
+                          disabled={true}
+                          size={14}
+                        />
+                        <span>•</span>
+                        <div className="flex items-center">
+                          <CalendarDays className="w-4 h-4 mr-1" />
+                          {formatDate(review.reviewDate)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center mb-2">
-                  <StarRating rating={review.rating} disabled={true} size={16} />
-                  <p className="text-sm ml-3 text-gray-500">
-                    {formatDate(review.reviewDate)}
-                  </p>
-                </div>
-                <p className="text-gray-700 italic">{review.comment}</p>
+                <p className="text-gray-600 pl-16">{review.comment}</p>
               </div>
             ))
           ) : (
-            <div className="text-center text-gray-500 italic bg-gray-50 p-6 rounded-lg">
-              <MessageCircle className="mx-auto mb-3 text-gray-400" size={32} />
-              <p>No reviews yet. Be the first to share your experience!</p>
+            <div className="text-center py-12">
+              <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-500">
+                No reviews yet. Be the first to share your experience!
+              </p>
             </div>
           )}
         </div>
       )}
 
       {session ? (
-        <form 
-          onSubmit={handleSubmit} 
-          className="bg-gray-100 p-6 rounded-lg shadow-inner"
-        >
-          <div className="mb-4">
-            <label className="block text-gray-700 font-bold mb-2">
-              Your Rating
-            </label>
+        <form onSubmit={handleSubmit} className="border-t border-gray-100 pt-8">
+          <h3 className="text-xl font-bold mb-6">Write a Review</h3>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2">Rating</label>
             <StarRating
               rating={newReview.rating}
               onRatingChange={(rating) =>
                 setNewReview((prev) => ({ ...prev, rating }))
               }
-              size={28}
+              size={24}
             />
           </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 font-bold mb-2">
-              Your Review
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2">
+              Your Experience
             </label>
             <textarea
-              className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-green-500 transition duration-300"
+              className="w-full px-4 py-3 rounded-2xl bg-gray-100 border-transparent focus:border-black focus:bg-white focus:ring-0 transition-colors"
               rows="4"
               value={newReview.comment}
               onChange={(e) =>
                 setNewReview((prev) => ({ ...prev, comment: e.target.value }))
               }
-              placeholder="Share your experience... (minimum 10 characters)"
+              placeholder="Share your thoughts about your experience..."
               required
               minLength={10}
             ></textarea>
@@ -250,27 +263,22 @@ const Reviews = ({ businessId }) => {
 
           <div className="flex justify-end">
             <button
-              className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg 
-                hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 
-                transition duration-300 ease-in-out transform hover:scale-105
-                disabled:opacity-50 disabled:cursor-not-allowed"
               type="submit"
               disabled={isSubmitting}
+              className="px-6 py-3 bg-black text-white rounded-full font-medium
+                hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 
+                transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Submitting..." : "Submit Review"}
+              {isSubmitting ? "Submitting..." : "Post Review"}
             </button>
           </div>
         </form>
       ) : (
-        <div className="bg-gray-100 p-6 rounded-lg text-center">
-          <p className="text-gray-700 mb-4">
-            Please log in to submit a review
-          </p>
-          <button 
-            className="bg-green-600 text-white px-6 py-2 rounded-lg 
-              hover:bg-green-700 transition duration-300"
-          >
-            Log In
+        <div className="text-center border rounded-2xl p-8 bg-gray-50">
+          <UserCircle2 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600 mb-4">Sign in to share your experience</p>
+          <button className="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors">
+            Sign In
           </button>
         </div>
       )}

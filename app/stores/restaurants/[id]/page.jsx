@@ -4,7 +4,15 @@ import { useSession } from "next-auth/react";
 import { useCart } from "@/contex/cartcontex";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Star, Phone, LocateIcon, Mail } from "lucide-react";
+import {
+  Star,
+  Phone,
+  LocateIcon,
+  Mail,
+  Clock,
+  Tag,
+  MapPin,
+} from "lucide-react";
 
 import Header from "@/components/header";
 import CustomError from "@/app/error";
@@ -16,7 +24,6 @@ import Reviews from "./reviews";
 import BackToTopButton from "./backtotop";
 import Footer from "@/components/footer";
 import GetErrorContent from "@/components/geterror";
-import { Description } from "@mui/icons-material";
 
 const ShopDetails = ({ params }) => {
   const { id } = params;
@@ -120,7 +127,7 @@ const ShopDetails = ({ params }) => {
         toast.error("Unable to add to cart. Store information is missing.");
         return;
       }
-  
+
       const cartProduct = {
         ...product,
         id: product.id,
@@ -132,9 +139,9 @@ const ShopDetails = ({ params }) => {
         price: product.price,
         image: product.image,
       };
-  
+
       console.log("Attempting to add to cart:", cartProduct);
-  
+
       try {
         addToCart(cartProduct); // Directly pass the cartProduct
         toast.success("Added item to cart");
@@ -165,7 +172,7 @@ const ShopDetails = ({ params }) => {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-white">
       <Header />
       <ToastContainer position="top-right" autoClose={3000} />
 
@@ -178,9 +185,9 @@ const ShopDetails = ({ params }) => {
         />
       )}
 
-      <main className="container mx-auto max-w-screen-xl border p-4">
-        <div className="lg:flex gap-8">
-          <section className="w-full lg:w-3/4">
+      <main className="container mx-auto max-w-screen-xl px-4 py-6">
+        <div className="lg:flex gap-10">
+          <section className="w-full lg:w-3/4 space-y-10">
             <HeroSection loading={loading} profile={profile} />
             <RestaurantInfo loading={loading} profile={profile} />
             <MenuSection
@@ -195,9 +202,9 @@ const ShopDetails = ({ params }) => {
             <OpeningHoursAndContact loading={loading} profile={profile} />
           </section>
 
-          <aside className="hidden lg:block border-l lg:w-1/4">
-            <div className="sticky top-4 bg-white rounded-lg p-6">
-              <h2 className="text-xl font-bold mb-4">Your Cart</h2>
+          <aside className="hidden lg:block lg:w-1/4">
+            <div className="sticky top-24 bg-white border border-gray-100 rounded-3xl p-6">
+              <h2 className="text-2xl font-bold mb-6">Your Cart</h2>
               <CartContent />
             </div>
           </aside>
@@ -205,51 +212,69 @@ const ShopDetails = ({ params }) => {
       </main>
       <BackToTopButton />
       <Footer />
-    </>
+    </div>
   );
 };
 
 const HeroSection = ({ loading, profile }) => (
-  <div className="relative h-80 mb-6 rounded-xl overflow-hidden">
+  <div className="relative h-[500px] rounded-3xl overflow-hidden">
     {loading ? (
-      <div className="h-full w-full bg-gray-300 animate-pulse flex items-center justify-center"></div>
+      <div className="h-full w-full bg-gray-100 animate-pulse"></div>
     ) : (
-      <img
-        src={profile?.coverImage || "/images/placeholder.jpg"}
-        className="w-full h-full object-cover"
-        alt={profile?.businessName}
-      />
+      <>
+        <div className="absolute inset-0  "></div>
+        <img
+          src={profile?.coverImage || "/images/placeholder.jpg"}
+          className="w-full h-full object-cover"
+          alt={profile?.businessName}
+        />
+        <div className="absolute bottom-0 left-0 right-0 p-12 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
+          <div className="flex items-center space-x-4 mb-4">
+            <span className="px-4 py-1 bg-white/20 backdrop-blur-md rounded-full text-white text-sm">
+              {profile?.businessType}
+            </span>
+            <div className="flex items-center bg-white/20 backdrop-blur-md px-4 py-1 rounded-full">
+              <Star className="text-yellow-400 mr-2" size={16} />
+              <span className="text-white text-sm">4.5 (5 reviews)</span>
+            </div>
+          </div>
+          <h1 className="text-5xl font-bold text-white mb-4">
+            {profile?.businessName}
+          </h1>
+          <div className="flex items-center text-white/80">
+            <MapPin className="mr-2" size={18} />
+            <span className="text-sm">
+              {profile?.address || "Location N/A"}
+            </span>
+          </div>
+        </div>
+      </>
     )}
   </div>
 );
 
 const RestaurantInfo = ({ loading, profile }) => (
-  <div className="mb-8">
-    <div className="flex justify-between items-center mb-4">
-      {loading ? (
-        <div className="h-8 bg-gray-300 rounded w-1/3 animate-pulse"></div>
-      ) : (
-        <h1 className="text-3xl font-bold">{profile?.businessName}</h1>
-      )}
-      {loading ? (
-        <div className="h-6 bg-gray-300 rounded w-16 animate-pulse"></div>
-      ) : (
-        <div className="flex items-center bg-green-100 px-3 py-1 rounded-full">
-          <Star className="text-yellow-500 mr-1" size={16} />
-          <span className="font-medium">4.5</span>
-          <span className="text-sm text-gray-600 ml-1">(5)</span>
+  <div className="flex items-center justify-between border-b border-gray-100 pb-6">
+    {loading ? (
+      <div className="h-8 bg-gray-100 rounded w-1/3 animate-pulse"></div>
+    ) : (
+      <>
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <span className="text-sm font-medium">Open Now</span>
+          </div>
+
+          <div className="text-sm text-gray-600">
+            <Clock className="inline mr-2" size={16} />
+            9:00 AM - 12:00 AM
+          </div>
         </div>
-      )}
-    </div>
-    <div className="flex justify-between text-sm text-gray-600 mb-6">
-      <div>
-        {/* <p className="font-semibold text-gray-800">Opening time</p>
-        <p>9:00am-12:00am</p> */}
-        <p className="font-semibold text-gray-800">Category</p>
-        <p className="text-green-600">{profile?.businessType}</p>
-      </div>
-      <div></div>
-    </div>
+        <button className="px-6 py-2 bg-black text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
+          Follow
+        </button>
+      </>
+    )}
   </div>
 );
 
@@ -261,18 +286,19 @@ const MenuSection = ({
   onCategoryChange,
   onProductDetails,
 }) => (
-  <div className="mb-12">
-    <h2 className="text-2xl font-bold mb-4">
+  <div>
+    <h2 className="text-3xl font-bold mb-8">
       {profile?.businessType === "restaurant" ? "Our Menu" : "Products"}
     </h2>
-    <div className="flex space-x-2 overflow-x-auto pb-4 mb-6">
+
+    <div className="flex space-x-2 overflow-x-auto pb-6 mb-8 scrollbar-hide">
       {loading ? (
         Array(6)
           .fill()
           .map((_, index) => (
             <div
               key={index}
-              className="h-10 w-20 bg-gray-300 rounded-full animate-pulse flex-shrink-0"
+              className="h-12 w-28 bg-gray-100 rounded-full animate-pulse flex-shrink-0"
             ></div>
           ))
       ) : (
@@ -293,9 +319,10 @@ const MenuSection = ({
         </>
       )}
     </div>
-    <div className="grid md:grid-cols-2 gap-6">
+
+    <div className="grid md:grid-cols-2 gap-8">
       {loading ? (
-        Array(1)
+        Array(4)
           .fill()
           .map((_, index) => <Productscardskeleton key={index} />)
       ) : products && products?.length > 0 ? (
@@ -307,8 +334,8 @@ const MenuSection = ({
           />
         ))
       ) : (
-        <div className="text-center text-gray-500 col-span-2">
-          No products available.
+        <div className="col-span-2 py-20 text-center">
+          <div className="text-gray-400 text-lg">No products available yet</div>
         </div>
       )}
     </div>
@@ -318,10 +345,10 @@ const MenuSection = ({
 const CategoryButton = ({ category, currentCategory, onClick }) => (
   <button
     onClick={() => onClick(category)}
-    className={`px-4 py-2 rounded-full flex-shrink-0 transition duration-300 ${
+    className={`px-6 py-3 rounded-full flex-shrink-0 transition-all duration-300 text-sm font-medium ${
       category === currentCategory
-        ? "bg-green-600 text-white"
-        : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+        ? "bg-black text-white scale-105"
+        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
     }`}
   >
     {category}
@@ -329,52 +356,66 @@ const CategoryButton = ({ category, currentCategory, onClick }) => (
 );
 
 const OpeningHoursAndContact = ({ loading, profile }) => (
-  <div className="grid md:grid-cols-2 gap-8">
-    <div className="mt-5">
-      <h2 className="text-2xl font-bold mb-4">Opening Hours</h2>
-      <div className="bg-gray-100 p-4 rounded-lg">
+  <div className="grid md:grid-cols-2 gap-10">
+    <div>
+      <h2 className="text-2xl font-bold mb-6">Opening Hours</h2>
+      <div className="space-y-4">
         {loading ? (
           Array(7)
             .fill()
             .map((_, index) => (
               <div
                 key={index}
-                className="h-4 bg-gray-300 rounded mb-2 animate-pulse"
+                className="h-4 bg-gray-100 rounded animate-pulse"
               ></div>
             ))
         ) : (
-          <ul className="text-sm text-gray-600">
-            <li className="flex justify-between py-2">
-              <span>Monday</span>
-              <span>9:00am - 12:00am</span>
-            </li>
-          </ul>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center py-3 border-b border-gray-100">
+              <span className="font-medium">Monday</span>
+              <span className="text-gray-600">9:00 AM - 12:00 AM</span>
+            </div>
+            {/* Add other days similarly */}
+          </div>
         )}
       </div>
     </div>
 
     <div>
-      <h2 className="text-2xl font-bold mb-4">Contact Information</h2>
-      <div className="bg-gray-100 p-4 rounded-lg">
-        {loading ? (
-          <div className="h-6 bg-gray-300 rounded mb-4 animate-pulse"></div>
-        ) : (
-          <>
-            <div className="flex items-center mb-2">
-              <Phone className="text-green-600 mr-2" />
-              <span>{profile?.phone || "N/A"}</span>
+      <h2 className="text-2xl font-bold mb-6">Contact</h2>
+      {loading ? (
+        <div className="space-y-4">
+          {Array(3)
+            .fill()
+            .map((_, index) => (
+              <div
+                key={index}
+                className="h-6 bg-gray-100 rounded animate-pulse"
+              ></div>
+            ))}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="flex items-center group cursor-pointer">
+            <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-2xl group-hover:bg-black group-hover:text-white transition-colors">
+              <Phone size={20} />
             </div>
-            <div className="flex items-center mb-2">
-              <Mail className="text-green-600 mr-2" />
-              <span>{profile?.email || "N/A"}</span>
+            <span className="ml-4">{profile?.phone || "N/A"}</span>
+          </div>
+          <div className="flex items-center group cursor-pointer">
+            <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-2xl group-hover:bg-black group-hover:text-white transition-colors">
+              <Mail size={20} />
             </div>
-            <div className="flex items-center">
-              <LocateIcon className="text-green-600 mr-2" />
-              <span>{profile?.address || "N/A"}</span>
+            <span className="ml-4">{profile?.email || "N/A"}</span>
+          </div>
+          <div className="flex items-center group cursor-pointer">
+            <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-2xl group-hover:bg-black group-hover:text-white transition-colors">
+              <LocateIcon size={20} />
             </div>
-          </>
-        )}
-      </div>
+            <span className="ml-4">{profile?.address || "N/A"}</span>
+          </div>
+        </div>
+      )}
     </div>
   </div>
 );
