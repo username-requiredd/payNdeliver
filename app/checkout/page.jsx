@@ -83,7 +83,7 @@ const Checkout = () => {
   const [orderDetails, setOrderDetails] = useState(null);
 
   console.log("cart", cart);
-
+  // retrieve shipping details form localstorage
   useEffect(() => {
     localStorage.setItem("shippingDetails", JSON.stringify(shippingDetails));
   }, [shippingDetails]);
@@ -97,14 +97,14 @@ const Checkout = () => {
       }));
     }
   }, [session]);
-
+  // calculate subtotal
   const calculateSubtotal = () => {
     return cart.reduce(
       (total, { price, quantity }) => total + price * quantity,
       0
     );
   };
-
+  // calculate shipping
   const calculateShipping = () => {
     const rate = SHIPPING_RATES[shippingMethod];
     const totalWeight = cart.reduce(
@@ -126,6 +126,7 @@ const Checkout = () => {
     return subtotal + shipping + tax;
   };
 
+  // function to get real time sol price
   const getSolPrice = async () => {
     try {
       // Fetch current Solana price in USD
@@ -134,13 +135,13 @@ const Checkout = () => {
       );
       const solPriceUSD = solPriceResponse.data.solana.usd;
 
-      // Fetch current USD to Naira exchange rate
+      // Fetch current USD to Naira
       const exchangeRateResponse = await axios.get(
         "https://api.exchangerate-api.com/v4/latest/USD"
       );
       const nairaRate = exchangeRateResponse.data.rates.NGN;
 
-      // Calculate Solana price in Naira
+      // Calculate Sol price in Naira
       const solPriceNaira = solPriceUSD * nairaRate;
 
       return solPriceNaira;
@@ -186,14 +187,14 @@ const Checkout = () => {
       throw new Error(`Solana transaction failed: ${error.message}`);
     }
   };
-
+  // function to update the order status
   const updateOrderStatus = async (orderId, updateData) => {
     try {
       const response = await axios.put(`/api/orders/${orderId}`, updateData, {
         headers: {
           "Content-Type": "application/json",
         },
-        timeout: 10000, // 10-second timeout
+        timeout: 10000,
       });
 
       if (response.status !== 200) {
@@ -224,6 +225,7 @@ const Checkout = () => {
     }
   };
 
+  // form validations
   const validateForms = () => {
     const requiredShippingFields = [
       "name",
@@ -256,7 +258,7 @@ const Checkout = () => {
 
     return true;
   };
-
+  // function to create order after sucessful payments
   const createOrder = async (paymentInfo) => {
     try {
       const orderData = {
@@ -300,7 +302,7 @@ const Checkout = () => {
       throw new Error("Failed to create order");
     }
   };
-
+  //  function to handle card payment
   const handleCardPayment = async () => {
     try {
       setLoading(true);
@@ -317,7 +319,6 @@ const Checkout = () => {
       // Make the put request to update the order
       await axios.put(`/api/orders/${orderId}`, {
         status: "paid",
-        // Add any other update information you need
         paymentDetails: {
           type: "card",
           last4: cardDetails.number.slice(-4),
@@ -432,7 +433,6 @@ const Checkout = () => {
       setIsOrderSuccessModalOpen(true);
     } catch (error) {
       console.error("Error in post-payment processing:", error);
-      // Optionally show an error toast or message
       setPaymentStatus("Payment successful, but navigation failed");
     }
   };
@@ -455,8 +455,6 @@ const Checkout = () => {
           onContinueShopping={onContinueShopping}
         />
       )}
-
-      {/* Checkout UI Implementation */}
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-center mb-8">Checkout</h1>
