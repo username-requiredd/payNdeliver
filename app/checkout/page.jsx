@@ -263,12 +263,13 @@ const Checkout = () => {
     try {
       const orderData = {
         customerId: session?.user?.id,
-        businessId: cart[0]?.storeId,
         items: cart.map((item) => ({
           productId: item.id,
           productImage: item.image,
           productName: item.name,
           storeName: item.storeName,
+          businessId: item.storeId,
+          productDescription: item.description,
           quantity: item.quantity,
           unitPriceUSD: item.price,
           subtotalUSD: item.price * item.quantity,
@@ -282,7 +283,6 @@ const Checkout = () => {
           state: shippingDetails.state,
           zip: shippingDetails.zip,
           phone: shippingDetails.phone,
-          // trackingId:orderId
         },
         status: "pending",
         payment: {
@@ -290,7 +290,6 @@ const Checkout = () => {
           amountUSD: calculateTotal(),
         },
       };
-
       const response = await axios.post("/api/orders", orderData);
 
       // Extract the order ID
@@ -383,7 +382,7 @@ const Checkout = () => {
     } catch (error) {
       const message = {
         title: "Payment Failed",
-        message: `Unfortunately, your payment for order #${orderId} could not be processed. Please try again or contact support for assistance.`,
+        message: `Unfortunately, your payment for order  could not be processed. Please try again or contact support for assistance.`,
         userId: session?.user?.id,
         type: "in-app",
       };
