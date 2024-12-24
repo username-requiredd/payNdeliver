@@ -293,7 +293,6 @@ const Checkout = () => {
           amountUSD: calculateTotal(),
         },
       };
-
       const response = await axios.post("/api/orders", orderData);
 
       // Extract the order ID
@@ -405,7 +404,7 @@ const Checkout = () => {
     } catch (error) {
       const message = {
         title: "Payment Failed",
-        message: `Unfortunately, your payment for order #${orderId} could not be processed. Please try again or contact support for assistance.`,
+        message: `Unfortunately, your payment for order  could not be processed. Please try again or contact support for assistance.`,
         userId: session?.user?.id,
         type: "in-app",
       };

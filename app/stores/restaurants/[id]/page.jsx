@@ -288,7 +288,7 @@ const MenuSection = ({
 }) => (
   <div>
     <h2 className="text-3xl font-bold mb-8">
-      {profile?.businessType === "restaurant" ? "Our Menu" : "Products"}
+      {profile?.businessType === "Restaurant" ? "Our Menu" : "Products"}
     </h2>
 
     <div className="flex space-x-2 overflow-x-auto pb-6 mb-8 scrollbar-hide">

@@ -154,8 +154,6 @@ const Reviews = ({ businessId }) => {
     }
   };
 
-  // ... [Previous fetch and submit handlers remain the same] ...
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between border-b border-gray-100 pb-6">
