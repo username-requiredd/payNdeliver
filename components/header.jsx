@@ -10,6 +10,7 @@ import {
   Settings,
   Bell,
   ChevronDown,
+  LogIn,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useCart } from "@/contex/cartcontex";
@@ -143,23 +144,35 @@ const Header = () => {
                         icon={<User className="h-4 w-4" />}
                         label="Profile"
                       />
-                      <UserMenuItem
+                      {/* <UserMenuItem
                         href="/settings"
                         icon={<Settings className="h-4 w-4" />}
                         label="Settings"
-                      />
+                      /> */}
                     </div>
-
-                    <div className="py-1">
-                      <button
-                        onClick={() => signOut()}
-                        className="flex w-full items-center px-4 py-2 text-sm 
-                  text-red-600 hover:bg-red-50 space-x-2"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        <span>Sign out</span>
-                      </button>
-                    </div>
+                    {session?.user ? (
+                      <div className="py-1">
+                        <button
+                          onClick={() => signOut()}
+                          className="flex w-full items-center px-4 py-2 text-sm 
+                    text-red-600 hover:bg-red-50 space-x-2"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Sign out</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="py-1">
+                        <Link
+                          href={"/signin"}
+                          className="flex w-full items-center px-4 py-2 text-sm 
+                    text-green-600 hover:bg-green-50 space-x-2"
+                        >
+                          <LogIn className="h-4 w-4" />
+                          <span>Signin</span>
+                        </Link>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

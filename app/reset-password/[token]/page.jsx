@@ -9,7 +9,7 @@ const ResetPasswordPage = ({ params }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const router = useRouter();
   const token = params.token;
 
@@ -33,10 +33,10 @@ const ResetPasswordPage = ({ params }) => {
       });
 
       const data = await response.json();
-
+      console.log("password", password);
       if (response.ok) {
         setSuccess("Password reset successful!");
-        setTimeout(() => router.push("/login"), 2000);
+        setTimeout(() => router.push("/signin"), 2000);
       } else {
         setError(data?.message || "Failed to reset password.");
       }
@@ -52,7 +52,7 @@ const ResetPasswordPage = ({ params }) => {
       <h2 className="text-2xl font-bold mb-6">Reset Your Password</h2>
       {error && <p className="text-red-500 mb-4">{error}</p>}
       {success && <p className="text-green-500 mb-4">{success}</p>}
-      
+
       <form onSubmit={handleReset} className="space-y-4">
         <div className="space-y-2">
           <label htmlFor="password" className="block font-medium">
@@ -67,7 +67,7 @@ const ResetPasswordPage = ({ params }) => {
             className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        
+
         <div className="space-y-2">
           <label htmlFor="confirmPassword" className="block font-medium">
             Confirm Password

@@ -1,72 +1,101 @@
-"use client"
-import { 
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
-  Paper, Card, CardContent, Typography, List, ListItem, ListItemText, 
-  Grid, Box
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
+"use client";
+
+import { formatCurrency } from "@/hooks/formatcurrency";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Card,
+  CardContent,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  Grid,
+  Box,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontWeight: 'bold',
+  fontWeight: "bold",
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.common.white,
 }));
 
 const StyledListItem = styled(ListItem)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,
-  '&:last-child': {
-    borderBottom: 'none',
+  "&:last-child": {
+    borderBottom: "none",
   },
 }));
 
-const DashboardComponent = () => {
-  // Sample data - replace with your actual data
-  const latestOrders = [
-    { id: 1, customer: 'John Doe', product: 'Laptop', total: '$999' },
-    { id: 2, customer: 'Jane Smith', product: 'Smartphone', total: '$699' },
-    { id: 3, customer: 'Bob Johnson', product: 'Headphones', total: '$199' },
-  ];
+const DashboardComponent = ({ data }) => {
+  // Debug the data to verify its structure
+  console.log("Data received in DashboardComponent:", data);
 
-  const transactions = [
-    { id: 1, description: 'Payment received', amount: '+$999' },
-    { id: 2, description: 'Refund processed', amount: '-$50' },
-    { id: 3, description: 'Payment received', amount: '+$699' },
-  ];
+  // Safely map the latest orders
+  const latestOrders =
+    Array.isArray(data) && data.length > 0
+      ? data[0]?.items?.map(({ productName, quantity, subtotalUSD }) => ({
+          productName,
+          quantity,
+          subtotalUSD,
+        }))
+      : [];
 
-  const bestSellingProducts = [
-    { name: 'Laptop', sales: 120 },
-    { name: 'Smartphone', sales: 95 },
-    { name: 'Headphones', sales: 80 },
-  ];
+  // Safely map recent transactions
+  const transactions =
+    Array.isArray(data) && data.length > 0
+      ? data.map(({ _id, payment, totalAmountUSD }) => ({
+          id: _id,
+          description: `Payment via ${payment.type} (${payment.status})`,
+          amount: formatCurrency(totalAmountUSD, "en-NG", "NGN"),
+        }))
+      : [];
 
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={3}>
+        {/* Orders Table */}
         <Grid item xs={12} md={6}>
           <TableContainer component={Paper} elevation={3}>
             <Table>
               <TableHead>
                 <TableRow>
                   <StyledTableCell>Order ID</StyledTableCell>
-                  <StyledTableCell>Customer</StyledTableCell>
                   <StyledTableCell>Product</StyledTableCell>
+                  <StyledTableCell>Quantity</StyledTableCell>
                   <StyledTableCell align="right">Total</StyledTableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {latestOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.id}</TableCell>
-                    <TableCell>{order.customer}</TableCell>
-                    <TableCell>{order.product}</TableCell>
-                    <TableCell align="right">{order.total}</TableCell>
+                {latestOrders.map((order, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{order.productName}</TableCell>
+                    <TableCell>{order.quantity}</TableCell>
+                    <TableCell align="right">
+                      {formatCurrency(order.subtotalUSD, "en-NG", "NGN")}
+                    </TableCell>
                   </TableRow>
                 ))}
+                {latestOrders.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">
+                      No orders available
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </TableContainer>
         </Grid>
-        
+
+        {/* Transactions List */}
         <Grid item xs={12} md={6}>
           <Card elevation={3}>
             <CardContent>
@@ -76,36 +105,21 @@ const DashboardComponent = () => {
               <List>
                 {transactions.map((transaction) => (
                   <StyledListItem key={transaction.id}>
-                    <ListItemText 
+                    <ListItemText
                       primary={transaction.description}
                       secondary={transaction.amount}
                     />
                   </StyledListItem>
                 ))}
+                {transactions.length === 0 && (
+                  <Typography align="center">
+                    No transactions available
+                  </Typography>
+                )}
               </List>
             </CardContent>
           </Card>
         </Grid>
-
-        {/* <Grid item xs={12} md={6}>
-          <Card elevation={3}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Best Selling Products
-              </Typography>
-              <List>
-                {bestSellingProducts.map((product, index) => (
-                  <StyledListItem key={index}>
-                    <ListItemText 
-                      primary={product.name}
-                      secondary={`${product.sales} units sold`}
-                    />
-                  </StyledListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid> */}
       </Grid>
     </Box>
   );

@@ -3,13 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import OrderDetailsModal from "./orderdetails";
-import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Truck,
-} from "lucide-react";
+import { User, Mail, Phone, MapPin, Truck } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 
@@ -18,10 +12,13 @@ const AccountPage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Admin redirect
   useEffect(() => {
-    if (session?.user?.role === "admin") {
+    if (!session) return; // Wait for session data
+
+    if (session.user.role === "admin") {
       router.push("/dashboards/admin");
+    } else if (session.user.role === "business") {
+      router.push("/dashboards/business");
     }
   }, [session, router]);
 
@@ -112,7 +109,6 @@ const OrdersSection = () => {
   const [error, setError] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Fetch orders
   const fetchOrders = useCallback(async () => {
     if (!session?.user?.id) {
       setIsLoading(false);
@@ -131,8 +127,8 @@ const OrdersSection = () => {
       setOrders(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
       setError(
-        err instanceof Error 
-          ? err.message 
+        err instanceof Error
+          ? err.message
           : "An unexpected error occurred while fetching orders"
       );
     } finally {
@@ -140,18 +136,15 @@ const OrdersSection = () => {
     }
   }, [session?.user?.id]);
 
-  // Fetch orders on component mount or when user ID changes
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Handle viewing order details
   const handleViewOrder = (id) => {
     setOrderId(id);
     setIsOpen(true);
   };
 
-  // Render loading state
   if (isLoading) {
     return (
       <div>
@@ -161,7 +154,6 @@ const OrdersSection = () => {
     );
   }
 
-  // Render error state
   if (error) {
     return (
       <div>

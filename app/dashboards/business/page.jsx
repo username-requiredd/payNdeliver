@@ -1,48 +1,98 @@
-"use client"
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Grid, 
+"use client";
+import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
   useTheme,
-  Box
-} from '@mui/material';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from 'recharts';
-import { Banknote, ShoppingBag, Users } from 'lucide-react';
-// import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-// import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-// import PeopleIcon from '@mui/icons-material/People';
-import DashboardComponent from './dashboard';
-
-// Sample data
-const data = [
-  { name: 'Jan', orders: 4000, sales: 2400, customers: 2400 },
-  { name: 'Feb', orders: 3000, sales: 1398, customers: 2210 },
-  { name: 'Mar', orders: 2000, sales: 9800, customers: 2290 },
-  { name: 'Apr', orders: 2780, sales: 3908, customers: 2000 },
-  { name: 'May', orders: 1890, sales: 4800, customers: 2181 },
-  { name: 'Jun', orders: 2390, sales: 3800, customers: 2500 },
-  { name: 'Jul', orders: 3490, sales: 4300, customers: 2100 },
-];
+  Box,
+} from "@mui/material";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { Banknote, ShoppingBag, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import DashboardComponent from "./dashboard";
+import { useSession } from "next-auth/react";
+import { formatCurrency } from "@/hooks/formatcurrency";
 
 const DashboardChart = () => {
   const theme = useTheme();
+  const { data: session } = useSession();
 
-  const totalOrders = data.reduce((sum, item) => sum + item.orders, 0);
-  const totalSales = data.reduce((sum, item) => sum + item.sales, 0);
-  const totalCustomers = data.reduce((sum, item) => sum + item.customers, 0);
+  // Fetch orders data
+  const {
+    data: ordersData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["business"],
+    queryFn: () =>
+      fetch(`/api/orders/${session?.user?.id}`).then((res) => res.json()),
+  });
 
+  // Handling potential error or loading state
+  if (isLoading) return <Typography>Loading...</Typography>;
+  if (error) return <Typography>Error fetching data.</Typography>;
+
+  // Calculate totals
+  const totalOrders = ordersData.data?.length || 0;
+  const totalSales =
+    ordersData.data?.reduce(
+      (sum, order) => sum + (order.totalAmountUSD || 0),
+      0
+    ) || 0;
+
+  // Calculate unique customers
+  const uniqueCustomerIds = new Set(
+    ordersData.data?.map((order) => order.customerId)
+  );
+  const totalCustomers = uniqueCustomerIds.size;
+
+  // Prepare chart data
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const chartData = months.map((month, index) => {
+    const monthlyData = ordersData.data?.filter((order) => {
+      const orderDate = new Date(order.createdAt);
+      return orderDate.getMonth() === index;
+    });
+
+    return {
+      name: month,
+      orders: monthlyData?.length || 0,
+      sales:
+        monthlyData?.reduce(
+          (sum, order) => sum + (order.totalAmountUSD || 0),
+          0
+        ) || 0,
+      customers: new Set(monthlyData?.map((order) => order.customerId)).size,
+    };
+  });
+
+  // StatCard component for displaying statistics
   const StatCard = ({ title, value, color, icon: Icon }) => (
-    <Card sx={{ height: '100%', backgroundColor: color, color: 'white' }}>
+    <Card sx={{ height: "100%", backgroundColor: color, color: "white" }}>
       <CardContent>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6" component="div">
@@ -58,31 +108,38 @@ const DashboardChart = () => {
   );
 
   return (
-    <Grid container className='mt-5 p-2' spacing={3}>
+    <Grid container className="mt-5 p-2" spacing={3}>
+      {/* Display Total Orders */}
       <Grid item xs={12} md={4}>
-        <StatCard 
-          title="Total Orders" 
-          value={totalOrders} 
+        <StatCard
+          title="Total Orders"
+          value={totalOrders}
           color={theme.palette.primary.main}
           icon={ShoppingBag}
         />
       </Grid>
+
+      {/* Display Total Sales */}
       <Grid item xs={12} md={4}>
-        <StatCard 
-          title="Total Sales" 
-          value={totalSales} 
+        <StatCard
+          title="Total Sales"
+          value={formatCurrency(totalSales, "en-NG", "NGN")}
           color={theme.palette.secondary.main}
           icon={Banknote}
         />
       </Grid>
+
+      {/* Display Total Customers */}
       <Grid item xs={12} md={4}>
-        <StatCard 
-          title="Total Customers" 
-          value={totalCustomers} 
+        <StatCard
+          title="Total Customers"
+          value={totalCustomers}
           color={theme.palette.success.main}
           icon={Users}
         />
       </Grid>
+
+      {/* Display Monthly Trends Chart */}
       <Grid item xs={12}>
         <Card>
           <CardContent>
@@ -90,34 +147,35 @@ const DashboardChart = () => {
               Monthly Trends
             </Typography>
             <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={data}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="orders" 
-                  stroke={theme.palette.primary.main} 
-                  activeDot={{ r: 8 }} 
+                <Line
+                  type="monotone"
+                  dataKey="orders"
+                  stroke={theme.palette.primary.main}
+                  activeDot={{ r: 8 }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="sales" 
-                  stroke={theme.palette.secondary.main} 
+                <Line
+                  type="monotone"
+                  dataKey="sales"
+                  stroke={theme.palette.secondary.main}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="customers" 
-                  stroke={theme.palette.success.main} 
+                <Line
+                  type="monotone"
+                  dataKey="customers"
+                  stroke={theme.palette.success.main}
                 />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </Grid>
-      <DashboardComponent/>
+
+      <DashboardComponent data={ordersData?.data} />
     </Grid>
   );
 };

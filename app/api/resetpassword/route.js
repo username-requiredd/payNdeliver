@@ -3,13 +3,14 @@ import UsersModel from "../../../models/usersmodel";
 import Business from "../../../models/businessmodel";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-
+import bcrypt from "bcryptjs";
 export const POST = async (req) => {
   try {
     await dbConnect();
     const { token, password } = await req.json();
 
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const passwordHash = await bcrypt.hash(password, 10);
 
     // Check for user or business with the reset token
     let user =
@@ -30,7 +31,7 @@ export const POST = async (req) => {
     }
 
     // Update password
-    user.password = password; // Ensure you hash the password before saving
+    user.password = passwordHash; // Ensure you hash the password before saving
     user.resetToken = undefined;
     user.resetTokenExpiry = undefined;
     await user.save();
