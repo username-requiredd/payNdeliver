@@ -19,6 +19,8 @@ import BigNumber from "bignumber.js";
 import axios from "axios";
 import { CreditCard, Coins, Truck, Calculator, Wallet } from "lucide-react";
 import { formatCurrency } from "@/hooks/formatcurrency";
+import initializePaystackTransaction from "@/actions/initiaze-paystack-tx";
+import PaystackPop from "@paystack/inline-js";
 
 const TAX_RATES = {
   CA: 0.0725,
@@ -45,6 +47,7 @@ const Checkout = () => {
   const [merchantWallet] = useState(
     "GAQakNCAeoKLi5nacP95fUWkTt2BLXRuQSBY5hequ8NU"
   );
+  const [accessCode, setAccessCode] = useState("");
 
   const [shippingDetails, setShippingDetails] = useState(() => {
     if (typeof window !== "undefined") {
@@ -82,7 +85,7 @@ const Checkout = () => {
   const [isOrderSuccessModalOpen, setIsOrderSuccessModalOpen] = useState(false);
   const [orderDetails, setOrderDetails] = useState(null);
 
-  console.log("cart", cart);
+  // console.log("cart", cart);
   // retrieve shipping details form localstorage
   useEffect(() => {
     localStorage.setItem("shippingDetails", JSON.stringify(shippingDetails));
@@ -263,12 +266,13 @@ const Checkout = () => {
     try {
       const orderData = {
         customerId: session?.user?.id,
-        businessId: cart[0]?.storeId,
         items: cart.map((item) => ({
           productId: item.id,
           productImage: item.image,
           productName: item.name,
           storeName: item.storeName,
+          businessId: item.storeId,
+          productDescription: item.description,
           quantity: item.quantity,
           unitPriceUSD: item.price,
           subtotalUSD: item.price * item.quantity,
@@ -282,7 +286,6 @@ const Checkout = () => {
           state: shippingDetails.state,
           zip: shippingDetails.zip,
           phone: shippingDetails.phone,
-          // trackingId:orderId
         },
         status: "pending",
         payment: {
@@ -302,30 +305,49 @@ const Checkout = () => {
       throw new Error("Failed to create order");
     }
   };
+
   //  function to handle card payment
   const handleCardPayment = async () => {
     try {
       setLoading(true);
       setPaymentStatus("Processing payment...");
 
-      if (!validateForms())
-        throw new Error("Please fill in all required fields");
+      // if (!validateForms())
+      //   throw new Error("Please fill in all required fields");
 
       const orderId = await createOrder({
         type: "card",
         last4: cardDetails.number.slice(-4),
       });
 
-      // Make the put request to update the order
-      await axios.put(`/api/orders/${orderId}`, {
-        status: "paid",
-        paymentDetails: {
-          type: "card",
-          last4: cardDetails.number.slice(-4),
+      const price = calculateTotal();
+
+      const paystack = new PaystackPop();
+      paystack.newTransaction({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        email: session.user.email,
+        amount: price * 100,
+        onSuccess: async (transaction) => {
+          setPaymentStatus("Transaction success");
+          console.log(transaction);
+
+          // Make the put request to update the order
+          const res = await axios.put(`/api/orders/${orderId}`, {
+            status: "paid",
+            paymentDetails: {
+              type: "card",
+              last4: cardDetails.number.slice(-4),
+            },
+          });
+
+          console.log(res);
+
+          await handleSuccessfulPayment(orderId);
+        },
+        onCancel: () => {
+          setPaymentStatus("Payment canceled by user");
         },
       });
-
-      await handleSuccessfulPayment(orderId);
     } catch (error) {
       setPaymentStatus(`Payment failed: ${error.message}`);
     } finally {
@@ -552,8 +574,11 @@ const Checkout = () => {
                 </div>
 
                 {paymentMethod === "card" && (
-                  <div className="space-y-4">
-                    {Object.entries(cardDetails).map(([key, value]) => (
+                  <div className="space-y-4 flex items-center justify-center py-8">
+                    <button className=" bg-blue-500 text-white rounded-md p-3">
+                      Pay with PayStack
+                    </button>
+                    {/* {Object.entries(cardDetails).map(([key, value]) => (
                       <div key={key}>
                         <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
                           {key}
@@ -570,7 +595,7 @@ const Checkout = () => {
                           className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                    ))}
+                    ))} */}
                   </div>
                 )}
 
