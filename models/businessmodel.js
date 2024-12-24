@@ -86,6 +86,14 @@ const BusinessSchema = new mongoose.Schema(
       type: String,
       default: "business",
     },
+    resetToken: {
+      type: String,
+      required: false,
+    },
+    resetTokenExpiry: {
+      type: String,
+      required: false,
+    },
   },
   {
     timestamps: true,
