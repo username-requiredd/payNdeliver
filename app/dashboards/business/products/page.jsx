@@ -1,243 +1,358 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TablePagination from '@mui/material/TablePagination';
-import TableRow from '@mui/material/TableRow';
-import IconButton from '@mui/material/IconButton';
-import Image from 'next/image'; 
-import { Search, SearchX, Eye, Trash2, Plus } from 'lucide-react';
-import ProductDetailModal from './productsdetailmodal';
-import { Typography, Chip, TextField, InputAdornment, TableSortLabel } from '@mui/material';
-import { useSession } from 'next-auth/react';
-const columns = [
-  { id: 'action', label: 'Action', minWidth: 100, align: 'center', sortable: false },
-  { id: 'product', label: 'Product', minWidth: 150, sortable: true },
-  { id: 'image', label: 'Image', minWidth: 100, align: 'left', sortable: false },
-  { id: 'category', label: 'Category', minWidth: 100, sortable: true },
-  { id: 'quantity', label: 'Quantity', minWidth: 100, align: 'left', sortable: true },
-  { id: 'price', label: 'Price', minWidth: 100, align: 'left', sortable: true },
-];
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+// import AddproductForm from "./addproduct";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Search, UserPlus, Eye, Trash2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
+  Avatar,
+} from "@mui/material";
 
-
-
-
-const initialRows = [
-  { id: 1, product: 'Laptop', image: 'https://via.placeholder.com/50', category: 'Electronics', quantity: 3, price: 1500 },
-  { id: 2, product: 'Headphones', image: 'https://via.placeholder.com/50', category: 'Accessories', quantity: 10, price: 300 },
-  { id: 3, product: 'Coffee Mug', image: 'https://via.placeholder.com/50', category: 'Kitchen', quantity: 5, price: 15 },
-  { id: 13, product: 'Coffee Mug', image: 'https://via.placeholder.com/50', category: 'Kitchen', quantity: 5, price: 15 },
-  { id: 32, product: 'Coffee Mug', image: 'https://via.placeholder.com/50', category: 'Kitchen', quantity: 5, price: 15 },
-  { id: 34, product: 'Coffee Mug', image: 'https://via.placeholder.com/50', category: 'Kitchen', quantity: 5, price: 15 },
-  { id: 33, product: 'Coffee Mug', image: 'https://via.placeholder.com/50', category: 'Kitchen', quantity: 5, price: 15 },
-];
-
-export default function ProductTable() {
+const PRoductsTable = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isVisible, setIsVisible] = useState(true);
-  const [rows, setRows] = useState(initialRows);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('product');
+  const [filterCriteria, setFilterCriteria] = useState({
+    role: "",
+    subject: "",
+  });
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
 
+  const { data: session } = useSession();
 
-  const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
-  };
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!session?.user?.id) return;
 
-  const handleDelete = (id) => {
-    const updatedRows = rows.filter((item) => item.id !== id);
-    setRows(updatedRows);
-  };
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`/api/products/${session.user.id}`);
 
-  const handleChangePage = (e, newPage) => {
-    setPage(newPage);
-  };
+        if (!response.ok) {
+          throw new Error(
+            "Failed to fetch products. Please check your connection and try again."
+          );
+        }
 
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
+        const data = await response.json();
+        setProducts(data.data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleChangeRowsPerPage = (e) => {
-    setRowsPerPage(+e.target.value);
-    setPage(0);
-  };
+    fetchProducts();
+  }, [session?.user?.id]);
 
-  const handleView = (product) => {
-    setSelectedProduct(product);
-    setIsModalOpen(true);
-  };
+  const filteredProduct = useMemo(() => {
+    if (!products.length) return [];
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedProduct(null);
-  };
+    return products.filter((product) => {
+      const matchesSearch = product.product
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesRole =
+        !filterCriteria.role || product.role === filterCriteria.role;
+      const matchesSubject =
+        !filterCriteria.subject || product.subject === filterCriteria.subject;
 
-  const stableSort = (array, comparator) => {
-    const stabilizedThis = array.map((el, index) => [el, index]);
-    stabilizedThis.sort((a, b) => {
-      const order = comparator(a[0], b[0]);
-      if (order !== 0) return order;
-      return a[1] - b[1];
+      return matchesSearch && matchesRole && matchesSubject;
     });
-    return stabilizedThis.map((el) => el[0]);
-  };
+  }, [products, searchTerm, filterCriteria]);
 
-  const getComparator = (order, orderBy) => {
-    return order === 'desc'
-      ? (a, b) => descendingComparator(a, b, orderBy)
-      : (a, b) => -descendingComparator(a, b, orderBy);
-  };
+  const handleDeleteConfirmation = useCallback((product) => {
+    setProductToDelete(product);
+    setDeleteDialogOpen(true);
+  }, []);
 
-  const descendingComparator = (a, b, orderBy) => {
-    if (b[orderBy] < a[orderBy]) {
-      return -1;
+  const handleDeleteProduct = async () => {
+    if (!productToDelete) return;
+
+    const prevProducts = [...products];
+
+    try {
+      setProducts(
+        products.filter((product) => product._id !== productToDelete._id)
+      );
+      setDeleteDialogOpen(false);
+
+      const response = await fetch(`/api/products/${productToDelete._id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: productToDelete._id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete product");
+      }
+
+      const data = await response.json();
+      console.log("Product deleted:", data.message);
+    } catch (err) {
+      console.error("Delete error:", err);
+      setError("Failed to delete product. Please try again.");
+      setProducts(prevProducts); // Rollback on error
     }
-    if (b[orderBy] > a[orderBy]) {
-      return 1;
-    }
-    return 0;
   };
 
-  const filteredRows = stableSort(
-    rows.filter(row =>
-      Object.values(row).some(value =>
-        value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    ),
-    getComparator(order, orderBy)
-  );
+  const handleFilterChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFilterCriteria((prev) => ({ ...prev, [name]: value }));
+  }, []);
 
   return (
-    <div className="mt-5 mx-auto max-w-7xl px-4 sm:px-2 lg:px-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-bold text-2xl text-gray-800">
-          All Products
-        </h1>
-        <Link href="products/add" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors duration-300">
-          <Plus className="mr-2" size={20} />
-          Add a Product
-        </Link>
-      </div>
-      <Paper className="mb-5 rounded-lg shadow-md overflow-hidden">
-        <div className="p-4 bg-gray-50 border-b">
-          <div className="flex items-center justify-between">
-            <Typography variant="h6" className="text-gray-700">
-              Product Inventory
-            </Typography>
-            <div className="flex items-center">
-              <TextField
-                variant="outlined"
-                size="small"
-                placeholder="Search..."
+    <div className=" min-h-screen p-6 sm:p-8 md:p-10">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h1 className="text-4xl font-bold text-indigo-800 mb-2">
+            Manage Products
+          </h1>
+          {/* <p className="text-gray-600">Efficiently manage your product members</p> */}
+        </div>
+
+        {/* Main Content */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          {/* Search & Filter */}
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-4">
+            <div className="relative w-full sm:w-1/3">
+              <input
+                type="text"
+                placeholder="Search product..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
                 value={searchTerm}
-                onChange={handleSearch}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search className="text-gray-400" />
-                    </InputAdornment>
-                  ),
-                }}
-                className={`transition-all duration-300 ease-in-out ${
-                  isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
-                }`}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <IconButton onClick={() => setIsVisible((prev) => !prev)} className="ml-2">
-                {isVisible ? <SearchX className="text-gray-600" /> : <Search className="text-gray-600" />}
-              </IconButton>
+              <Search
+                className="absolute left-3 top-2.5 text-gray-400"
+                size={20}
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+              <button
+                className="flex items-center justify-center px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-200 shadow-md"
+                onClick={() => setShowAddForm(true)}
+              >
+                <UserPlus size={20} className="mr-2" />
+                Add product
+              </button>
+              <select
+                name="role"
+                value={filterCriteria.role}
+                onChange={handleFilterChange}
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+              >
+                <option value="">All Roles</option>
+                <option value="teacher">Teacher</option>
+                <option value="admin">Admin</option>
+              </select>
+              <select
+                name="subject"
+                value={filterCriteria.subject}
+                onChange={handleFilterChange}
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+              >
+                <option value="">All Subjects</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Science">Science</option>
+                <option value="Administration">Administration</option>
+                <option value="Counseling">Counseling</option>
+              </select>
             </div>
           </div>
-        </div>
-        <TableContainer>
-          <Table stickyHeader aria-label="customized table">
-            <TableHead>
-              <TableRow>
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.id}
-                    align={column.align}
-                    style={{ minWidth: column.minWidth }}
-                    className="font-bold text-gray-700 bg-gray-100"
-                    sortDirection={orderBy === column.id ? order : false}
-                  >
-                    {column.sortable ? (
-                      <TableSortLabel
-                        active={orderBy === column.id}
-                        direction={orderBy === column.id ? order : 'asc'}
-                        onClick={(event) => handleRequestSort(event, column.id)}
-                      >
-                        {column.label}
-                      </TableSortLabel>
-                    ) : (
-                      column.label
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredRows
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row) => (
-                  <TableRow hover role="checkbox" tabIndex={-1} key={row.id} className="transition-colors hover:bg-gray-50">
-                    {columns.map((column) => {
-                      const value = row[column.id];
-                      return (
-                        <TableCell key={column.id} align={column.align}>
-                          {column.id === 'image' ? (
-                            <Image src={value} alt={row.product} width={70} height={70} className="rounded-md shadow-sm" />
-                          ) : column.id === 'action' ? (
-                            <div className='flex items-center justify-center'>
-                              <IconButton onClick={() => handleView(row)} aria-label="view" className="text-blue-600 hover:text-blue-800">
-                                <Eye />
-                              </IconButton>
-                              <IconButton onClick={() => handleDelete(row.id)} aria-label="delete" className="text-red-600 hover:text-red-800">
-                                <Trash2 />
-                              </IconButton>
-                            </div>
-                          ) : column.id === 'category' ? (
-                            <Chip label={value} size="small" className="bg-blue-100 text-blue-800" />
-                          ) : column.id === 'price' ? (
-                            <span className="font-semibold text-green-600">${value.toFixed(2)}</span>
-                          ) : (
-                            value
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 100]}
-          component="div"
-          count={filteredRows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          className="border-t"
-        />
-      </Paper>
 
-      <ProductDetailModal
-        open={isModalOpen}
-        onClose={handleCloseModal}
-        product={selectedProduct}
-      />
+          {/* product Table */}
+          <TableContainer
+            component={Paper}
+            className="max-h-[calc(100vh-300px)] overflow-auto rounded-lg shadow-md"
+          >
+            <Table stickyHeader aria-label="product table">
+              <TableHead>
+                <TableRow className="bg-indigo-100">
+                  <TableCell className="font-semibold text-indigo-800">
+                    Image
+                  </TableCell>
+                  <TableCell className="font-semibold text-indigo-800">
+                    Full Name
+                  </TableCell>
+                  <TableCell className="font-semibold text-indigo-800">
+                    Role
+                  </TableCell>
+                  <TableCell className="font-semibold text-indigo-800">
+                    Subject
+                  </TableCell>
+                  <TableCell className="font-semibold text-indigo-800">
+                    Experience (Years)
+                  </TableCell>
+                  <TableCell className="font-semibold text-indigo-800">
+                    Qualification
+                  </TableCell>
+                  <TableCell className="font-semibold text-indigo-800">
+                    Email
+                  </TableCell>
+                  <TableCell
+                    align="right" // Ensure this is set to "right"
+                    className="font-semibold text-indigo-800"
+                  >
+                    Actions
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <>
+                    {[...Array(5)].map((_, index) => (
+                      <TableRow key={`skeleton-${index}`}>
+                        {[...Array(8)].map((_, cellIndex) => (
+                          <TableCell key={`skeleton-cell-${cellIndex}`}>
+                            <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={8}>
+                      <div
+                        className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md"
+                        role="alert"
+                      >
+                        <p className="font-bold">Error</p>
+                        <p>{error}</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filterProduct?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8}>
+                      <div
+                        className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md"
+                        role="alert"
+                      >
+                        <p className="font-bold">No results found</p>
+                        <p>
+                          There are no product members matching your current
+                          filters.
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filterProduct?.map((product, index) => (
+                    <TableRow
+                      key={product._id}
+                      className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
+                    >
+                      <TableCell>
+                        <Avatar
+                          src={product.image || "/images/profile/default.jpg"}
+                          alt={`${product.firstName} ${product.lastName}`}
+                        />
+                      </TableCell>
+                      <TableCell>{`${product.firstName} ${product.lastName}`}</TableCell>
+                      <TableCell>{product.role}</TableCell>
+                      <TableCell>{product.subject.join(", ")}</TableCell>
+                      <TableCell>{product.experience}</TableCell>
+                      <TableCell>{product.qualification}</TableCell>
+                      <TableCell>{product.email}</TableCell>
+                      <TableCell className=" flex flex-row items-center justify-center">
+                        <Link
+                          href={`/dashboards/admin/manageproducts/${product._id}`}
+                          className="text-indigo-600 hover:text-indigo-800 mr-2"
+                        >
+                          <IconButton
+                            aria-label="view"
+                            className="hover:bg-indigo-100"
+                          >
+                            <Eye
+                              className="text-blue-600 hover:text-blue-800"
+                              size={20}
+                            />
+                          </IconButton>
+                        </Link>
+                        <IconButton
+                          aria-label="delete"
+                          onClick={() => handleDeleteConfirmation(product)}
+                          className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                        >
+                          <Trash2 size={20} />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </div>
+      </div>
+
+      {showAddForm && <AddproductForm onClose={() => setShowAddForm(false)} />}
+
+      {/* Confirm Delete Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+        PaperProps={{
+          style: {
+            borderRadius: "12px",
+          },
+        }}
+      >
+        <DialogTitle
+          id="alert-dialog-title"
+          className="bg-red-100 text-red-800"
+        >
+          {"Confirm product Deletion"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description" className="mt-4">
+            Are you sure you want to delete {productToDelete?.firstName}{" "}
+            {productToDelete?.lastName}? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions className="p-4">
+          <Button
+            className="bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-full"
+            onClick={() => setDeleteDialogOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="bg-red-600 text-white hover:bg-red-700 px-4 py-2 rounded-full"
+            onClick={handleDeleteproduct}
+            color="error"
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
-}
+};
+
+export default PRoductsTable;
