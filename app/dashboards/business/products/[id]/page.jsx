@@ -1,194 +1,306 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
 
-const REDIRECT_DELAY = 2000;
+import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { styled } from "@mui/material/styles";
+import {
+  Box,
+  Button,
+  Chip,
+  TextField,
+  Typography,
+  Alert,
+  Paper,
+  Grid,
+  Autocomplete,
+} from "@mui/material";
+import { Camera, Loader } from "lucide-react";
+import ImageUpload from "@/components/Imageupload";
 
-export default function EditProduct({ params }) {
-  const router = useRouter();
-  const [state, setState] = useState({
-    product: null,
-    loading: false,
-    error: "",
-    success: false,
-  });
+const UploadBox = styled(Box)(({ theme }) => ({
+  height: 250,
+  borderRadius: theme.shape.borderRadius,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexDirection: "column",
+  borderStyle: "dashed",
+  borderWidth: 2,
+  borderColor: theme.palette.divider,
+  backgroundColor: theme.palette.background.default,
+  transition: "border-color 0.3s, background-color 0.3s",
+  "&:hover": {
+    borderColor: theme.palette.primary.main,
+    backgroundColor: theme.palette.action.hover,
+  },
+}));
 
-  const [formData, setFormData] = useState({
-    name: "",
-    price: "",
-    instock: "",
-    category: "",
-    image: "",
-  });
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: theme.shadows[3],
+}));
 
-  const fetchProduct = async (id, signal) => {
-    try {
-      const response = await fetch(`/api/products/${id}`, { signal });
-      const data = await response.json();
+const EditProduct = ({ id }) => {
+  const { data: session } = useSession();
+  const [loading, setLoading] = useState(false);
+  const [productData, setProductData] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
-      if (!response.ok) throw new Error(data.message || "Failed to fetch");
-
-      const { name, price, instock, category, image } = data.data;
-      setState((prev) => ({ ...prev, product: data.data }));
-      setFormData({ name, price, instock, category, image });
-    } catch (err) {
-      if (err.name !== "AbortError") {
-        setState((prev) => ({ ...prev, error: err.message }));
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`/api/products/${id}`);
+        if (!response.ok) throw new Error("Failed to fetch product data");
+        const data = await response.json();
+        setProductData(data);
+      } catch (error) {
+        console.error("Error fetching product data:", error);
+        setSubmitError("Failed to load product data.");
       }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  const handleChange = (field) => (event) => {
+    setProductData({ ...productData, [field]: event.target.value });
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: "" });
     }
   };
 
-  useEffect(() => {
-    if (!params?.id) {
-      setState((prev) => ({ ...prev, error: "Product ID is missing" }));
-      return;
-    }
+  const handleImageUpload = (url) => {
+    setProductData({ ...productData, image: url });
+  };
 
-    const controller = new AbortController();
-    fetchProduct(params.id, controller.signal);
-
-    return () => controller.abort();
-  }, [params?.id]);
-
-  const handleChange = ({ target: { name, value } }) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleMultipleChange = (field) => (event, newValue) => {
+    setProductData({ ...productData, [field]: newValue });
   };
 
   const validateForm = () => {
-    const errors = [];
-    if (!formData.name.trim()) errors.push("Name is required");
-    if (parseFloat(formData.price) < 0) errors.push("Price must be positive");
-    if (parseInt(formData.instock) < 0) errors.push("Stock must be positive");
-    if (!formData.category.trim()) errors.push("Category is required");
-    if (!formData.image.trim()) errors.push("Image URL is required");
+    const newErrors = {};
+    if (!productData.name) newErrors.name = "Product name is required";
+    if (!productData.price) newErrors.price = "Price is required";
+    if (!productData.stock) newErrors.stock = "Stock is required";
 
-    return errors;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const errors = validateForm();
-
-    if (errors.length) {
-      setState((prev) => ({ ...prev, error: errors.join(", ") }));
-      return;
+    if (productData.price && isNaN(Number(productData.price))) {
+      newErrors.price = "Price must be a number";
+    }
+    if (productData.stock && isNaN(Number(productData.stock))) {
+      newErrors.stock = "Stock must be a number";
     }
 
-    setState((prev) => ({ ...prev, loading: true, error: "", success: false }));
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    setSubmitError("");
+    setSubmitSuccess(false);
+
+    if (!validateForm()) return;
 
     try {
-      const updatedData = {
-        ...formData,
-        price: parseFloat(formData.price),
-        instock: parseInt(formData.instock),
+      const formattedData = {
+        name: productData.name,
+        description: productData.description,
+        price: Number(productData.price),
+        category: productData.category,
+        image: productData.image,
+        stock: Number(productData.stock),
       };
 
-      const response = await fetch(`/api/products/${params.id}`, {
+      setLoading(true);
+      const response = await fetch(`/api/products/${productId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
+        body: JSON.stringify(formattedData),
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
+      }
 
-      if (!response.ok) throw new Error(data.message || "Update failed");
-
-      setState((prev) => ({ ...prev, success: true }));
-      setTimeout(() => router.push("/products"), REDIRECT_DELAY);
-    } catch (err) {
-      setState((prev) => ({ ...prev, error: err.message }));
-    } finally {
-      setState((prev) => ({ ...prev, loading: false }));
+      setLoading(false);
+      setSubmitSuccess(true);
+    } catch (error) {
+      setLoading(false);
+      console.error("Error updating product:", error);
+      setSubmitError(
+        error.message || "An error occurred while updating the product."
+      );
     }
   };
 
-  const formFields = useMemo(
-    () => [
-      { name: "name", label: "Product Name", type: "text" },
-      { name: "price", label: "Price", type: "number", step: "0.01", min: "0" },
-      { name: "instock", label: "Stock Quantity", type: "number", min: "0" },
-      { name: "category", label: "Category", type: "text" },
-      { name: "image", label: "Image URL", type: "text" },
-    ],
-    []
-  );
-
-  if (!state.product && !state.error) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        Loading...
-      </div>
-    );
-  }
+  // if (!productData) return <Typography>Loading...</Typography>;
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Edit Product</h1>
+    <Box sx={{ maxWidth: 800, mx: "auto", mt: 5, mb: 8 }}>
+      <Typography
+        variant="h4"
+        sx={{ mb: 4, fontWeight: 700, color: "primary.main" }}
+      >
+        Edit Product
+      </Typography>
 
-        {state.error && (
-          <div className="mb-4 p-4 bg-red-50 text-red-700 rounded">
-            {state.error}
-          </div>
-        )}
+      {submitSuccess && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          Product successfully updated!
+        </Alert>
+      )}
 
-        {state.success && (
-          <div className="mb-4 p-4 bg-green-50 text-green-700 rounded">
-            Product updated successfully! Redirecting...
-          </div>
-        )}
+      {submitError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {submitError}
+        </Alert>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {formFields.map(({ name, label, type, ...props }) => (
-            <div key={name} className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">
-                {label}
-              </label>
-              <input
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                name={name}
-                type={type}
-                value={formData[name]}
-                onChange={handleChange}
-                required
-                {...props}
-              />
-            </div>
-          ))}
+      <StyledPaper>
+        <Grid container spacing={4}>
+          <Grid item xs={12}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+              Cover Image
+            </Typography>
+            <UploadBox>
+              {productData.image ? (
+                <img
+                  src={productData.image}
+                  alt="Cover"
+                  style={{
+                    maxHeight: "100%",
+                    maxWidth: "100%",
+                    objectFit: "cover",
+                    borderRadius: "8px",
+                  }}
+                />
+              ) : (
+                <Camera size={48} color="#9e9e9e" />
+              )}
+              <ImageUpload onImageUpload={handleImageUpload} />
+              <Typography
+                variant="caption"
+                sx={{ mt: 1, color: "text.secondary" }}
+              >
+                PNG, JPG, GIF up to 10MB
+              </Typography>
+            </UploadBox>
+          </Grid>
 
-          {formData.image && (
-            <div className="mt-4">
-              <p className="text-sm font-medium mb-2">Current Image Preview:</p>
-              <Image
-                src={formData.image}
-                alt="Product preview"
-                width={200}
-                height={200}
-                className="rounded-lg shadow-sm"
-              />
-            </div>
-          )}
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Product Name"
+              variant="outlined"
+              fullWidth
+              value={productData.name}
+              onChange={handleChange("name")}
+              error={!!errors.name}
+              helperText={errors.name}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
 
-          <div className="flex gap-4 pt-4">
-            <button
-              type="button"
-              onClick={() => router.push("/products")}
-              disabled={state.loading}
-              className="px-4 py-2 border rounded hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={state.loading}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-            >
-              {state.loading ? "Updating..." : "Update Product"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          <Grid item xs={12}>
+            <TextField
+              label="Product Description"
+              variant="outlined"
+              fullWidth
+              multiline
+              rows={4}
+              value={productData.description}
+              onChange={handleChange("description")}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Autocomplete
+              multiple
+              options={[]}
+              freeSolo
+              value={productData.category}
+              onChange={handleMultipleChange("category")}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    variant="outlined"
+                    label={option}
+                    {...getTagProps({ index })}
+                    key={option}
+                  />
+                ))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  variant="outlined"
+                  label="Product Category"
+                  placeholder="Add category"
+                  helperText="Type and press enter to add category"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Price"
+              variant="outlined"
+              fullWidth
+              value={productData.price}
+              onChange={handleChange("price")}
+              type="number"
+              error={!!errors.price}
+              helperText={errors.price}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Stock"
+              variant="outlined"
+              fullWidth
+              value={productData.stock}
+              onChange={handleChange("stock")}
+              type="number"
+              error={!!errors.stock}
+              helperText={errors.stock}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Button
+                variant="contained"
+                onClick={handleSubmit}
+                sx={{
+                  borderRadius: 2,
+                  px: 4,
+                  py: 1.5,
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                }}
+              >
+                {loading ? (
+                  <Loader className="animate-spin h-5 w-5" />
+                ) : (
+                  "Update Product"
+                )}
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </StyledPaper>
+    </Box>
   );
-}
+};
+
+export default EditProduct;
