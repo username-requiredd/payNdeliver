@@ -1,486 +1,360 @@
 "use client";
-import React, { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Typography,
-  TableSortLabel,
-  TablePagination,
-  TextField,
-  Button,
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-} from "@mui/material";
-// import { Search, GetApp, Visibility, Print } from "@mui/icons-material";
-import { Search,Eye,Printer } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { formatCurrency } from "@/hooks/formatcurrency";
 
-const createData = (
-  id,
-  studentName,
-  paymentNumber,
-  dateTime,
-  amount,
-  paymentType,
-  status,
-  grade
-) => {
-  return {
-    id,
-    studentName,
-    paymentNumber,
-    dateTime,
-    amount,
-    paymentType,
-    status,
-    grade,
-  };
-};
-
-const rows = [
-  createData(
-    1,
-    "John Doe",
-    "0001",
-    "2024-08-25 12:00 PM",
-    100,
-    "Tuition",
-    "Completed",
-    "10A"
-  ),
-  createData(
-    2,
-    "Jane Smith",
-    "0002",
-    "2024-08-24 03:15 PM",
-    150,
-    "Library Fee",
-    "Pending",
-    "11B"
-  ),
-  createData(
-    3,
-    "Bob Johnson",
-    "0003",
-    "2024-08-23 10:30 AM",
-    200,
-    "Sports Fee",
-    "Failed",
-    "9C"
-  ),
-  createData(
-    4,
-    "Alice Brown",
-    "0004",
-    "2024-08-22 05:45 PM",
-    250,
-    "Tuition",
-    "Completed",
-    "12A"
-  ),
-  createData(
-    5,
-    "Charlie Davis",
-    "0005",
-    "2024-08-21 08:00 AM",
-    300,
-    "Exam Fee",
-    "Completed",
-    "10B"
-  ),
-];
-
-const TransactionsTable = () => {
-  const [order, setOrder] = useState("asc");
-  const [orderBy, setOrderBy] = useState("paymentNumber");
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [search, setSearch] = useState("");
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+const TransactionDashboard = () => {
+  const [transactions, setTransactions] = useState([]);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { data: session } = useSession();
+  const [modalLoading, setModalLoading] = useState(false);
+  const [copiedId, setCopiedId] = useState("");
 
-  const handleRequestSort = (property) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
+  // Existing helper functions remain the same
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(text);
+      setTimeout(() => setCopiedId(""), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
   };
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  // Existing useEffect and handlers remain the same
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`/api/orders/${session?.user?.id}`);
+        if (!response.ok) throw new Error("Failed to fetch transactions");
+        const data = await response.json();
+        setTransactions(data.data);
+      } catch (error) {
+        setError(error.message);
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleSearch = (event) => {
-    setSearch(event.target.value);
-    setPage(0);
-  };
+    if (session?.user?.id) {
+      fetchTransactions();
+    }
+  }, [session?.user?.id]);
 
-  const handleViewOpen = (transaction) => {
+  const handleViewDetails = async (transaction) => {
+    setModalLoading(true);
     setSelectedTransaction(transaction);
-    setViewDialogOpen(true);
+    setModalLoading(false);
   };
 
-  const handleViewClose = () => {
-    setViewDialogOpen(false);
-  };
+  const shortenId = (id) => `${id.slice(0, 8)}...${id.slice(-4)}`;
 
-  const handlePrintOpen = (transaction) => {
-    setSelectedTransaction(transaction);
-    setPrintDialogOpen(true);
-  };
-
-  const handlePrintClose = () => {
-    setPrintDialogOpen(false);
-  };
-
-  const handlePrint = () => {
-    const printContent = document.getElementById("print-content");
-    const winPrint = window.open(
-      "",
-      "",
-      "left=0,top=0,width=800,height=900,toolbar=0,scrollbars=0,status=0"
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
+      </div>
     );
-    winPrint.document.write(printContent.innerHTML);
-    winPrint.document.close();
-    winPrint.focus();
-    winPrint.print();
-    winPrint.close();
-    handlePrintClose();
-  };
+  }
 
-  const filteredRows = rows.filter((row) =>
-    Object.values(row).some(
-      (value) =>
-        value && value.toString().toLowerCase().includes(search.toLowerCase())
-    )
-  );
-
-  const sortedRows = filteredRows.sort((a, b) => {
-    if (b[orderBy] < a[orderBy]) return order === "asc" ? 1 : -1;
-    if (b[orderBy] > a[orderBy]) return order === "asc" ? -1 : 1;
-    return 0;
-  });
-
-  const totalReceived = rows.reduce(
-    (sum, row) => (row.status === "Completed" ? sum + row.amount : sum),
-    0
-  );
-  const totalPending = rows.reduce(
-    (sum, row) => (row.status === "Pending" ? sum + row.amount : sum),
-    0
-  );
-  const totalFailed = rows.reduce(
-    (sum, row) => (row.status === "Failed" ? sum + row.amount : sum),
-    0
-  );
+  if (error) {
+    return (
+      <div className="text-center p-8 bg-red-50 rounded-xl">
+        <div className="text-red-600 text-xl mb-4">⚠️ {error}</div>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors duration-200"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" sx={{ mb: 4 }}>
-        Transactions
-      </Typography>
+    <div className="w-full space-y-6">
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-t-xl">
+        <h1 className="text-2xl font-bold text-white">Transaction History</h1>
+        <p className="text-blue-100 mt-2">Manage and track your orders</p>
+      </div>
 
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid item xs={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">Total Received</Typography>
-              <Typography variant="h4" color="success.main">
-                ${totalReceived.toFixed(2)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">Total Pending</Typography>
-              <Typography variant="h4" color="warning.main">
-                ${totalPending.toFixed(2)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">Total Failed</Typography>
-              <Typography variant="h4" color="error.main">
-                ${totalFailed.toFixed(2)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-        <TextField
-          label="Search"
-          variant="outlined"
-          placeholder="Search transactions"
-          value={search}
-          onChange={handleSearch}
-          InputProps={{
-            startAdornment: <Search sx={{ mr: 1 }} />,
-          }}
-        />
-      </Box>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "studentName"}
-                  direction={orderBy === "studentName" ? order : "asc"}
-                  onClick={() => handleRequestSort("studentName")}
-                >
-                  Student Name
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "paymentNumber"}
-                  direction={orderBy === "paymentNumber" ? order : "asc"}
-                  onClick={() => handleRequestSort("paymentNumber")}
-                >
-                  Payment Number
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "dateTime"}
-                  direction={orderBy === "dateTime" ? order : "asc"}
-                  onClick={() => handleRequestSort("dateTime")}
-                >
-                  Date and Time
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "amount"}
-                  direction={orderBy === "amount" ? order : "asc"}
-                  onClick={() => handleRequestSort("amount")}
-                >
-                  Amount
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "paymentType"}
-                  direction={orderBy === "paymentType" ? order : "asc"}
-                  onClick={() => handleRequestSort("paymentType")}
-                >
+      <div className="bg-white rounded-xl my-5 shadow-xl overflow-hidden border border-gray-100">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr className="border-b border-gray-200">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                  Date
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                  Transaction ID
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                  Customer
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
                   Payment Type
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "status"}
-                  direction={orderBy === "status" ? order : "asc"}
-                  onClick={() => handleRequestSort("status")}
+                </th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">
+                  Amount
+                </th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {transactions.map((transaction) => (
+                <tr
+                  key={transaction._id.$oid}
+                  className="hover:bg-blue-50/50 transition-colors duration-150"
                 >
-                  Status
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "grade"}
-                  direction={orderBy === "grade" ? order : "asc"}
-                  onClick={() => handleRequestSort("grade")}
-                >
-                  Product
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedRows
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.studentName}</TableCell>
-                  <TableCell>{row.paymentNumber}</TableCell>
-                  <TableCell>{row.dateTime}</TableCell>
-                  <TableCell>${row.amount.toFixed(2)}</TableCell>
-                  <TableCell>{row.paymentType}</TableCell>
-                  <TableCell>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        display: "inline-block",
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: 1,
-                        bgcolor:
-                          row.status === "Completed"
-                            ? "success.light"
-                            : row.status === "Pending"
-                            ? "warning.light"
-                            : "error.light",
-                        color:
-                          row.status === "Completed"
-                            ? "success.dark"
-                            : row.status === "Pending"
-                            ? "warning.dark"
-                            : "error.dark",
-                      }}
+                  <td className="px-6 py-4 text-gray-600">
+                    {formatDate(transaction.createdAt)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                        {shortenId(transaction.payment.transactionHash)}
+                      </span>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(transaction.payment.transactionHash)
+                        }
+                        className="text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        {copiedId === transaction.payment.transactionHash ? (
+                          <span className="text-green-500 text-sm bg-green-50 px-2 py-1 rounded">
+                            ✓ Copied
+                          </span>
+                        ) : (
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {transaction.delivery.name}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-50 text-indigo-700">
+                      {transaction.payment.type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right font-medium text-gray-700">
+                    {formatCurrency(transaction.totalAmountUSD, "en-NG", "NGN")}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => handleViewDetails(transaction)}
+                      className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
                     >
-                      {row.status}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{row.grade}</TableCell>
-                  <TableCell>
-                    <Button
-                      size="small"
-                      startIcon={<Eye />}
-                      onClick={() => handleViewOpen(row)}
-                    >
-                      View
-                    </Button>
-                    {/* <Button
-                      size="small"
-                      startIcon={<Print />}
-                      onClick={() => handlePrintOpen(row)}
-                    >
-                      Print
-                    </Button> */}
-                  </TableCell>
-                </TableRow>
+                      View Details →
+                    </button>
+                  </td>
+                </tr>
               ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={filteredRows.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      {/* View Dialog */}
-      <Dialog open={viewDialogOpen} onClose={handleViewClose}>
-        <DialogTitle>Transaction Details</DialogTitle>
-        <DialogContent>
-          {selectedTransaction && (
-            <List>
-              <ListItem>
-                <ListItemText
-                  primary="Student Name"
-                  secondary={selectedTransaction.studentName}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemText
-                  primary="Payment Number"
-                  secondary={selectedTransaction.paymentNumber}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemText
-                  primary="Date and Time"
-                  secondary={selectedTransaction.dateTime}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemText
-                  primary="Amount"
-                  secondary={`$${selectedTransaction.amount.toFixed(2)}`}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemText
-                  primary="Payment Type"
-                  secondary={selectedTransaction.paymentType}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemText
-                  primary="Status"
-                  secondary={selectedTransaction.status}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemText
-                  primary="Grade"
-                  secondary={selectedTransaction.grade}
-                />
-              </ListItem>
-            </List>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleViewClose}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Print Dialog */}
-      <Dialog open={printDialogOpen} onClose={handlePrintClose}>
-        <DialogTitle>Print Transaction</DialogTitle>
-        <DialogContent>
-          <div id="print-content">
-            {selectedTransaction && (
+      {selectedTransaction && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {modalLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+              </div>
+            ) : (
               <>
-                <Typography variant="h6" gutterBottom>
-                  Transaction Receipt
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  Student: {selectedTransaction.studentName}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  Payment Number: {selectedTransaction.paymentNumber}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  Date: {selectedTransaction.dateTime}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  Amount: ${selectedTransaction.amount.toFixed(2)}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  Type: {selectedTransaction.paymentType}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  Status: {selectedTransaction.status}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  Grade: {selectedTransaction.grade}
-                </Typography>
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 rounded-t-xl">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-white text-xl font-bold">
+                      Order Details
+                    </h2>
+                    <button
+                      onClick={() => setSelectedTransaction(null)}
+                      className="text-white/80 hover:text-white transition-colors"
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-8">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-gray-500 text-sm mb-1">
+                        Transaction ID
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        <p className="font-mono font-medium">
+                          {shortenId(
+                            selectedTransaction.payment.transactionHash
+                          )}
+                        </p>
+                        <button
+                          onClick={() =>
+                            copyToClipboard(
+                              selectedTransaction.payment.transactionHash
+                            )
+                          }
+                          className="text-gray-400 hover:text-blue-600 transition-colors"
+                        >
+                          {copiedId ===
+                          selectedTransaction.payment.transactionHash ? (
+                            <span className="text-green-500 text-sm">✓</span>
+                          ) : (
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                              />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-gray-500 text-sm mb-1">Date</p>
+                      <p className="font-medium">
+                        {formatDate(selectedTransaction.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Order Items</h3>
+                    <div className="space-y-4">
+                      {selectedTransaction.items.map((item) => (
+                        <div
+                          key={item._id.$oid}
+                          className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <img
+                              src={item.productImage}
+                              alt={item.productName}
+                              className="w-20 h-20 rounded-lg object-cover"
+                            />
+                            <div>
+                              <p className="font-semibold text-gray-800">
+                                {item.productName}
+                              </p>
+                              <p className="text-gray-500">
+                                Quantity: {item.quantity}
+                              </p>
+                              <p className="text-gray-500">
+                                {formatCurrency(
+                                  item.unitPriceUSD,
+                                  "en-NG",
+                                  "NGN"
+                                )}{" "}
+                                each
+                              </p>
+                            </div>
+                          </div>
+                          <p className="font-semibold text-gray-800">
+                            {formatCurrency(item.subtotalUSD, "en-NG", "NGN")}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">
+                      Delivery Information
+                    </h3>
+                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                      <p className="font-semibold text-gray-800 mb-2">
+                        {selectedTransaction.delivery.name}
+                      </p>
+                      <p className="text-gray-600">
+                        {selectedTransaction.delivery.email}
+                      </p>
+                      <p className="text-gray-600">
+                        {selectedTransaction.delivery.address}
+                      </p>
+                      <p className="text-gray-600">
+                        {selectedTransaction.delivery.city},{" "}
+                        {selectedTransaction.delivery.state}{" "}
+                        {selectedTransaction.delivery.zip}
+                      </p>
+                      <p className="text-gray-600">
+                        Phone: {selectedTransaction.delivery.phone}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+                    <p className="text-xl font-bold text-gray-800">
+                      Total Amount
+                    </p>
+                    <p className="text-xl font-bold text-blue-600">
+                      {formatCurrency(
+                        selectedTransaction.totalAmountUSD,
+                        "en-NG",
+                        "NGN"
+                      )}
+                    </p>
+                  </div>
+                </div>
               </>
             )}
           </div>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handlePrintClose}>Cancel</Button>
-          <Button onClick={handlePrint} variant="contained" color="primary">
-            Print
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+        </div>
+      )}
+    </div>
   );
 };
 
-export default TransactionsTable;
+export default TransactionDashboard;

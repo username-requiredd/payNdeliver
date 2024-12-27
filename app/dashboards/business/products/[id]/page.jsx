@@ -1,306 +1,335 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useSession } from "next-auth/react";
-import { styled } from "@mui/material/styles";
-import {
-  Box,
-  Button,
-  Chip,
-  TextField,
-  Typography,
-  Alert,
-  Paper,
-  Grid,
-  Autocomplete,
-} from "@mui/material";
-import { Camera, Loader } from "lucide-react";
+import { Camera, Loader, Edit, X, Check, Trash } from "lucide-react";
 import ImageUpload from "@/components/Imageupload";
+import { useProductDetails } from "./useProductDetails";
+// import { useProductDetails } from "./useProductDetails";
 
-const UploadBox = styled(Box)(({ theme }) => ({
-  height: 250,
-  borderRadius: theme.shape.borderRadius,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexDirection: "column",
-  borderStyle: "dashed",
-  borderWidth: 2,
-  borderColor: theme.palette.divider,
-  backgroundColor: theme.palette.background.default,
-  transition: "border-color 0.3s, background-color 0.3s",
-  "&:hover": {
-    borderColor: theme.palette.primary.main,
-    backgroundColor: theme.palette.action.hover,
-  },
-}));
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[3],
-}));
-
-const EditProduct = ({ id }) => {
+const ProductDetails = ({ params }) => {
+  const { id } = params || {};
   const { data: session } = useSession();
-  const [loading, setLoading] = useState(false);
-  const [productData, setProductData] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const {
+    state: {
+      loading,
+      isEditing,
+      productData,
+      editedData,
+      errors,
+      status,
+      imageUploading,
+    },
+    actions: {
+      handleInputChange,
+      handleEdit,
+      handleCancel,
+      handleSubmit,
+      handleImageUpload,
+      handleCategoryChange,
+      handleRemoveCategory,
+    },
+  } = useProductDetails({ id, session });
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await fetch(`/api/products/${id}`);
-        if (!response.ok) throw new Error("Failed to fetch product data");
-        const data = await response.json();
-        setProductData(data);
-      } catch (error) {
-        console.error("Error fetching product data:", error);
-        setSubmitError("Failed to load product data.");
-      }
-    };
-
-    fetchProduct();
-  }, [id]);
-
-  const handleChange = (field) => (event) => {
-    setProductData({ ...productData, [field]: event.target.value });
-    if (errors[field]) {
-      setErrors({ ...errors, [field]: "" });
-    }
-  };
-
-  const handleImageUpload = (url) => {
-    setProductData({ ...productData, image: url });
-  };
-
-  const handleMultipleChange = (field) => (event, newValue) => {
-    setProductData({ ...productData, [field]: newValue });
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!productData.name) newErrors.name = "Product name is required";
-    if (!productData.price) newErrors.price = "Price is required";
-    if (!productData.stock) newErrors.stock = "Stock is required";
-
-    if (productData.price && isNaN(Number(productData.price))) {
-      newErrors.price = "Price must be a number";
-    }
-    if (productData.stock && isNaN(Number(productData.stock))) {
-      newErrors.stock = "Stock must be a number";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    setSubmitError("");
-    setSubmitSuccess(false);
-
-    if (!validateForm()) return;
-
-    try {
-      const formattedData = {
-        name: productData.name,
-        description: productData.description,
-        price: Number(productData.price),
-        category: productData.category,
-        image: productData.image,
-        stock: Number(productData.stock),
-      };
-
-      setLoading(true);
-      const response = await fetch(`/api/products/${productId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formattedData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
-        );
-      }
-
-      setLoading(false);
-      setSubmitSuccess(true);
-    } catch (error) {
-      setLoading(false);
-      console.error("Error updating product:", error);
-      setSubmitError(
-        error.message || "An error occurred while updating the product."
-      );
-    }
-  };
-
-  // if (!productData) return <Typography>Loading...</Typography>;
+  if (loading && !productData.name) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader className="animate-spin h-8 w-8" />
+      </div>
+    );
+  }
 
   return (
-    <Box sx={{ maxWidth: 800, mx: "auto", mt: 5, mb: 8 }}>
-      <Typography
-        variant="h4"
-        sx={{ mb: 4, fontWeight: 700, color: "primary.main" }}
-      >
-        Edit Product
-      </Typography>
+    <div className="max-w-4xl mx-auto mt-8 mb-16 px-4">
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        {/* Status Messages */}
+        {status.error && (
+          <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg">
+            {status.error}
+          </div>
+        )}
+        {status.success && (
+          <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-lg">
+            Product successfully updated!
+          </div>
+        )}
 
-      {submitSuccess && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          Product successfully updated!
-        </Alert>
-      )}
+        {/* Header */}
+        <ProductHeader
+          isEditing={isEditing}
+          loading={loading}
+          productName={productData.name}
+          onEdit={handleEdit}
+          onCancel={handleCancel}
+          onSubmit={handleSubmit}
+        />
 
-      {submitError && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {submitError}
-        </Alert>
-      )}
+        {/* Main Content */}
+        <div className="space-y-6">
+          <ImageSection
+            isEditing={isEditing}
+            imageUrl={isEditing ? editedData.image : productData.image}
+            productName={productData.name}
+            onUpload={handleImageUpload}
+            isUploading={imageUploading}
+          />
 
-      <StyledPaper>
-        <Grid container spacing={4}>
-          <Grid item xs={12}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-              Cover Image
-            </Typography>
-            <UploadBox>
-              {productData.image ? (
-                <img
-                  src={productData.image}
-                  alt="Cover"
-                  style={{
-                    maxHeight: "100%",
-                    maxWidth: "100%",
-                    objectFit: "cover",
-                    borderRadius: "8px",
-                  }}
-                />
-              ) : (
-                <Camera size={48} color="#9e9e9e" />
-              )}
-              <ImageUpload onImageUpload={handleImageUpload} />
-              <Typography
-                variant="caption"
-                sx={{ mt: 1, color: "text.secondary" }}
-              >
-                PNG, JPG, GIF up to 10MB
-              </Typography>
-            </UploadBox>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Product Name"
-              variant="outlined"
-              fullWidth
-              value={productData.name}
-              onChange={handleChange("name")}
-              error={!!errors.name}
-              helperText={errors.name}
-              InputLabelProps={{ shrink: true }}
+          {isEditing ? (
+            <EditForm
+              data={editedData}
+              errors={errors}
+              onChange={handleInputChange}
+              onCategoryChange={handleCategoryChange}
+              onRemoveCategory={handleRemoveCategory}
             />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              label="Product Description"
-              variant="outlined"
-              fullWidth
-              multiline
-              rows={4}
-              value={productData.description}
-              onChange={handleChange("description")}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Autocomplete
-              multiple
-              options={[]}
-              freeSolo
-              value={productData.category}
-              onChange={handleMultipleChange("category")}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    variant="outlined"
-                    label={option}
-                    {...getTagProps({ index })}
-                    key={option}
-                  />
-                ))
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  variant="outlined"
-                  label="Product Category"
-                  placeholder="Add category"
-                  helperText="Type and press enter to add category"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Price"
-              variant="outlined"
-              fullWidth
-              value={productData.price}
-              onChange={handleChange("price")}
-              type="number"
-              error={!!errors.price}
-              helperText={errors.price}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Stock"
-              variant="outlined"
-              fullWidth
-              value={productData.stock}
-              onChange={handleChange("stock")}
-              type="number"
-              error={!!errors.stock}
-              helperText={errors.stock}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-              <Button
-                variant="contained"
-                onClick={handleSubmit}
-                sx={{
-                  borderRadius: 2,
-                  px: 4,
-                  py: 1.5,
-                  fontSize: "1rem",
-                  fontWeight: 600,
-                }}
-              >
-                {loading ? (
-                  <Loader className="animate-spin h-5 w-5" />
-                ) : (
-                  "Update Product"
-                )}
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </StyledPaper>
-    </Box>
+          ) : (
+            <DisplayInfo data={productData} />
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
-export default EditProduct;
+const ProductHeader = ({
+  isEditing,
+  loading,
+  productName,
+  onEdit,
+  onCancel,
+  onSubmit,
+}) => (
+  <div className="flex justify-between items-center mb-6">
+    {isEditing ? (
+      <>
+        <h1 className="text-2xl font-bold text-gray-800">Edit Product</h1>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+          >
+            <X className="w-4 h-4" />
+            Cancel
+          </button>
+          <button
+            onClick={onSubmit}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+          >
+            {loading ? (
+              <Loader className="animate-spin w-4 h-4" />
+            ) : (
+              <Check className="w-4 h-4" />
+            )}
+            Save Changes
+          </button>
+        </div>
+      </>
+    ) : (
+      <>
+        <h1 className="text-2xl font-bold text-gray-800">{productName}</h1>
+        <button
+          onClick={onEdit}
+          className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+        >
+          <Edit className="w-4 h-4" />
+          Edit Product
+        </button>
+      </>
+    )}
+  </div>
+);
+
+const ImageSection = ({
+  isEditing,
+  imageUrl,
+  productName,
+  onUpload,
+  isUploading,
+}) => (
+  <div className="aspect-video relative rounded-lg overflow-hidden">
+    {imageUrl ? (
+      <div className="relative h-full">
+        <img
+          src={imageUrl}
+          alt={productName || "Product"}
+          className="w-full h-full object-cover"
+        />
+        {isEditing && (
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+            <ImageUpload onImageUpload={onUpload}>
+              <button
+                type="button"
+                className="bg-white text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <Loader className="animate-spin w-4 h-4" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
+                Change Image
+              </button>
+            </ImageUpload>
+          </div>
+        )}
+      </div>
+    ) : (
+      <div className="h-full flex flex-col items-center justify-center bg-gray-100">
+        <Camera className="w-12 h-12 text-gray-400 mb-4" />
+        {isEditing && (
+          <ImageUpload onImageUpload={onUpload}>
+            <button
+              type="button"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <Loader className="animate-spin w-4 h-4" />
+              ) : (
+                <Camera className="w-4 h-4" />
+              )}
+              Upload Image
+            </button>
+          </ImageUpload>
+        )}
+      </div>
+    )}
+  </div>
+);
+
+const FormField = ({ label, error, children }) => (
+  <div>
+    <label className="block text-sm font-medium mb-2">{label}</label>
+    {children}
+    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+  </div>
+);
+
+const EditForm = ({
+  data,
+  errors,
+  onChange,
+  onCategoryChange,
+  onRemoveCategory,
+}) => (
+  <form className="space-y-6">
+    <FormField label="Product Name" error={errors.name}>
+      <input
+        type="text"
+        value={data.name}
+        onChange={(e) => onChange("name", e.target.value)}
+        className={`w-full px-3 py-2 border rounded-lg ${
+          errors.name ? "border-red-500" : "border-gray-300"
+        }`}
+      />
+    </FormField>
+
+    <FormField label="Description">
+      <textarea
+        value={data.description}
+        onChange={(e) => onChange("description", e.target.value)}
+        rows={4}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+      />
+    </FormField>
+
+    <FormField label="Categories" error={errors.category}>
+      <div className="flex flex-wrap gap-2 mb-2">
+        {data.category?.map((cat) => (
+          <span
+            key={cat}
+            className="px-3 py-1 bg-gray-100 rounded-full text-sm flex items-center"
+          >
+            {cat}
+            <button
+              type="button"
+              onClick={() => onRemoveCategory(cat)}
+              className="ml-2 text-gray-500 hover:text-red-500"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </span>
+        ))}
+      </div>
+      <input
+        type="text"
+        placeholder="Add category and press Enter"
+        onKeyPress={onCategoryChange}
+        className={`w-full px-3 py-2 border rounded-lg ${
+          errors.category ? "border-red-500" : "border-gray-300"
+        }`}
+      />
+    </FormField>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <FormField label="Price ($)" error={errors.price}>
+        <input
+          type="number"
+          value={data.price}
+          onChange={(e) => onChange("price", e.target.value)}
+          min="0"
+          step="0.01"
+          className={`w-full px-3 py-2 border rounded-lg ${
+            errors.price ? "border-red-500" : "border-gray-300"
+          }`}
+        />
+      </FormField>
+
+      <FormField label="Stock Quantity" error={errors.instock}>
+        <input
+          type="number"
+          value={data.instock}
+          onChange={(e) => onChange("instock", e.target.value)}
+          min="0"
+          step="1"
+          className={`w-full px-3 py-2 border rounded-lg ${
+            errors.instock ? "border-red-500" : "border-gray-300"
+          }`}
+        />
+      </FormField>
+    </div>
+  </form>
+);
+
+const DisplayInfo = ({ data }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
+      <h2 className="text-lg font-semibold mb-2">Description</h2>
+      <p className="text-gray-600">
+        {data.description || "No description available"}
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold mb-2">Price</h2>
+        <p className="text-2xl font-bold text-blue-600">
+          ${Number(data.price || 0).toFixed(2)}
+        </p>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-2">In Stock</h2>
+        <p className="text-xl">{data.instock || 0} units</p>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-2">Categories</h2>
+        <div className="flex flex-wrap gap-2">
+          {data.category?.map((cat) => (
+            <span
+              key={cat}
+              className="px-3 py-1 bg-gray-100 rounded-full text-sm"
+            >
+              {cat}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+export default ProductDetails;
