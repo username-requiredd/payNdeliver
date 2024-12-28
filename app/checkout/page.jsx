@@ -23,7 +23,12 @@ import { formatCurrency } from "@/hooks/formatcurrency";
 import { useEmailSender } from "@/hooks/useEmailSender";
 
 import initializePaystackTransaction from "@/actions/initiaze-paystack-tx";
-import PaystackPop from "@paystack/inline-js";
+
+import dynamic from "next/dynamic";
+
+const PaystackPop = dynamic(() => import("@paystack/inline-js"), {
+  ssr: false,
+});
 
 const TAX_RATES = {
   CA: 0.0725,
@@ -66,31 +71,30 @@ const Checkout = () => {
     },
   });
 
-  const [shippingDetails, setShippingDetails] = useState(() => {
+  const [shippingDetails, setShippingDetails] = useState({
+    name: "",
+    email: "",
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
+    phone: "",
+  });
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const savedDetails = localStorage.getItem("shippingDetails");
-      return savedDetails
-        ? JSON.parse(savedDetails)
-        : {
-            name: "",
-            email: "",
-            address: "",
-            city: "",
-            state: "",
-            zip: "",
-            phone: "",
-          };
+      if (savedDetails) {
+        setShippingDetails(JSON.parse(savedDetails));
+      }
     }
-    return {
-      name: "",
-      email: "",
-      address: "",
-      city: "",
-      state: "",
-      zip: "",
-      phone: "",
-    };
-  });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("shippingDetails", JSON.stringify(shippingDetails));
+    }
+  }, [shippingDetails]);
 
   const [cardDetails, setCardDetails] = useState({
     number: "",
@@ -104,12 +108,23 @@ const Checkout = () => {
 
   // console.log("cart", cart);
   // retrieve shipping details form localstorage
+  // Save shippingDetails to localStorage
   useEffect(() => {
-    localStorage.setItem("shippingDetails", JSON.stringify(shippingDetails));
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          "shippingDetails",
+          JSON.stringify(shippingDetails)
+        );
+      } catch (error) {
+        console.error("Failed to save shipping details:", error);
+      }
+    }
   }, [shippingDetails]);
 
+  // Update shippingDetails when session changes
   useEffect(() => {
-    if (session?.user) {
+    if (typeof window !== "undefined" && session?.user) {
       setShippingDetails((prev) => ({
         ...prev,
         email: session.user.email || prev.email,
@@ -117,6 +132,7 @@ const Checkout = () => {
       }));
     }
   }, [session]);
+
   // calculate subtotal
   const calculateSubtotal = () => {
     return cart.reduce(
@@ -340,6 +356,7 @@ const Checkout = () => {
       const price = calculateTotal();
 
       const paystack = new PaystackPop();
+
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: session.user.email,
