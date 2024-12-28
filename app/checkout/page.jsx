@@ -19,7 +19,12 @@ import BigNumber from "bignumber.js";
 import axios from "axios";
 import { CreditCard, Coins, Truck, Calculator, Wallet } from "lucide-react";
 import { formatCurrency } from "@/hooks/formatcurrency";
+
 import { useEmailSender } from "@/hooks/useEmailSender";
+
+import initializePaystackTransaction from "@/actions/initiaze-paystack-tx";
+import PaystackPop from "@paystack/inline-js";
+
 const TAX_RATES = {
   CA: 0.0725,
   NY: 0.08875,

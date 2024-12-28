@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSession, csrfToken } from "next-auth/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useProfileDetails } from "./useProfileDetails";
+import { useProfileDetails } from "./useprofiledetails";
 import ImageUpload from "@/components/Imageupload";
 import { InputField } from "./inputfield";
 import ProfileSkeleton from "./profileskeleton";
