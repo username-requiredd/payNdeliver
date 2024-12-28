@@ -14,6 +14,7 @@
     "@emotion/styled": "^11.13.0",
     "@mui/icons-material": "^6.1.6",
     "@mui/x-data-grid": "^7.17.0",
+    "@paystack/inline-js": "^2.22.1",
     "@solana/pay": "^0.2.5",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",
@@ -44,6 +45,7 @@
     "react-dom": "^18",
     "react-hook-form": "^7.53.0",
     "react-hot-toast": "^2.4.1",
+    "react-paystack": "^6.0.0",
     "react-toastify": "^10.0.5",
     "recharts": "^2.12.7"
   },
