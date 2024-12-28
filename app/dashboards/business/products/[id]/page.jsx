@@ -138,7 +138,6 @@ const EditProduct = ({ id }) => {
     }
   };
 
-
   return (
     <Box sx={{ maxWidth: 800, mx: "auto", mt: 5, mb: 8 }}>
       <Typography
@@ -167,7 +166,7 @@ const EditProduct = ({ id }) => {
               Cover Image
             </Typography>
             <UploadBox>
-              {productData.image ? (
+              {productData?.image ? (
                 <img
                   src={productData.image}
                   alt="Cover"
@@ -196,7 +195,7 @@ const EditProduct = ({ id }) => {
               label="Product Name"
               variant="outlined"
               fullWidth
-              value={productData.name}
+              value={productData?.name}
               onChange={handleChange("name")}
               error={!!errors.name}
               helperText={errors.name}
@@ -211,7 +210,7 @@ const EditProduct = ({ id }) => {
               fullWidth
               multiline
               rows={4}
-              value={productData.description}
+              value={productData?.description}
               onChange={handleChange("description")}
               InputLabelProps={{ shrink: true }}
             />
@@ -222,7 +221,7 @@ const EditProduct = ({ id }) => {
               multiple
               options={[]}
               freeSolo
-              value={productData.category}
+              value={productData?.category}
               onChange={handleMultipleChange("category")}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
@@ -252,7 +251,7 @@ const EditProduct = ({ id }) => {
               label="Price"
               variant="outlined"
               fullWidth
-              value={productData.price}
+              value={productData?.price}
               onChange={handleChange("price")}
               type="number"
               error={!!errors.price}
@@ -266,7 +265,7 @@ const EditProduct = ({ id }) => {
               label="Stock"
               variant="outlined"
               fullWidth
-              value={productData.stock}
+              value={productData?.stock}
               onChange={handleChange("stock")}
               type="number"
               error={!!errors.stock}

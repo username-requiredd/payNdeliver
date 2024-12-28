@@ -27,6 +27,7 @@
     "bcryptjs": "^2.4.3",
     "bignumber.js": "^9.1.2",
     "crypto": "^1.0.1",
+    "csrf": "^3.1.0",
     "formidable": "^3.5.1",
     "framer-motion": "^11.5.4",
     "imagekitio-next": "^1.0.0",

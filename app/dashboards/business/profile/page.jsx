@@ -1,31 +1,102 @@
 "use client";
-import React from "react";
-import { useSession } from "next-auth/react";
-import { ToastContainer } from "react-toastify";
+
+import React, { useState, useEffect } from "react";
+import { useSession, csrfToken } from "next-auth/react";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useProfileDetails } from "./useProfileDetails";
 import ImageUpload from "@/components/Imageupload";
 import { InputField } from "./inputfield";
+import ProfileSkeleton from "./profileskeleton";
+
 const ProfilePage = () => {
   const { data: session } = useSession();
+  const [csrf, setCsrf] = useState("");
+
   const {
     state: { loading, isEditing, editedData, errors },
     actions: {
       handleInputChange,
       handleEdit,
       handleCancel,
-      handleSubmit,
+      handleSubmit: submitChanges,
       handleImageUpload,
       handleOpeningHoursChange,
     },
   } = useProfileDetails({ session });
 
+  // Fetch the CSRF token when the component mounts
+
+  const fetchCsrfToken = async (signal) => {
+    try {
+      const response = await fetch("/api/csrf", {
+        method: "GET", // Changed to GET
+        signal,
+        credentials: "include", // Important for cookies
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch CSRF token");
+      }
+
+      const data = await response.json();
+      setCsrf(data.csrfToken);
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        console.error("Error fetching CSRF token:", error);
+        toast.error("Failed to secure the request. Please try again.");
+      }
+    }
+  };
+
+  //  Fetch token on mount and refresh every 30 minutes
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchCsrfToken(controller.signal);
+
+    // Refresh token periodically
+    const intervalId = setInterval(() => {
+      fetchCsrfToken(controller.signal);
+    }, 30 * 60 * 1000); // 30 minutes
+
+    return () => {
+      controller.abort();
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  // Handle form submission
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch(`/api/business/${session?.user?.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrf, // Use the fetched CSRF token
+        },
+        body: JSON.stringify({ profileData: editedData }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success("Profile updated successfully!");
+        submitChanges();
+      } else {
+        toast.error(result.message || "Failed to update profile.");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("An unexpected error occurred.");
+    }
+  };
+
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   return (
@@ -160,10 +231,9 @@ const ProfilePage = () => {
                     <span className="w-24 font-medium">{dayInfo.day}</span>
                     <input
                       type="time"
-                      className={`
-                        border rounded-md p-2
-                        ${!isEditing ? "bg-gray-100" : "bg-white"}
-                      `}
+                      className={`border rounded-md p-2 ${
+                        !isEditing ? "bg-gray-100" : "bg-white"
+                      }`}
                       value={dayInfo.openingTime}
                       onChange={(e) =>
                         handleOpeningHoursChange(
@@ -177,10 +247,9 @@ const ProfilePage = () => {
                     <span>to</span>
                     <input
                       type="time"
-                      className={`
-                        border rounded-md p-2
-                        ${!isEditing ? "bg-gray-100" : "bg-white"}
-                      `}
+                      className={`border rounded-md p-2 ${
+                        !isEditing ? "bg-gray-100" : "bg-white"
+                      }`}
                       value={dayInfo.closingTime}
                       onChange={(e) =>
                         handleOpeningHoursChange(
@@ -212,13 +281,11 @@ const ProfilePage = () => {
                   handleInputChange("description", e.target.value)
                 }
                 disabled={!isEditing}
-                className={`
-                  shadow-sm focus:ring-indigo-500 focus:border-indigo-500 
+                className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 
                   block w-full sm:text-sm border-gray-300 rounded-md p-3 
-                  transition-colors duration-200
-                  ${!isEditing ? "bg-gray-50" : "bg-white"}
-                  ${errors.description ? "border-red-500" : ""}
-                `}
+                  transition-colors duration-200 ${
+                    !isEditing ? "bg-gray-50" : "bg-white"
+                  } ${errors.description ? "border-red-500" : ""}`}
                 aria-invalid={errors.description ? "true" : "false"}
                 aria-describedby={
                   errors.description ? "description-error" : undefined

@@ -132,6 +132,7 @@ const ShopDetails = ({ params }) => {
         ...product,
         id: product.id,
         storeId: profile._id,
+        storeEmail: profile.email,
         storeName: profile.businessName,
         quantity: product.quantity || 1, // Default to 1 if not provided
         description: product.description,

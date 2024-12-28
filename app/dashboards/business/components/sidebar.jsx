@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  LogIn,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -46,13 +47,14 @@ const Sidebar = () => {
       icon: ShoppingBag,
       label: "Products",
     },
-    { href: "/dashboards/business/customers", icon: Users, label: "Customers" },
-    { href: "/dashboards/business/sales", icon: Coins, label: "Sales" },
     {
       href: "/dashboards/business/transactions",
       icon: ArrowRightLeft,
-      label: "Transactions",
+      label: "Orders",
     },
+    { href: "/dashboards/business/sales", icon: Coins, label: "Sales" },
+
+    { href: "/dashboards/business/customers", icon: Users, label: "Customers" },
   ];
 
   return (
@@ -98,13 +100,23 @@ const Sidebar = () => {
           </nav>
 
           <div className="mt-auto pt-4">
-            <button
-              onClick={() => signOut()}
-              className="w-full rounded-md flex items-center text-start p-3 px-3 bg-gray-700 text-white hover:bg-gray-600 transition-colors duration-200"
-            >
-              Logout
-              <LogOut className="ml-2" />
-            </button>
+            {session?.user?.id ? (
+              <button
+                onClick={() => signOut()}
+                className="w-full rounded-md flex items-center text-start p-3 px-3 bg-gray-700 text-white hover:bg-red-600 transition-colors duration-200"
+              >
+                Logout
+                <LogOut className="ml-2" />
+              </button>
+            ) : (
+              <Link
+                href={"/signin"}
+                className="w-full rounded-md flex items-center text-start p-3 px-3 bg-gray-700 text-white hover:bg-green-600 transition-colors duration-200"
+              >
+                Login
+                <LogIn className="ml-2" />
+              </Link>
+            )}
           </div>
         </div>
       </aside>

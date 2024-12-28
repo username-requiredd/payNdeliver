@@ -2,11 +2,30 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState, useEffect, useMemo } from "react";
-import { Search, UserPlus, Eye, Trash2 } from "lucide-react";
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, IconButton, Dialog, DialogActions, DialogContent,
-  DialogContentText, DialogTitle, Button, Avatar
+  Search,
+  UserPlus,
+  Eye,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
+  Avatar,
 } from "@mui/material";
 
 const ProductsTable = () => {
@@ -16,6 +35,10 @@ const ProductsTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: "ascending",
+  });
 
   const { data: session } = useSession();
 
@@ -37,29 +60,72 @@ const ProductsTable = () => {
     fetchProducts();
   }, [session?.user?.id]);
 
+  const requestSort = (key) => {
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  };
 
-  const filteredProducts = useMemo(() => {
-    if (!products.length) return [];
-    const searchLower = searchTerm.toLowerCase();
-    
-    return products.filter(product => {
-      const name = String(product.name || '');
-      const category = String(product.category || '');
-      const price = String(product.price || '');
-      
-      return (
-        name.toLowerCase().includes(searchLower) ||
-        category.toLowerCase().includes(searchLower) ||
-        price.includes(searchLower)
-      );
-    });
-  }, [products, searchTerm]);
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) {
+      return <div className="w-4 h-4 inline-block" />;
+    }
+    return sortConfig.direction === "ascending" ? (
+      <ChevronUp className="w-4 h-4 inline-block" />
+    ) : (
+      <ChevronDown className="w-4 h-4 inline-block" />
+    );
+  };
+
+  const sortedAndFilteredProducts = useMemo(() => {
+    let filteredProducts = products;
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filteredProducts = products.filter((product) => {
+        const name = String(product.name || "");
+        const category = String(product.category || "");
+        const price = String(product.price || "");
+
+        return (
+          name.toLowerCase().includes(searchLower) ||
+          category.toLowerCase().includes(searchLower) ||
+          price.includes(searchLower)
+        );
+      });
+    }
+
+    if (sortConfig.key) {
+      filteredProducts.sort((a, b) => {
+        const aValue = String(a[sortConfig.key] || "").toLowerCase();
+        const bValue = String(b[sortConfig.key] || "").toLowerCase();
+
+        if (sortConfig.key === "price") {
+          // Handle price sorting numerically
+          const aPrice = parseFloat(aValue.replace(/[^0-9.-]+/g, ""));
+          const bPrice = parseFloat(bValue.replace(/[^0-9.-]+/g, ""));
+          if (sortConfig.direction === "ascending") {
+            return aPrice - bPrice;
+          }
+          return bPrice - aPrice;
+        }
+
+        if (sortConfig.direction === "ascending") {
+          return aValue.localeCompare(bValue);
+        }
+        return bValue.localeCompare(aValue);
+      });
+    }
+
+    return filteredProducts;
+  }, [products, searchTerm, sortConfig]);
 
   const handleDeleteProduct = async () => {
     if (!productToDelete?._id) return;
     const prevProducts = [...products];
     try {
-      setProducts(products.filter(p => p._id !== productToDelete._id));
+      setProducts(products.filter((p) => p._id !== productToDelete._id));
       setDeleteDialogOpen(false);
       const response = await fetch(`/api/products/${productToDelete._id}`, {
         method: "DELETE",
@@ -76,10 +142,12 @@ const ProductsTable = () => {
   };
 
   return (
-    <div className="min-h-screen p-6 sm:p-8 md:p-10">
+    <div className="min-h-screen p-2 pt-5 ">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h1 className="text-4xl font-bold text-indigo-800 mb-2">Manage Products</h1>
+          <h1 className="text-4xl font-bold text-indigo-800 mb-2">
+            Manage Products
+          </h1>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
@@ -92,7 +160,10 @@ const ProductsTable = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+              <Search
+                className="absolute left-3 top-2.5 text-gray-400"
+                size={20}
+              />
             </div>
             <Link
               href="products/add"
@@ -103,27 +174,63 @@ const ProductsTable = () => {
             </Link>
           </div>
 
-          <TableContainer component={Paper} className="max-h-[calc(100vh-300px)] overflow-auto rounded-lg shadow-md">
+          <TableContainer
+            component={Paper}
+            className="max-h-[calc(100vh-300px)] overflow-auto rounded-lg shadow-md"
+          >
             <Table stickyHeader>
               <TableHead>
                 <TableRow className="bg-indigo-100">
-                  <TableCell className="font-semibold text-indigo-800">Image</TableCell>
-                  <TableCell className="font-semibold text-indigo-800">Name</TableCell>
-                  <TableCell className="font-semibold text-indigo-800">Category</TableCell>
-                  <TableCell className="font-semibold text-indigo-800">In Stock</TableCell>
-                  <TableCell className="font-semibold text-indigo-800">Price</TableCell>
-                  <TableCell align="right" className="font-semibold text-indigo-800">Actions</TableCell>
+                  <TableCell className="font-semibold text-indigo-800">
+                    Image
+                  </TableCell>
+                  <TableCell
+                    className="font-semibold text-indigo-800 cursor-pointer"
+                    onClick={() => requestSort("name")}
+                  >
+                    Name {getSortIcon("name")}
+                  </TableCell>
+                  <TableCell
+                    className="font-semibold text-indigo-800 cursor-pointer"
+                    onClick={() => requestSort("category")}
+                  >
+                    Category {getSortIcon("category")}
+                  </TableCell>
+                  <TableCell
+                    className="font-semibold text-indigo-800 cursor-pointer"
+                    onClick={() => requestSort("instock")}
+                  >
+                    In Stock {getSortIcon("instock")}
+                  </TableCell>
+                  <TableCell
+                    className="font-semibold text-indigo-800 cursor-pointer"
+                    onClick={() => requestSort("price")}
+                  >
+                    Price {getSortIcon("price")}
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    className="font-semibold text-indigo-800"
+                  >
+                    Actions
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
-                  Array(5).fill(null).map((_, i) => (
-                    <TableRow key={i}>
-                      {Array(6).fill(null).map((_, j) => (
-                        <TableCell key={j}><div className="h-6 bg-gray-200 rounded animate-pulse" /></TableCell>
-                      ))}
-                    </TableRow>
-                  ))
+                  Array(5)
+                    .fill(null)
+                    .map((_, i) => (
+                      <TableRow key={i}>
+                        {Array(6)
+                          .fill(null)
+                          .map((_, j) => (
+                            <TableCell key={j}>
+                              <div className="h-6 bg-gray-200 rounded animate-pulse" />
+                            </TableCell>
+                          ))}
+                      </TableRow>
+                    ))
                 ) : error ? (
                   <TableRow>
                     <TableCell colSpan={6}>
@@ -133,7 +240,7 @@ const ProductsTable = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : filteredProducts.length === 0 ? (
+                ) : sortedAndFilteredProducts.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6}>
                       <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md">
@@ -143,10 +250,16 @@ const ProductsTable = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredProducts.map((product, index) => (
-                    <TableRow key={product._id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                  sortedAndFilteredProducts.map((product, index) => (
+                    <TableRow
+                      key={product._id}
+                      className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
+                    >
                       <TableCell>
-                        <Avatar src={product.image || "/images/default.jpg"} alt={product.name} />
+                        <Avatar
+                          src={product.image || "/images/default.jpg"}
+                          alt={product.name}
+                        />
                       </TableCell>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.category}</TableCell>
@@ -155,7 +268,10 @@ const ProductsTable = () => {
                       <TableCell className="flex justify-end space-x-2">
                         <Link href={`products/${product._id}`}>
                           <IconButton className="hover:bg-indigo-100">
-                            <Eye className="text-blue-600 hover:text-blue-800" size={20} />
+                            <Eye
+                              className="text-blue-600 hover:text-blue-800"
+                              size={20}
+                            />
                           </IconButton>
                         </Link>
                         <IconButton
@@ -187,7 +303,8 @@ const ProductsTable = () => {
         </DialogTitle>
         <DialogContent>
           <DialogContentText className="mt-4">
-            Are you sure you want to delete {productToDelete?.name}? This action cannot be undone.
+            Are you sure you want to delete {productToDelete?.name}? This action
+            cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions className="p-4">

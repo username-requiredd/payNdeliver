@@ -18,6 +18,10 @@ const orderItemSchema = new mongoose.Schema({
     required: true,
   },
 
+  businessEmail: {
+    type: String,
+  },
+
   productImage: {
     type: String,
   },

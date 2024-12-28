@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
-
+import { PublicKey } from "@solana/web3.js";
 const DAYS_OF_WEEK = [
   "Monday",
   "Tuesday",
@@ -102,9 +102,21 @@ export const useProfileDetails = ({ session }) => {
     if (!accountName?.trim())
       newErrors.accountName = "Account name is required";
 
-    // if (walletAddress && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(walletAddress)) {
-    //   newErrors.walletAddress = "Invalid wallet address format";
-    // }
+    if (walletAddress) {
+      const trimmedAddress = walletAddress.trim();
+      if (trimmedAddress) {
+        try {
+          new PublicKey(trimmedAddress);
+          // If the address is valid but has whitespace, update it
+          if (trimmedAddress !== walletAddress) {
+            handleInputChange("walletAddress", trimmedAddress);
+          }
+        } catch (error) {
+          newErrors.walletAddress =
+            "Please enter a valid Solana wallet address";
+        }
+      }
+    }
 
     if (accountNumber && !/^\d{10,}$/.test(accountNumber.trim())) {
       newErrors.accountNumber = "Account number must be at least 10 digits";
@@ -131,6 +143,21 @@ export const useProfileDetails = ({ session }) => {
   }, [editedData]);
 
   const handleInputChange = useCallback((field, value) => {
+    // Immediately validate wallet address when it changes
+    if (field === "walletAddress" && value) {
+      try {
+        new PublicKey(value.trim());
+      } catch (error) {
+        setErrors((prev) => ({
+          ...prev,
+          walletAddress: "Please enter a valid Solana wallet address",
+        }));
+        // Still update the value to show user input
+        setEditedData((prev) => ({ ...prev, [field]: value }));
+        return;
+      }
+    }
+
     setEditedData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
   }, []);
@@ -161,7 +188,7 @@ export const useProfileDetails = ({ session }) => {
         .then((r) => r.json())
         .then((d) => d.token);
 
-      const response = await fetch(`/api/business/${session.user.id}`, {
+      const response = await fetch(`/api/business/${session?.user?.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

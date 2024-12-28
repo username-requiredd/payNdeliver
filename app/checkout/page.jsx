@@ -19,7 +19,7 @@ import BigNumber from "bignumber.js";
 import axios from "axios";
 import { CreditCard, Coins, Truck, Calculator, Wallet } from "lucide-react";
 import { formatCurrency } from "@/hooks/formatcurrency";
-
+import { useEmailSender } from "@/hooks/useEmailSender";
 const TAX_RATES = {
   CA: 0.0725,
   NY: 0.08875,
@@ -45,6 +45,20 @@ const Checkout = () => {
   const [merchantWallet] = useState(
     "GAQakNCAeoKLi5nacP95fUWkTt2BLXRuQSBY5hequ8NU"
   );
+
+  const {
+    sendEmail,
+    loading: emailLoader,
+    error,
+    success,
+  } = useEmailSender({
+    // Optional configurations
+    retryCount: 3,
+    onSuccess: () => {
+      // Clear form on success
+      setFormData({ email: "", subject: "", message: "" });
+    },
+  });
 
   const [shippingDetails, setShippingDetails] = useState(() => {
     if (typeof window !== "undefined") {
@@ -269,6 +283,7 @@ const Checkout = () => {
           productName: item.name,
           storeName: item.storeName,
           businessId: item.storeId,
+          businessEmail: item.storeEmail,
           productDescription: item.description,
           quantity: item.quantity,
           unitPriceUSD: item.price,
@@ -377,16 +392,53 @@ const Checkout = () => {
         },
       });
 
+      // Send success email
+      await sendEmail({
+        to: session?.user?.email,
+        subject: "Payment Successful - Order Confirmation",
+        html: `
+          <h1>Thank you for your payment!</h1>
+          <p>Your order (${orderId}) has been successfully processed.</p>
+          <p>Payment Details:</p>
+          <ul>
+            <li>Amount: ${amountInSol.toString()} SOL</li>
+            <li>Transaction Hash: ${signature}</li>
+            <li>Wallet: ${publicKey.toString()}</li>
+          </ul>
+          <p>You can track your order status using the order ID: ${orderId}</p>
+        `,
+      });
+
       // Ensure successful payment handling
       await handleSuccessfulPayment(orderId);
     } catch (error) {
       const message = {
         title: "Payment Failed",
-        message: `Unfortunately, your payment for order  could not be processed. Please try again or contact support for assistance.`,
+        message: `Unfortunately, your payment for order could not be processed. Please try again or contact support for assistance.`,
         userId: session?.user?.id,
         type: "in-app",
       };
       createNotification(message);
+
+      // Send failure email
+      if (session?.user?.email) {
+        await sendEmail({
+          to: session.user.email,
+          subject: "Payment Failed - Action Required",
+          html: `
+            <h1>Payment Failed</h1>
+            <p>We noticed there was an issue processing your recent payment.</p>
+            <p>Error Details: ${error.message}</p>
+            <p>Please try the following:</p>
+            <ul>
+              <li>Check your wallet connection</li>
+              <li>Ensure you have sufficient SOL balance</li>
+              <li>Try the transaction again</li>
+            </ul>
+            <p>If you continue to experience issues, please contact our support team.</p>
+          `,
+        });
+      }
 
       console.error("Crypto payment full error:", error);
       setPaymentStatus(`Payment failed: ${error.message}`);

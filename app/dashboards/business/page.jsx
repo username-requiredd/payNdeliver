@@ -22,6 +22,7 @@ import { useQuery } from "@tanstack/react-query";
 import DashboardComponent from "./dashboard";
 import { useSession } from "next-auth/react";
 import { formatCurrency } from "@/hooks/formatcurrency";
+import DashboardSkeleton from "./dashboardskeleton";
 
 const DashboardChart = () => {
   const theme = useTheme();
@@ -39,7 +40,7 @@ const DashboardChart = () => {
   });
 
   // Handling potential error or loading state
-  if (isLoading) return <Typography>Loading...</Typography>;
+  if (isLoading) return <DashboardSkeleton />;
   if (error) return <Typography>Error fetching data.</Typography>;
 
   // Calculate totals
@@ -108,7 +109,7 @@ const DashboardChart = () => {
   );
 
   return (
-    <Grid container className="mt-5 p-2" spacing={3}>
+    <Grid container className="pt-5 p-2" spacing={3}>
       {/* Display Total Orders */}
       <Grid item xs={12} md={4}>
         <StatCard

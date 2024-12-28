@@ -1,11 +1,48 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
-import { Search, SearchX, Trash2, Eye } from "lucide-react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Search, SearchX, Eye, ChevronUp, ChevronDown } from "lucide-react";
 import { useSession } from "next-auth/react";
 import CustomerModal from "./customerProfileMoadal";
+
+// Keeping existing TableSkeleton and HeaderSkeleton components unchanged
+const TableSkeleton = () => (
+  <>
+    {Array(5)
+      .fill(0)
+      .map((_, index) => (
+        <tr key={index} className="animate-pulse">
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+            </div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="h-4 bg-gray-200 rounded w-32"></div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="h-4 bg-gray-200 rounded w-48"></div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="h-4 bg-gray-200 rounded w-40"></div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="h-4 bg-gray-200 rounded w-24"></div>
+          </td>
+        </tr>
+      ))}
+  </>
+);
+
+const HeaderSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
+    <div className="h-4 bg-gray-200 rounded w-64 mb-8"></div>
+  </div>
+);
+
 const CustomersTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -14,6 +51,10 @@ const CustomersTable = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: "ascending",
+  });
 
   const fetchCustomer = useCallback(
     async ({ signal }) => {
@@ -63,43 +104,84 @@ const CustomersTable = () => {
     setIsModalOpen(true);
   };
 
-  const filteredRows = rows.filter((row) =>
-    Object.values(row).some((value) =>
-      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const requestSort = (key) => {
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) {
+      return <div className="w-4 h-4 inline-block" />;
+    }
+    return sortConfig.direction === "ascending" ? (
+      <ChevronUp className="w-4 h-4 inline-block" />
+    ) : (
+      <ChevronDown className="w-4 h-4 inline-block" />
+    );
+  };
+
+  const sortedAndFilteredRows = useMemo(() => {
+    let filteredData = rows.filter((row) =>
+      Object.values(row).some((value) =>
+        value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+
+    if (sortConfig.key) {
+      filteredData.sort((a, b) => {
+        const aValue = String(a[sortConfig.key] || "").toLowerCase();
+        const bValue = String(b[sortConfig.key] || "").toLowerCase();
+
+        if (sortConfig.direction === "ascending") {
+          return aValue.localeCompare(bValue);
+        }
+        return bValue.localeCompare(aValue);
+      });
+    }
+
+    return filteredData;
+  }, [rows, searchTerm, sortConfig]);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto bg-white rounded-lg shadow-sm">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-        <p className="text-gray-500 mt-2">
-          Manage and view your customer details
-        </p>
+    <div className="p-2 pt-5 mb-5 max-w-7xl mx-auto rounded-lg shadow-sm">
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        {loading ? (
+          <HeaderSkeleton />
+        ) : (
+          <>
+            <h1 className="text-4xl font-bold text-indigo-800 mb-2">
+              Customers
+            </h1>
+            <p className="mb-8">Manage and view your customer details</p>
+          </>
+        )}
       </div>
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
           <div
-            className={`transition-all duration-300 ease-in-out transform
-            ${
+            className={`transition-all duration-300 ease-in-out transform ${
               isVisible
                 ? "opacity-100 translate-x-0"
                 : "opacity-0 -translate-x-full"
             }`}
           >
             <input
-              className="w-64 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 
-                focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+              className="w-64 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
               onChange={(e) => setSearchTerm(e.target.value)}
               value={searchTerm}
               placeholder="Search customers..."
               type="text"
+              disabled={loading}
             />
           </div>
           <button
             onClick={() => setIsVisible((prev) => !prev)}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+            disabled={loading}
           >
             {isVisible ? (
               <Search className="text-gray-600" />
@@ -118,31 +200,36 @@ const CustomersTable = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer Name
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => requestSort("customer")}
+                >
+                  Customer Name {getSortIcon("customer")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => requestSort("email")}
+                >
+                  Email {getSortIcon("email")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Address
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => requestSort("address")}
+                >
+                  Address {getSortIcon("address")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Phone Number
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => requestSort("phone")}
+                >
+                  Phone Number {getSortIcon("phone")}
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="px-6 py-4 text-center text-gray-500"
-                  >
-                    Loading...
-                  </td>
-                </tr>
-              ) : filteredRows.length === 0 ? (
+                <TableSkeleton />
+              ) : sortedAndFilteredRows.length === 0 ? (
                 <tr>
                   <td
                     colSpan="5"
@@ -152,7 +239,7 @@ const CustomersTable = () => {
                   </td>
                 </tr>
               ) : (
-                filteredRows
+                sortedAndFilteredRows
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((row) => (
                     <tr
@@ -201,6 +288,7 @@ const CustomersTable = () => {
                 setRowsPerPage(Number(e.target.value));
                 setPage(0);
               }}
+              disabled={loading}
             >
               {[10, 25, 100].map((pageSize) => (
                 <option key={pageSize} value={pageSize}>
@@ -209,30 +297,33 @@ const CustomersTable = () => {
               ))}
             </select>
             <span className="text-sm text-gray-700">
-              Showing {page * rowsPerPage + 1} to{" "}
-              {Math.min((page + 1) * rowsPerPage, filteredRows.length)} of{" "}
-              {filteredRows.length} results
+              {loading ? (
+                <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
+              ) : (
+                `Showing ${page * rowsPerPage + 1} to ${Math.min(
+                  (page + 1) * rowsPerPage,
+                  sortedAndFilteredRows.length
+                )} of ${sortedAndFilteredRows.length} results`
+              )}
             </span>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setPage(page - 1)}
-              disabled={page === 0}
-              className="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium 
-                text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 
-                disabled:cursor-not-allowed transition-colors duration-200"
+              disabled={page === 0 || loading}
+              className="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               Previous
             </button>
             <button
               onClick={() => setPage(page + 1)}
               disabled={
-                page >= Math.ceil(filteredRows.length / rowsPerPage) - 1
+                page >=
+                  Math.ceil(sortedAndFilteredRows.length / rowsPerPage) - 1 ||
+                loading
               }
-              className="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium 
-                text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 
-                disabled:cursor-not-allowed transition-colors duration-200"
+              className="px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               Next
             </button>
