@@ -24,7 +24,6 @@ const NotificationCount = () => {
 
       if (response.status === 200) {
         const count = response.data?.data.filter((notif)=>notif.read === false) || 0; 
-        console.log(count)
         setNotificationsCount(count);
       } else {
         throw new Error(`Unexpected status code: ${response.status}`);

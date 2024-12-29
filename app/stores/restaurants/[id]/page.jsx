@@ -141,7 +141,7 @@ const ShopDetails = ({ params }) => {
         image: product.image,
       };
 
-      console.log("Attempting to add to cart:", cartProduct);
+      // console.log("Attempting to add to cart:", cartProduct);
 
       try {
         addToCart(cartProduct); // Directly pass the cartProduct
