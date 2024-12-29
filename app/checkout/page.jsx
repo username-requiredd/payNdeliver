@@ -338,15 +338,9 @@ const Checkout = () => {
       setLoading(true);
       setPaymentStatus("Processing payment...");
 
-<<<<<<< HEAD
       if (!validateForms()) {
         throw new Error("Please fill in all required fields");
       }
-=======
-      // if (!validateForms())
-      //   throw new Error("Please fill in all required fields");
-      // Make the put request to update the order
->>>>>>> master
 
       const price = calculateTotal();
 
@@ -362,25 +356,15 @@ const Checkout = () => {
           setPaymentStatus("Transaction success");
           // console.log(transaction.reference);
 
-<<<<<<< HEAD
           const paymentDetails = {
             type: "card",
             amountUSD: price,
             transactionHash: transaction.reference,
-=======
-          const transactionRef = transaction.reference;
-
-          const paymentDetails = {
-            type: "card",
-            amountUSD: price,
-            transactionHash: transactionRef,
->>>>>>> master
           };
 
           // Create order first and get the orderId
           const orderId = await createOrder({
             ...paymentDetails,
-<<<<<<< HEAD
             status: "pending",
           });
           console.log("Order Id: ", orderId);
@@ -409,32 +393,6 @@ const Checkout = () => {
             `,
           });
 
-=======
-            status: "processing",
-          });
-
-          // Update order status
-          await updateOrderStatus(orderId, {
-            status: "paid",
-            ...paymentDetails,
-          });
-
-          // Send success email
-          await sendEmail({
-            to: session?.user?.email,
-            subject: "Payment Successful - Order Confirmation",
-            html: `
-          <h1>Thank you for your payment!</h1>
-          <p>Your order (${orderId}) has been successfully processed.</p>
-          <p>Payment Details:</p>
-          <ul>
-            <li>Amount: ${price} Naira</li>
-          </ul>
-          <p>You can track your order status using the order ID: ${orderId}</p>
-        `,
-          });
-
->>>>>>> master
           // Ensure successful payment handling
           await handleSuccessfulPayment(orderId);
         },
