@@ -347,11 +347,7 @@ const Checkout = () => {
 
       // if (!validateForms())
       //   throw new Error("Please fill in all required fields");
-
-      const orderId = await createOrder({
-        type: "card",
-        last4: cardDetails.number.slice(-4),
-      });
+      // Make the put request to update the order
 
       const price = calculateTotal();
 
@@ -363,19 +359,44 @@ const Checkout = () => {
         amount: price * 100,
         onSuccess: async (transaction) => {
           setPaymentStatus("Transaction success");
-          console.log(transaction);
+          // console.log(transaction.reference);
 
-          // Make the put request to update the order
-          const res = await axios.put(`/api/orders/${orderId}`, {
-            status: "paid",
-            paymentDetails: {
-              type: "card",
-              last4: cardDetails.number.slice(-4),
-            },
+          const transactionRef = transaction.reference;
+
+          const paymentDetails = {
+            type: "card",
+            amountUSD: price,
+            transactionHash: transactionRef,
+          };
+
+          // Create order first and get the orderId
+          const orderId = await createOrder({
+            ...paymentDetails,
+            status: "processing",
           });
 
-          console.log(res);
+          // Update order status
+          await updateOrderStatus(orderId, {
+            status: "paid",
+            ...paymentDetails,
+          });
 
+          // Send success email
+          await sendEmail({
+            to: session?.user?.email,
+            subject: "Payment Successful - Order Confirmation",
+            html: `
+          <h1>Thank you for your payment!</h1>
+          <p>Your order (${orderId}) has been successfully processed.</p>
+          <p>Payment Details:</p>
+          <ul>
+            <li>Amount: ${price} Naira</li>
+          </ul>
+          <p>You can track your order status using the order ID: ${orderId}</p>
+        `,
+          });
+
+          // Ensure successful payment handling
           await handleSuccessfulPayment(orderId);
         },
         onCancel: () => {
