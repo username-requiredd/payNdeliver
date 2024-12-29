@@ -440,6 +440,8 @@ const Checkout = () => {
         status: "paid",
       });
 
+
+
       // Update order status
       await updateOrderStatus(orderId, {
         status: "paid",

@@ -15,16 +15,15 @@ import {
 import { signOut, useSession } from "next-auth/react";
 import { useCart } from "@/contex/cartcontex";
 import { motion, AnimatePresence } from "framer-motion";
-import NotificationCount from "./notificationcount";
+import useUnreadCount from "@/hooks/useunreadcount";
 const Header = () => {
   const [mounted, setMounted] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
   const { cart } = useCart();
   const { data: session } = useSession();
-
-  const n = NotificationCount().length;
-  console.log(n);
+  const unreadCount = useUnreadCount();
+  console.log("unread notification:",unreadCount)
   useEffect(() => {
     setMounted(true);
 
@@ -34,6 +33,7 @@ const Header = () => {
       if (menuElement && !menuElement.contains(event.target)) {
         setUserMenuOpen(false);
       }
+
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -71,7 +71,7 @@ const Header = () => {
                   className="absolute -top-1 -right-1 inline-flex items-center justify-center 
           h-4 w-4 text-xs font-bold text-white bg-red-500 rounded-full"
                 >
-                  {n}
+                  {unreadCount}
                 </span>
               )}
             </Link>
