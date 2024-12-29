@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Star, UserCircle2, MessageCircle, CalendarDays } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 const StarRating = ({
   rating,
@@ -275,9 +276,12 @@ const Reviews = ({ businessId }) => {
         <div className="text-center border rounded-2xl p-8 bg-gray-50">
           <UserCircle2 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
           <p className="text-gray-600 mb-4">Sign in to share your experience</p>
-          <button className="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors">
+          <Link
+            href={"/signin"}
+            className="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
+          >
             Sign In
-          </button>
+          </Link>
         </div>
       )}
     </div>
