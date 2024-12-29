@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import { useEmailSender } from "@/hooks/useEmailSender";
 const GetStartedPage = () => {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -20,6 +20,16 @@ const GetStartedPage = () => {
     businessName: "",
     businessType: "",
   });
+  const {
+    sendEmail,
+  } = useEmailSender({
+    retryCount: 3,
+    onSuccess: () => {
+      // Clear form on success
+      setFormData({ email: "", subject: "", message: "" });
+    },
+  });
+
 
   const router = useRouter();
 
@@ -31,8 +41,8 @@ const GetStartedPage = () => {
     e.preventDefault();
 
     if (
-      accountType === "business" &&
       formData.password !== formData.confirmPassword
+
     ) {
       toast.error("Passwords do not match!");
       return;
@@ -53,9 +63,49 @@ const GetStartedPage = () => {
 
       if (response.ok) {
         if (accountType === "business") {
+          await sendEmail({
+            to: formData.email,
+            subject: "Welcome to payNdeliver - Your Business is Now Live!",
+            html: `
+              <h1>Welcome to payNdeliver!</h1>
+              <p>Congratulations on successfully registering your business with payNdeliver.</p>
+              <p>Your store is now live and ready to start accepting both cash and crypto payments from customers!</p>
+              <p>Here are some next steps to help you get started:</p>
+              <ul>
+                <li><strong>Dashboard Access:</strong> Log in to your dashboard to manage your store, view orders, and track sales.</li>
+                <li><strong>Product Listing:</strong> Add your products or services to attract customers.</li>
+                <li><strong>Payment Details:</strong> Ensure your payment settings are correctly configured to receive payouts seamlessly.</li>
+              </ul>
+              <p>We’re thrilled to have you on board and can’t wait to see your business thrive!</p>
+              <p>If you have any questions or need assistance, our support team is here to help.</p>
+              <p>Warm regards,<br> 
+              The payNdeliver Team</p>
+            `,
+          });
+          
           document.cookie = `businessRedirect=${encodeURIComponent(
             "/dashboards/business/setup"
           )}; path=/; max-age=3600; SameSite=Strict; Secure`;
+        }else{
+          await sendEmail({
+            to:formData.email,
+            subject: "Welcome to payNdeliver - Your Account is Ready!",
+            html: `
+              <h1>Welcome to payNdeliver!</h1>
+              <p>We're excited to have you join our community of smart shoppers and sellers.</p>
+              <p>Your account has been successfully created, giving you access to:</p>
+              <ul>
+                <li><strong>Explore Stores:</strong> Discover a wide range of businesses offering great products and services.</li>
+                <li><strong>Secure Payments:</strong> Pay seamlessly using cash or crypto.</li>
+                <li><strong>Order Tracking:</strong> Stay updated on your purchases in real-time.</li>
+              </ul>
+              <p>Start shopping now and enjoy a hassle-free experience!</p>
+              <p>If you have any questions or need assistance, our support team is here to help.</p>
+              <p>Happy shopping!<br> 
+              The payNdeliver Team</p>
+            `,
+          });
+          
         }
         setStep(step + 1);
       } else {

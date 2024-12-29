@@ -179,7 +179,7 @@ const OrdersSection = () => {
                 </span>
               </div>
               <div className="text-sm text-gray-600">
-                Status: awaiting delivery
+                Status:{order.payment.status}
               </div>
               <div className="mt-2">
                 <button
