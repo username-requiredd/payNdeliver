@@ -8,7 +8,7 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false);
   const checkPaymentStatus = async () => {
     if (!reference) {
-      console.error("No reference available");
+      // console.error("No reference available");
       return;
     }
     setIsLoading(true);
@@ -22,7 +22,7 @@ export default function CheckoutPage() {
       const data = await response.json();
       setPaymentStatus(data.message);
     } catch (error) {
-      console.error("Error checking payment status:", error);
+      // console.error("Error checking payment status:", error);
       setPaymentStatus("error");
     } finally {
       setIsLoading(false);

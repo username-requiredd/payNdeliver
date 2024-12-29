@@ -1,20 +1,23 @@
 "use client";
 
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { 
+import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import {
+  ConnectionProvider,
+  WalletProvider,
+} from "@solana/wallet-adapter-react";
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
   TorusWalletAdapter,
   LedgerWalletAdapter,
-  CoinbaseWalletAdapter
-} from '@solana/wallet-adapter-wallets';
-import { clusterApiUrl } from '@solana/web3.js';
-import { useMemo } from 'react';
+  CoinbaseWalletAdapter,
+} from "@solana/wallet-adapter-wallets";
+import { clusterApiUrl } from "@solana/web3.js";
+import { useMemo } from "react";
 
 // Import default styles for the wallet modal
-require('@solana/wallet-adapter-react-ui/styles.css');
+require("@solana/wallet-adapter-react-ui/styles.css");
 
 export function WalletContextProvider({ children }) {
   // Configure the network - can be 'devnet', 'testnet', or 'mainnet-beta'
@@ -36,7 +39,7 @@ export function WalletContextProvider({ children }) {
       new SolflareWalletAdapter(),
       new TorusWalletAdapter(),
       new LedgerWalletAdapter(),
-      new CoinbaseWalletAdapter()
+      new CoinbaseWalletAdapter(),
     ],
     // Only re-initialize wallets if network changes
     [network]
@@ -47,23 +50,21 @@ export function WalletContextProvider({ children }) {
     wallets,
     autoConnect: true,
     onError: (error) => {
-      console.error('Wallet Error:', error);
+      // console.error('Wallet Error:', error);
       // You can add custom error handling here
     },
   };
 
   return (
-    <ConnectionProvider 
+    <ConnectionProvider
       endpoint={endpoint}
       config={{
-        commitment: 'confirmed',
-        wsEndpoint: endpoint.replace('https', 'wss'),
+        commitment: "confirmed",
+        wsEndpoint: endpoint.replace("https", "wss"),
       }}
     >
       <WalletProvider {...walletConfigs}>
-        <WalletModalProvider>
-          {children}
-        </WalletModalProvider>
+        <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
   );
@@ -71,9 +72,5 @@ export function WalletContextProvider({ children }) {
 
 // Export a wrapper component for handling hydration issues
 export default function ClientWalletProvider({ children }) {
-  return (
-    <WalletContextProvider>
-      {children}
-    </WalletContextProvider>
-  );
+  return <WalletContextProvider>{children}</WalletContextProvider>;
 }

@@ -34,7 +34,7 @@ const Header = () => {
               }`}
             >
               <Bell className="h-6 w-6" />
-              {mounted  && (
+              {mounted && (
                 <span
                   className="absolute -top-1 -right-1 inline-flex items-center justify-center 
                     h-4 w-4 text-xs font-bold text-white bg-red-500 rounded-full"

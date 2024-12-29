@@ -3,7 +3,7 @@ import { Home, Package, CreditCard, Truck, CheckCircle } from 'lucide-react';
 
 const OrderDetailsPage = ({params}) => {
     const {id} = params;
-    console.log(id)
+    // console.log(id)
   // Sample order data (you would replace this with actual order data)
   const orderData = {
     orderNumber: '#12345',

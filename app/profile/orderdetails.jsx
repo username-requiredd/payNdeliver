@@ -56,11 +56,11 @@ const OrderDetailsModal = ({ id, onClose }) => {
         }
 
         const data = await response.json();
-        console.log(data.data);
+        // console.log(data.data);
         setOrder(data.data || null);
         setError(null);
       } catch (err) {
-        console.error("Order fetch error:", err);
+        // console.error("Order fetch error:", err);
         setError(err.message || "An unexpected error occurred");
         setOrder(null);
       } finally {

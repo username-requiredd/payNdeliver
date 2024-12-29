@@ -19,7 +19,7 @@ const CartContent = () => {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
   const [hasMounted, setHasMounted] = useState(false);
 
-  console.log("cart:", cart);
+  // console.log("cart:", cart);
 
   useEffect(() => {
     setHasMounted(true);

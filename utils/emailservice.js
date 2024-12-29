@@ -18,10 +18,10 @@ export async function sendEmail({ to, subject, html }) {
       subject,
       html,
     });
-    console.log("Email sent:", info.messageId);
+    // console.log("Email sent:", info.messageId);
     return { success: true };
   } catch (error) {
-    console.error("Error sending email:", error);
+    // console.error("Error sending email:", error);
     return { success: false, error: error.message };
   }
 }

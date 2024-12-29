@@ -22,7 +22,7 @@ export async function GET(req, { params }) {
       );
     }
   } catch (err) {
-    console.error("Error in fetching cart:", err);
+    // console.error("Error in fetching cart:", err);
     return NextResponse.json(
       { message: "An error occurred while fetching the cart" },
       { status: 500 }
@@ -56,7 +56,7 @@ export async function PUT(req, { params }) {
       { status: 200 }
     );
   } catch (err) {
-    console.error("Error in updating cart:", err);
+    // console.error("Error in updating cart:", err);
     return NextResponse.json(
       { message: "An error occurred while updating the cart" },
       { status: 500 }
@@ -84,7 +84,7 @@ export async function DELETE(req, { params }) {
       { status: 200 }
     );
   } catch (err) {
-    console.error("Error in deleting cart:", err);
+    // console.error("Error in deleting cart:", err);
     return NextResponse.json(
       { message: "An error occurred while deleting the cart" },
       { status: 500 }

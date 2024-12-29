@@ -367,7 +367,7 @@ const Checkout = () => {
             ...paymentDetails,
             status: "pending",
           });
-          console.log("Order Id: ", orderId);
+          // console.log("Order Id: ", orderId);
 
           // Update order status
           await updateOrderStatus(orderId, {
@@ -379,6 +379,23 @@ const Checkout = () => {
           });
 
           // Send success email
+
+          const sendEmailToBusinesses = cart.map((item) => ({
+            to: item.storeEmail,
+            subject: "New Order Notification",
+            html: `
+            <h1>You have a new order!</h1>
+            <p>Order ID: ${orderId}</p>
+            <p>Order Details:</p>
+            <ul>
+              <li>Amount: ${price * 100}</li>
+            </ul>
+            <p>Please check your dashboard for more information about this order.</p>
+          `,
+          }));
+
+          await sendEmail(sendEmailToBusinesses);
+
           await sendEmail({
             to: session?.user?.email,
             subject: "Payment Successful - Order Confirmation",
@@ -387,7 +404,7 @@ const Checkout = () => {
               <p>Your order (${orderId}) has been successfully processed.</p>
               <p>Payment Details:</p>
               <ul>
-                <li>Amount: ${price} SOL</li>
+                <li>Amount: ${price * 100}</li>
               </ul>
               <p>You can track your order status using the order ID: ${orderId}</p>
             `,
@@ -453,6 +470,25 @@ const Checkout = () => {
       });
 
       // Send success email
+
+      const sendEmailToBusinesses = cart.map((item) => ({
+        to: item.storeEmail,
+        subject: "New Order Notification",
+        html: `
+            <h1>You have a new order!</h1>
+            <p>Order ID: ${orderId}</p>
+            <p>Order Details:</p>
+            <ul>
+              <li>Amount: ${amountInSol.toString()} SOL</li>
+              <li>Transaction Hash: ${signature}</li>
+              <li>Wallet: ${publicKey.toString()}</li>
+            </ul>
+            <p>Please check your dashboard for more information about this order.</p>
+          `,
+      }));
+
+      await sendEmail(sendEmailToBusinesses);
+
       await sendEmail({
         to: session?.user?.email,
         subject: "Payment Successful - Order Confirmation",
@@ -500,7 +536,7 @@ const Checkout = () => {
         });
       }
 
-      console.error("Crypto payment full error:", error);
+      // console.error("Crypto payment full error:", error);
       setPaymentStatus(`Payment failed: ${error.message}`);
 
       // Optional: Add more specific error handling
@@ -537,11 +573,21 @@ const Checkout = () => {
         type: "in-app",
       };
 
+      const sendNotificationtobusinesses = cart.map((item) => ({
+        title: "New Order Received",
+        message: `You have a new order with order ID #${orderId}. Please check your dashboard for details.`,
+        userId: item.storeId,
+        status: "success",
+        type: "in-app",
+      }));
+
+      createNotification(sendNotificationtobusinesses);
+
       createNotification(newNotification);
 
       setIsOrderSuccessModalOpen(true);
     } catch (error) {
-      console.error("Error in post-payment processing:", error);
+      // console.error("Error in post-payment processing:", error);
       setPaymentStatus("Payment successful, but navigation failed");
     }
   };

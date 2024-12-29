@@ -48,7 +48,7 @@ const Notifications = () => {
       );
 
       if (response.status === 200) {
-        console.log(response.data);
+        // console.log(response.data);
         const notificationsWithIcons = response.data.data.map(
           (notification) => ({
             ...notification,
@@ -57,12 +57,12 @@ const Notifications = () => {
         );
         setNotifications(notificationsWithIcons);
       } else {
-        console.log("error fetching notifications");
+        // console.log("error fetching notifications");
         throw new Error(`Unexpected status code: ${response.status}`);
       }
     } catch (error) {
       setError("Failed to fetch notifications. Please try again later.");
-      console.error("Error fetching notifications:", error);
+      // console.error("Error fetching notifications:", error);
     } finally {
       setIsLoading(false);
     }

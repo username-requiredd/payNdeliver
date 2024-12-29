@@ -24,7 +24,7 @@ const EmailSender = () => {
       const data = await response.json();
       if (response.ok) {
         setEmailStatus("Email sent successfully!");
-        console.log("Email sent:", data);
+        // console.log("Email sent:", data);
       } else {
         setEmailStatus(`Failed to send email: ${data.message}`);
         console.error("Error:", data);

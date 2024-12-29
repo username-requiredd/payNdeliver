@@ -5,9 +5,8 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
-// Updated transporter configuration
 const transporter = nodemailer.createTransport({
-  service: "gmail", // Use 'gmail' instead of manual host/port config
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
@@ -38,25 +37,25 @@ const createResetEmailTemplate = (resetUrl) => `
 `;
 
 export const POST = async (req) => {
-  console.log("API route triggered");
+  // console.log("API route triggered");
 
   try {
-    console.log("Connecting to database...");
+    // console.log("Connecting to database...");
     await dbConnect();
 
     const { email } = await req.json();
-    console.log("Received email:", email);
+    // console.log("Received email:", email);
 
     let existingUser = await UsersModel.findOne({ email: email });
     let userType = "user";
 
     if (!existingUser) {
-      console.log("Searching in business collection...");
+      // console.log("Searching in business collection...");
       existingUser = await Business.findOne({ email: email });
       userType = "business";
 
       if (!existingUser) {
-        console.log("No user found with this email");
+        // console.log("No user found with this email");
         return NextResponse.json(
           { message: "User does not exist!" },
           { status: 404 }
@@ -78,7 +77,7 @@ export const POST = async (req) => {
     // Use a default URL if environment variable is not set
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const resetUrl = `${baseUrl}/reset-password/${resetToken}`;
-    console.log("Reset URL:", resetUrl);
+    // console.log("Reset URL:", resetUrl);
 
     try {
       // Verify transporter connection
@@ -100,7 +99,7 @@ export const POST = async (req) => {
         { status: 200 }
       );
     } catch (emailError) {
-      console.error("Email sending failed:", emailError);
+      // console.error("Email sending failed:", emailError);
       // Revert the saved token if email fails
       existingUser.resetToken = undefined;
       existingUser.resetTokenExpiry = undefined;
@@ -112,7 +111,7 @@ export const POST = async (req) => {
       );
     }
   } catch (err) {
-    console.error("Error details:", err);
+    // console.error("Error details:", err);
     return NextResponse.json(
       { message: "Something went wrong", error: err.message },
       { status: 500 }

@@ -1,4 +1,4 @@
-import { Keypair } from '@solana/web3.js';
+import { Keypair } from "@solana/web3.js";
 
 function generateReference() {
   const reference = Keypair.generate().publicKey.toBytes();

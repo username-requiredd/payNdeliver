@@ -22,14 +22,7 @@ const Header = () => {
   const pathname = usePathname();
   const { cart } = useCart();
   const { data: session } = useSession();
-<<<<<<< HEAD
   const unreadCount = useUnreadCount();
-  console.log("unread notification:",unreadCount)
-=======
-
-  const n = NotificationCount().length;
-
->>>>>>> master
   useEffect(() => {
     setMounted(true);
 

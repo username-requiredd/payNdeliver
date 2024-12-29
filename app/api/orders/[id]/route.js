@@ -28,7 +28,7 @@ export const GET = async (req, { params }) => {
         { status: 404 }
       );
     }
-    console.log(getOrder);
+    // console.log(getOrder);
     return NextResponse.json(
       {
         message: "Order retrieved successfully!",
@@ -37,7 +37,7 @@ export const GET = async (req, { params }) => {
       { status: 200 }
     );
   } catch (err) {
-    console.error("Order retrieval error:", err);
+    // console.error("Order retrieval error:", err);
     return NextResponse.json(
       {
         message: "Error retrieving order",
@@ -47,10 +47,6 @@ export const GET = async (req, { params }) => {
     );
   }
 };
-
-// PUT method to update an order
-
-// PUT route with improved validation
 
 export async function PUT(request, { params }) {
   try {
@@ -65,7 +61,7 @@ export async function PUT(request, { params }) {
     }
 
     const body = await request.json();
-    console.log("put request body:", body);
+    // console.log("put request body:", body);
 
     // Validate allowed status values for payment.status
     const allowedStatus = [
@@ -73,9 +69,9 @@ export async function PUT(request, { params }) {
       "processing",
       "paid",
       "failed",
-      "refunded"
+      "refunded",
     ];
-    
+
     if (body.status && !allowedStatus.includes(body.status)) {
       return NextResponse.json(
         { message: "Invalid status value" },
@@ -85,7 +81,7 @@ export async function PUT(request, { params }) {
 
     // Build update object with correct schema structure
     const updateData = {};
-    
+
     if (body.payment) {
       if (!body.payment.type) {
         return NextResponse.json(
@@ -97,15 +93,16 @@ export async function PUT(request, { params }) {
       updateData.payment = {
         type: body.payment.type,
         status: body.status || "pending", // Move status here
-        transactionHash: body.payment.transactionHash || body.payment.paymentSignature || null,
+        transactionHash:
+          body.payment.transactionHash || body.payment.paymentSignature || null,
         // Add statusHistory entry for the status change
         $push: {
           statusHistory: {
             status: body.status,
             timestamp: new Date(),
-            notes: "Status updated via API"
-          }
-        }
+            notes: "Status updated via API",
+          },
+        },
       };
     }
 
@@ -117,7 +114,7 @@ export async function PUT(request, { params }) {
       );
     }
 
-    console.log("Update data being sent to MongoDB:", updateData);
+    // console.log("Update data being sent to MongoDB:", updateData);
 
     const updatedOrder = await Order.findByIdAndUpdate(
       id,
@@ -129,7 +126,7 @@ export async function PUT(request, { params }) {
       }
     );
 
-    console.log("Update operation result:", updatedOrder);
+    // console.log("Update operation result:", updatedOrder);
 
     if (!updatedOrder) {
       return NextResponse.json(
@@ -193,7 +190,7 @@ export const DELETE = async (req, { params }) => {
       { status: 200 }
     );
   } catch (err) {
-    console.error("Order deletion error:", err);
+    // console.error("Order deletion error:", err);
     return NextResponse.json(
       {
         message: "Error deleting order",

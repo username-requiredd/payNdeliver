@@ -109,7 +109,7 @@ const TransactionDashboard = () => {
       setCopiedId(text);
       setTimeout(() => setCopiedId(""), 2000);
     } catch (err) {
-      console.error("Failed to copy:", err);
+      // console.error("Failed to copy:", err);
     }
   };
 
@@ -126,7 +126,7 @@ const TransactionDashboard = () => {
         setTransactions(data.data);
       } catch (error) {
         setError(error.message);
-        console.error("Error fetching transactions:", error);
+        // console.error("Error fetching transactions:", error);
       } finally {
         setLoading(false);
       }

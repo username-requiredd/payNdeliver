@@ -16,7 +16,7 @@ export const POST = async (req) => {
     let user =
       (await UsersModel.findOne({
         resetToken: hashedToken,
-        resetTokenExpiry: { $gt: Date.now() }, // Ensure token has not expired
+        resetTokenExpiry: { $gt: Date.now() },
       })) ||
       (await Business.findOne({
         resetToken: hashedToken,
@@ -31,14 +31,14 @@ export const POST = async (req) => {
     }
 
     // Update password
-    user.password = passwordHash; // Ensure you hash the password before saving
+    user.password = passwordHash; 
     user.resetToken = undefined;
     user.resetTokenExpiry = undefined;
     await user.save();
 
     return NextResponse.json({ message: "Password reset successfully!" });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     return NextResponse.json(
       { message: "Something went wrong." },
       { status: 500 }

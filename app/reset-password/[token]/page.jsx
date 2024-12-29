@@ -33,7 +33,7 @@ const ResetPasswordPage = ({ params }) => {
       });
 
       const data = await response.json();
-      console.log("password", password);
+      // console.log("password", password);
       if (response.ok) {
         setSuccess("Password reset successful!");
         setTimeout(() => router.push("/signin"), 2000);

@@ -5,7 +5,7 @@ import { ObjectId } from "mongodb";
 
 export const GET = async (req, { params }) => {
     const { id } = params;
-    console.log(`Fetching notifications for user ID: ${id}`);
+    // console.log(`Fetching notifications for user ID: ${id}`);
 
     try {
         // Validate the user ID
@@ -18,7 +18,7 @@ export const GET = async (req, { params }) => {
 
         // Connect to the database
         await dbConnect();
-        console.log("Successfully connected to database");
+        // console.log("Successfully connected to database");
 
         // Check if the user exists (optional)
         const userExists = await Notification.findOne({ userId: new ObjectId(id) });
@@ -34,7 +34,7 @@ export const GET = async (req, { params }) => {
             userId: new ObjectId(id),
             read: false,
         });
-        console.log(`Unread notifications count for user ID ${id}: ${unreadCount}`);
+        // console.log(`Unread notifications count for user ID ${id}: ${unreadCount}`);
 
         return NextResponse.json(
             { message: "Unread notifications count retrieved!", count: unreadCount },
