@@ -332,7 +332,7 @@ const Checkout = () => {
       // if (!validateForms())
       //   throw new Error("Please fill in all required fields");
       // Make the put request to update the order
-      
+
       const price = calculateTotal();
 
       const paystack = new PaystackPop();
@@ -342,26 +342,26 @@ const Checkout = () => {
         amount: price * 100,
         onSuccess: async (transaction) => {
           setPaymentStatus("Transaction success");
-          console.log(transaction);
+          // console.log(transaction.reference);
+
+          const transactionRef = transaction.reference;
 
           const paymentDetails = {
             type: "card",
             amountUSD: price,
+            transactionHash: transactionRef,
           };
 
           // Create order first and get the orderId
           const orderId = await createOrder({
             ...paymentDetails,
-            status: "paid",
-          });          
+            status: "processing",
+          });
 
           // Update order status
           await updateOrderStatus(orderId, {
             status: "paid",
-            payment: {
-              type: "card",
-              last4: cardDetails.number.slice(-4),
-            },
+            ...paymentDetails,
           });
 
           // Send success email

@@ -105,7 +105,7 @@ const FoodDetailsModal = ({
             onClick={handleAddToCart}
             className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold text-lg hover:bg-green-600 transition-colors"
           >
-            Place Order - {formatCurrency(price * quantity, "en-NG", "NGN")}
+            Add to cart - {formatCurrency(price * quantity, "en-NG", "NGN")}
           </button>
         </div>
       </div>

@@ -24,7 +24,7 @@ const Header = () => {
   const { data: session } = useSession();
 
   const n = NotificationCount().length;
-  console.log(n);
+
   useEffect(() => {
     setMounted(true);
 

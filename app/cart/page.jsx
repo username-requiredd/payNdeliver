@@ -13,7 +13,7 @@ import { formatCurrency } from "@/hooks/formatcurrency";
 const CartPage = () => {
   const [mounted, setMounted] = useState(false);
   const { cart, removeFromCart, loading, error } = useCart();
-  console.log("cart:", cart);
+
   useEffect(() => {
     setMounted(true);
   }, []);
