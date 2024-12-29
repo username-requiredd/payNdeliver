@@ -7,7 +7,7 @@ const POLLING_INTERVAL = 30000;
 const useUnreadCount = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const { data: session, status } = useSession();
-
+console.log(session?.user.id)
   useEffect(() => {
     if (status === "loading" || !session?.user?.id) {
       return;
@@ -19,11 +19,12 @@ const useUnreadCount = () => {
     const fetchUnreadCount = async () => {
       try {
         const response = await axios.get(
-          `/api/notifications/noticationscount/${session.user.id}/`,
+          `/api/notifications/notifcationscount/${session?.user?.id}/`,
           { signal }
         );
         
         if (response.status === 200) {
+          console.log(response)
           setUnreadCount(response.data.count);
         }
       } catch (error) {

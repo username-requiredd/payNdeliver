@@ -23,6 +23,7 @@ const Header = () => {
   const { cart } = useCart();
   const { data: session } = useSession();
   const unreadCount = useUnreadCount();
+  console.log("unread notification:",unreadCount)
   useEffect(() => {
     setMounted(true);
 
@@ -32,6 +33,7 @@ const Header = () => {
       if (menuElement && !menuElement.contains(event.target)) {
         setUserMenuOpen(false);
       }
+
     };
 
     document.addEventListener("mousedown", handleClickOutside);
