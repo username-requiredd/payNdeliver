@@ -19,9 +19,8 @@ import BigNumber from "bignumber.js";
 import axios from "axios";
 import { CreditCard, Coins, Truck, Calculator, Wallet } from "lucide-react";
 import { formatCurrency } from "@/hooks/formatcurrency";
-
+import dynamic from "next/dynamic";
 import { useEmailSender } from "@/hooks/useEmailSender";
-import PaystackPop from "@paystack/inline-js";
 
 const TAX_RATES = {
   CA: 0.0725,
@@ -324,7 +323,7 @@ const Checkout = () => {
 
       // Extract the order ID
       const orderId = response.data.orderId || response.data.data._id;
-      
+
       return orderId; // Return the order ID
     } catch (error) {
       console.error("Error creating order:", error);
@@ -333,19 +332,23 @@ const Checkout = () => {
   };
 
   //  function to handle card payment
+
   const handleCardPayment = async () => {
     try {
       setLoading(true);
       setPaymentStatus("Processing payment...");
 
-      if (!validateForms())
+      if (!validateForms()) {
         throw new Error("Please fill in all required fields");
+      }
 
       const price = calculateTotal();
 
+      // Dynamically import Paystack
+      const PaystackPop = (await import("@paystack/inline-js")).default;
       const paystack = new PaystackPop();
 
-      paystack.newTransaction({
+      await paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: session.user.email,
         amount: price * 100,
@@ -364,7 +367,6 @@ const Checkout = () => {
             ...paymentDetails,
             status: "pending",
           });
-
           console.log("Order Id: ", orderId);
 
           // Update order status
@@ -381,14 +383,14 @@ const Checkout = () => {
             to: session?.user?.email,
             subject: "Payment Successful - Order Confirmation",
             html: `
-          <h1>Thank you for your payment!</h1>
-          <p>Your order (${orderId}) has been successfully processed.</p>
-          <p>Payment Details:</p>
-          <ul>
-            <li>Amount: ${price} SOL</li>
-          </ul>
-          <p>You can track your order status using the order ID: ${orderId}</p>
-        `,
+              <h1>Thank you for your payment!</h1>
+              <p>Your order (${orderId}) has been successfully processed.</p>
+              <p>Payment Details:</p>
+              <ul>
+                <li>Amount: ${price} SOL</li>
+              </ul>
+              <p>You can track your order status using the order ID: ${orderId}</p>
+            `,
           });
 
           // Ensure successful payment handling
@@ -439,8 +441,6 @@ const Checkout = () => {
         ...paymentDetails,
         status: "paid",
       });
-
-
 
       // Update order status
       await updateOrderStatus(orderId, {
