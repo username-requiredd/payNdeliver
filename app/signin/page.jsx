@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect, useCallback, Suspense } from "react";
-import { signIn, useSession, getSession } from "next-auth/react";
+import React, { useState, useEffect, Suspense } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import Link from "next/link";
@@ -9,49 +9,27 @@ import "react-toastify/dist/ReactToastify.css";
 const REDIRECT_COOKIE_NAME = "redirectAfterSignIn";
 const MIN_PASSWORD_LENGTH = 4;
 
-const LoginContent = () => {
+const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
-
-  const handleSuccessfulSignIn = useCallback(() => {
-    const redirectCookie = document.cookie
-      .split(";")
-      .find((cookie) => cookie.trim().startsWith(`${REDIRECT_COOKIE_NAME}=`));
-
-    if (redirectCookie) {
-      const redirectUrl = decodeURIComponent(redirectCookie.split("=")[1]);
-      router.push(redirectUrl);
-    } else {
-      router.push(
-        session?.user?.role === "business" ? "/dashboards/business" : "/stores"
-      );
-    }
-    toast.success("Welcome back!");
-  }, [router, session?.user?.role]);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    const redirectUrl = searchParams?.get("redirect");
+    const redirectUrl = searchParams.get("redirect");
     if (redirectUrl) {
       document.cookie = `${REDIRECT_COOKIE_NAME}=${encodeURIComponent(
         redirectUrl
-      )}; path=/; max-age=3600; SameSite=Strict`;
+      )}; path=/; max-age=3600; HttpOnly; Secure; SameSite=Strict`;
     }
 
     return () => {
-      document.cookie = `${REDIRECT_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict`;
+      document.cookie = `${REDIRECT_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict`;
     };
   }, [searchParams]);
-
-  useEffect(() => {
-    if (session?.user) {
-      handleSuccessfulSignIn();
-    }
-  }, [session, handleSuccessfulSignIn]);
 
   const validateForm = () => {
     if (!formData.email || !formData.password) {
@@ -80,6 +58,24 @@ const LoginContent = () => {
     return errorMap[error.message] || errorMap.default;
   };
 
+  const handleSuccessfulSignIn = () => {
+    router.refresh();
+
+    const redirectCookie = document.cookie
+      .split(";")
+      .find((cookie) => cookie.trim().startsWith(`${REDIRECT_COOKIE_NAME}=`));
+
+    if (redirectCookie) {
+      const redirectUrl = decodeURIComponent(redirectCookie.split("=")[1]);
+      router.push(redirectUrl);
+    } else {
+      router.push(
+        session?.user?.role === "business" ? "/dashboards/business" : "/stores"
+      );
+    }
+    toast.success("Welcome back!");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -93,15 +89,14 @@ const LoginContent = () => {
         redirect: false,
       });
 
-      if (result?.error) {
-        throw new Error(result.error);
+      if (!result) {
+        throw new Error("Sign in failed");
       }
 
-      if (result?.ok) {
-        const updatedSession = await getSession();
-        if (updatedSession) {
-          handleSuccessfulSignIn();
-        }
+      if (result.ok) {
+        handleSuccessfulSignIn();
+      } else {
+        throw new Error(result.error || "Sign in failed");
       }
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -215,16 +210,16 @@ const LoginContent = () => {
   );
 };
 
-const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-  </div>
-);
-
 export default function SignInForm() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
-      <LoginContent />
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <Login />
     </Suspense>
   );
 }
