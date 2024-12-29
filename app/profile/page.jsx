@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import OrderDetailsModal from "./orderdetails";
 import { User, Mail, Phone, MapPin, Truck } from "lucide-react";
 import Header from "@/components/header";
@@ -9,18 +8,7 @@ import Footer from "@/components/footer";
 
 const AccountPage = () => {
   const { data: session } = useSession();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState("profile");
-
-  useEffect(() => {
-    if (!session) return; // Wait for session data
-
-    if (session.user.role === "admin") {
-      router.push("/dashboards/admin");
-    } else if (session.user.role === "business") {
-      router.push("/dashboards/business");
-    }
-  }, [session, router]);
 
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
