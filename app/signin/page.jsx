@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect, Suspense } from "react";
-import { signIn, useSession } from "next-auth/react";
+import React, { useState, useEffect } from "react";
+import { signIn, useSession, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import Link from "next/link";
@@ -16,20 +16,26 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   useEffect(() => {
-    const redirectUrl = searchParams.get("redirect");
+    const redirectUrl = searchParams?.get("redirect");
     if (redirectUrl) {
       document.cookie = `${REDIRECT_COOKIE_NAME}=${encodeURIComponent(
         redirectUrl
-      )}; path=/; max-age=3600; HttpOnly; Secure; SameSite=Strict`;
+      )}; path=/; max-age=3600; SameSite=Strict`;
     }
 
     return () => {
-      document.cookie = `${REDIRECT_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict`;
+      document.cookie = `${REDIRECT_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict`;
     };
   }, [searchParams]);
+
+  useEffect(() => {
+    if (session?.user) {
+      handleSuccessfulSignIn();
+    }
+  }, [session]);
 
   const validateForm = () => {
     if (!formData.email || !formData.password) {
@@ -59,8 +65,6 @@ const Login = () => {
   };
 
   const handleSuccessfulSignIn = () => {
-    router.refresh();
-
     const redirectCookie = document.cookie
       .split(";")
       .find((cookie) => cookie.trim().startsWith(`${REDIRECT_COOKIE_NAME}=`));
@@ -89,14 +93,16 @@ const Login = () => {
         redirect: false,
       });
 
-      if (!result) {
-        throw new Error("Sign in failed");
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
-      if (result.ok) {
-        handleSuccessfulSignIn();
-      } else {
-        throw new Error(result.error || "Sign in failed");
+      if (result?.ok) {
+        // Force a session update
+        const updatedSession = await getSession();
+        if (updatedSession) {
+          handleSuccessfulSignIn();
+        }
       }
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -211,15 +217,5 @@ const Login = () => {
 };
 
 export default function SignInForm() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      }
-    >
-      <Login />
-    </Suspense>
-  );
+  return <Login />;
 }

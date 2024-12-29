@@ -49,9 +49,15 @@ export async function middleware(request) {
     return NextResponse.redirect(url);
   }
 
+  // For the business role redirect
+  if (url.pathname === "/profile" && token?.role === "business") {
+    url.pathname = "/dashboards/business/";
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/", "/checkout/:path*", "/dashboard/:path*", "/setup"],
+  matcher: ["/", "/checkout/:path*", "/dashboard/:path*", "/setup", "/profile"],
 };
