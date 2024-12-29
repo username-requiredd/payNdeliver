@@ -30,7 +30,7 @@ const NotificationCount = () => {
       }
     } catch (err) {
       setError("Failed to fetch notification count.");
-      console.error("Error fetching notifications count:", err);
+      // console.error("Error fetching notifications count:", err);
     } finally {
       setIsLoading(false);
     }

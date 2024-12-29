@@ -8,9 +8,6 @@ const CartItem = ({
   name,
   removeItem,
 }) => {
-
-
-
   const formatCurrency = (amount, locale = "en-US", currency = "NGN") => {
     return new Intl.NumberFormat(locale, {
       style: "currency",
@@ -18,7 +15,7 @@ const CartItem = ({
     }).format(amount);
   };
 
-  console.log("id", id);
+  // console.log("id", id);
   return (
     <div className="flex px-2 py-6 border-b">
       <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">

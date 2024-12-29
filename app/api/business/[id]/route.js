@@ -24,10 +24,10 @@ export async function GET(req, { params }) {
 export async function POST(req) {
   try {
     await dbConnect();
-    const body = await req.json();  // Assumes incoming request is JSON
-    const newBusiness = new Business(body); // Create a new Business model instance
+    const body = await req.json(); 
+    const newBusiness = new Business(body); 
     
-    await newBusiness.save(); // Save the business to the database
+    await newBusiness.save();
     
     return NextResponse.json({ message: "Business created successfully!", data: newBusiness }, { status: 201 });
   } catch (err) {

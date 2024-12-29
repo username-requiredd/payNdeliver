@@ -51,7 +51,7 @@ export const PUT = async (req, { params }) => {
             )
         }
 
-        const updatedNotification = await notifications.findOneAndUpdate(
+        const updatedNotification = await notifications.updateMany(
             { userId: new ObjectId(id) },
             { $set: updateData },
             { new: true } 

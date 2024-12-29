@@ -19,16 +19,8 @@ import BigNumber from "bignumber.js";
 import axios from "axios";
 import { CreditCard, Coins, Truck, Calculator, Wallet } from "lucide-react";
 import { formatCurrency } from "@/hooks/formatcurrency";
-
-import { useEmailSender } from "@/hooks/useEmailSender";
-
-import initializePaystackTransaction from "@/actions/initiaze-paystack-tx";
-
 import dynamic from "next/dynamic";
-
-const PaystackPop = dynamic(() => import("@paystack/inline-js"), {
-  ssr: false,
-});
+import { useEmailSender } from "@/hooks/useEmailSender";
 
 const TAX_RATES = {
   CA: 0.0725,
@@ -106,7 +98,6 @@ const Checkout = () => {
   const [isOrderSuccessModalOpen, setIsOrderSuccessModalOpen] = useState(false);
   const [orderDetails, setOrderDetails] = useState(null);
 
-  // console.log("cart", cart);
   // retrieve shipping details form localstorage
   // Save shippingDetails to localStorage
   useEffect(() => {
@@ -271,6 +262,7 @@ const Checkout = () => {
       "state",
       "zip",
     ];
+
     const isShippingValid = requiredShippingFields.every(
       (field) => shippingDetails[field] && shippingDetails[field].trim() !== ""
     );
@@ -280,17 +272,17 @@ const Checkout = () => {
       return false;
     }
 
-    if (paymentMethod === "card") {
-      const requiredCardFields = ["number", "name", "expiry", "cvc"];
-      const isCardValid = requiredCardFields.every(
-        (field) => cardDetails[field] && cardDetails[field].trim() !== ""
-      );
+    // if (paymentMethod === "card") {
+    //   const requiredCardFields = ["number", "name", "expiry", "cvc"];
+    //   const isCardValid = requiredCardFields.every(
+    //     (field) => cardDetails[field] && cardDetails[field].trim() !== ""
+    //   );
 
-      if (!isCardValid) {
-        setPaymentStatus("Please fill in all card details");
-        return false;
-      }
-    }
+    //   if (!isCardValid) {
+    //     setPaymentStatus("Please fill in all card details");
+    //     return false;
+    //   }
+    // }
 
     return true;
   };
@@ -331,7 +323,7 @@ const Checkout = () => {
 
       // Extract the order ID
       const orderId = response.data.orderId || response.data.data._id;
-      console.log(orderId);
+
       return orderId; // Return the order ID
     } catch (error) {
       console.error("Error creating order:", error);
@@ -340,20 +332,23 @@ const Checkout = () => {
   };
 
   //  function to handle card payment
+
   const handleCardPayment = async () => {
     try {
       setLoading(true);
       setPaymentStatus("Processing payment...");
 
-      // if (!validateForms())
-      //   throw new Error("Please fill in all required fields");
-      // Make the put request to update the order
+      if (!validateForms()) {
+        throw new Error("Please fill in all required fields");
+      }
 
       const price = calculateTotal();
 
+      // Dynamically import Paystack
+      const PaystackPop = (await import("@paystack/inline-js")).default;
       const paystack = new PaystackPop();
 
-      paystack.newTransaction({
+      await paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: session.user.email,
         amount: price * 100,
@@ -361,46 +356,65 @@ const Checkout = () => {
           setPaymentStatus("Transaction success");
           // console.log(transaction.reference);
 
-          const transactionRef = transaction.reference;
-
           const paymentDetails = {
             type: "card",
             amountUSD: price,
-            transactionHash: transactionRef,
+            transactionHash: transaction.reference,
           };
 
           // Create order first and get the orderId
           const orderId = await createOrder({
             ...paymentDetails,
-            status: "processing",
+            status: "pending",
           });
+          // console.log("Order Id: ", orderId);
 
           // Update order status
           await updateOrderStatus(orderId, {
             status: "paid",
-            ...paymentDetails,
+            payment: {
+              type: "card",
+              transactionHash: transaction.reference.toString(),
+            },
           });
 
           // Send success email
+
+          const sendEmailToBusinesses = cart.map((item) => ({
+            to: item.storeEmail,
+            subject: "New Order Notification",
+            html: `
+            <h1>You have a new order!</h1>
+            <p>Order ID: ${orderId}</p>
+            <p>Order Details:</p>
+            <ul>
+              <li>Amount: ${price * 100}</li>
+            </ul>
+            <p>Please check your dashboard for more information about this order.</p>
+          `,
+          }));
+
+          await sendEmail(sendEmailToBusinesses);
+
           await sendEmail({
             to: session?.user?.email,
             subject: "Payment Successful - Order Confirmation",
             html: `
-          <h1>Thank you for your payment!</h1>
-          <p>Your order (${orderId}) has been successfully processed.</p>
-          <p>Payment Details:</p>
-          <ul>
-            <li>Amount: ${price} Naira</li>
-          </ul>
-          <p>You can track your order status using the order ID: ${orderId}</p>
-        `,
+              <h1>Thank you for your payment!</h1>
+              <p>Your order (${orderId}) has been successfully processed.</p>
+              <p>Payment Details:</p>
+              <ul>
+                <li>Amount: ${price * 100}</li>
+              </ul>
+              <p>You can track your order status using the order ID: ${orderId}</p>
+            `,
           });
 
           // Ensure successful payment handling
           await handleSuccessfulPayment(orderId);
         },
         onCancel: () => {
-          setPaymentStatus("Payment canceled by user");
+          throw new Error("Payment cancelled by user");
         },
       });
     } catch (error) {
@@ -456,6 +470,25 @@ const Checkout = () => {
       });
 
       // Send success email
+
+      const sendEmailToBusinesses = cart.map((item) => ({
+        to: item.storeEmail,
+        subject: "New Order Notification",
+        html: `
+            <h1>You have a new order!</h1>
+            <p>Order ID: ${orderId}</p>
+            <p>Order Details:</p>
+            <ul>
+              <li>Amount: ${amountInSol.toString()} SOL</li>
+              <li>Transaction Hash: ${signature}</li>
+              <li>Wallet: ${publicKey.toString()}</li>
+            </ul>
+            <p>Please check your dashboard for more information about this order.</p>
+          `,
+      }));
+
+      await sendEmail(sendEmailToBusinesses);
+
       await sendEmail({
         to: session?.user?.email,
         subject: "Payment Successful - Order Confirmation",
@@ -503,7 +536,7 @@ const Checkout = () => {
         });
       }
 
-      console.error("Crypto payment full error:", error);
+      // console.error("Crypto payment full error:", error);
       setPaymentStatus(`Payment failed: ${error.message}`);
 
       // Optional: Add more specific error handling
@@ -518,7 +551,6 @@ const Checkout = () => {
 
   const handleSuccessfulPayment = async (orderId) => {
     try {
-      console.log("Handling successful payment for order:", orderId);
       setPaymentStatus("Payment successful!");
 
       setOrderDetails({
@@ -541,12 +573,21 @@ const Checkout = () => {
         type: "in-app",
       };
 
+      const sendNotificationtobusinesses = cart.map((item) => ({
+        title: "New Order Received",
+        message: `You have a new order with order ID #${orderId}. Please check your dashboard for details.`,
+        userId: item.storeId,
+        status: "success",
+        type: "in-app",
+      }));
+
+      createNotification(sendNotificationtobusinesses);
+
       createNotification(newNotification);
 
-      console.log("orderDetails: ", orderDetails);
       setIsOrderSuccessModalOpen(true);
     } catch (error) {
-      console.error("Error in post-payment processing:", error);
+      // console.error("Error in post-payment processing:", error);
       setPaymentStatus("Payment successful, but navigation failed");
     }
   };

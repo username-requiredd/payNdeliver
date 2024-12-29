@@ -7,10 +7,10 @@ export async function POST(req) {
   try {
     await dbConnect();
     const data = await req.json();
-    console.log("order data from api,", data);
+    // console.log("order data from api,", data);
     // Basic validation for required fields
     if (!data) {
-      console.log("missing fields!");
+      // console.log("missing fields!");
       return NextResponse.json(
         { message: "Missing required order fields" },
         { status: 400 }
@@ -23,8 +23,8 @@ export async function POST(req) {
 
     // Create the order
     const newOrder = await Order.create(data);
-    console.log("order created sucessfully!...");
-    console.log("new order", newOrder);
+    // console.log("order created sucessfully!...");
+    // console.log("new order", newOrder);
 
     // return NextResponse.json(
     //     { message: "Order created successfully", data: newOrder },

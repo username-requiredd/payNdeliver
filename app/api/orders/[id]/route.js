@@ -28,7 +28,7 @@ export const GET = async (req, { params }) => {
         { status: 404 }
       );
     }
-    console.log(getOrder);
+    // console.log(getOrder);
     return NextResponse.json(
       {
         message: "Order retrieved successfully!",
@@ -37,7 +37,7 @@ export const GET = async (req, { params }) => {
       { status: 200 }
     );
   } catch (err) {
-    console.error("Order retrieval error:", err);
+    // console.error("Order retrieval error:", err);
     return NextResponse.json(
       {
         message: "Error retrieving order",
@@ -48,9 +48,6 @@ export const GET = async (req, { params }) => {
   }
 };
 
-// PUT method to update an order
-
-// PUT route with improved validation
 export async function PUT(request, { params }) {
   try {
     await dbConnect();
@@ -64,15 +61,17 @@ export async function PUT(request, { params }) {
     }
 
     const body = await request.json();
+    // console.log("put request body:", body);
 
-    // Validate allowed status values
+    // Validate allowed status values for payment.status
     const allowedStatus = [
       "pending",
       "processing",
       "paid",
-      "cancelled",
-      "completed",
+      "failed",
+      "refunded",
     ];
+
     if (body.status && !allowedStatus.includes(body.status)) {
       return NextResponse.json(
         { message: "Invalid status value" },
@@ -80,12 +79,8 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // Build update object with validation
+    // Build update object with correct schema structure
     const updateData = {};
-
-    if (body.status) {
-      updateData.status = body.status;
-    }
 
     if (body.payment) {
       if (!body.payment.type) {
@@ -97,20 +92,29 @@ export async function PUT(request, { params }) {
 
       updateData.payment = {
         type: body.payment.type,
-        status: body.payment.status || "pending",
-        wallet: body.payment.wallet || null,
+        status: body.status || "pending", // Move status here
         transactionHash:
           body.payment.transactionHash || body.payment.paymentSignature || null,
+        // Add statusHistory entry for the status change
+        $push: {
+          statusHistory: {
+            status: body.status,
+            timestamp: new Date(),
+            notes: "Status updated via API",
+          },
+        },
       };
     }
 
     // If setting status to paid, ensure payment exists
-    if (body.status === "paid" && !updateData.payment && !body.payment) {
+    if (body.status === "paid" && !updateData.payment) {
       return NextResponse.json(
         { message: "Payment details required for paid status" },
         { status: 400 }
       );
     }
+
+    // console.log("Update data being sent to MongoDB:", updateData);
 
     const updatedOrder = await Order.findByIdAndUpdate(
       id,
@@ -118,9 +122,11 @@ export async function PUT(request, { params }) {
       {
         new: true,
         runValidators: true,
-        lean: true, // For better performance
+        lean: true,
       }
     );
+
+    // console.log("Update operation result:", updatedOrder);
 
     if (!updatedOrder) {
       return NextResponse.json(
@@ -184,7 +190,7 @@ export const DELETE = async (req, { params }) => {
       { status: 200 }
     );
   } catch (err) {
-    console.error("Order deletion error:", err);
+    // console.error("Order deletion error:", err);
     return NextResponse.json(
       {
         message: "Error deleting order",

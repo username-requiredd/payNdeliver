@@ -1,4 +1,3 @@
-// app/api/csrf/route.js
 import { NextResponse } from "next/server";
 import { generateToken, verifyToken } from "@/lib/csrf";
 import { getSession } from "@/utils/session";
@@ -29,7 +28,7 @@ export async function GET() {
 
     return NextResponse.json({ csrfToken: token }, { status: 200 });
   } catch (error) {
-    console.error("CSRF token generation error:", error);
+    // console.error("CSRF token generation error:", error);
     return NextResponse.json(
       { message: "Failed to generate CSRF token" },
       { status: 500 }
@@ -78,7 +77,7 @@ export async function POST(req) {
       { status: 200 }
     );
   } catch (error) {
-    console.error("CSRF validation error:", error);
+    // console.error("CSRF validation error:", error);
     return NextResponse.json(
       {
         message: "CSRF validation failed",
@@ -90,27 +89,3 @@ export async function POST(req) {
   }
 }
 
-// // middleware.js
-// import { NextResponse } from 'next/server';
-
-// export function middleware(request) {
-//   // List of paths that require CSRF protection
-//   const protectedPaths = ['/api/protected-route', '/api/another-protected-route'];
-
-//   if (protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
-//     const csrfToken = request.headers.get('x-csrf-token');
-
-//     if (!csrfToken) {
-//       return NextResponse.json(
-//         { message: 'CSRF token required' },
-//         { status: 400 }
-//       );
-//     }
-//   }
-
-//   return NextResponse.next();
-// }
-
-// export const config = {
-//   matcher: '/api/:path*'
-// };

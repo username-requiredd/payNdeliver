@@ -33,7 +33,7 @@ const isExpired = (timestamp) => {
 };
 
 const validateProduct = (product) => {
-  console.log("Product being validated:", product);
+  // console.log("Product being validated:", product);
 
   if (!product) {
     throw new Error("Product is undefined or null");
@@ -51,7 +51,7 @@ const validateProduct = (product) => {
 
   for (const field of required) {
     if (product[field] === undefined || product[field] === null) {
-      console.error(`Missing required field: ${field}`, product);
+      // console.error(`Missing required field: ${field}`, product);
       throw new Error(`Missing required field: ${field}`);
     }
   }
@@ -131,7 +131,7 @@ export const CartProvider = ({ children }) => {
 
         setLastSyncTimestamp(Date.now());
       } catch (error) {
-        console.error("Error updating cart in the database:", error);
+        // console.error("Error updating cart in the database:", error);
         if (retryCount > 0) {
           setTimeout(() => saveCartToDb(products, retryCount - 1), RETRY_DELAY);
         } else {
@@ -177,7 +177,7 @@ export const CartProvider = ({ children }) => {
           })
         );
 
-        console.log("validated products from cart contex;", validatedProducts);
+        // console.log("validated products from cart contex;", validatedProducts);
 
         setCart({
           version: CART_VERSION,
@@ -185,7 +185,7 @@ export const CartProvider = ({ children }) => {
         });
       }
     } catch (err) {
-      console.error("Error fetching cart:", err);
+      // console.error("Error fetching cart:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -281,7 +281,7 @@ export const CartProvider = ({ children }) => {
           };
         });
       } catch (error) {
-        console.error("Error adding product to cart:", error);
+        // console.error("Error adding product to cart:", error);
         setError(error.message);
       }
     },
@@ -311,7 +311,7 @@ export const CartProvider = ({ children }) => {
           };
         });
       } catch (error) {
-        console.error("Error removing product from cart:", error);
+        // console.error("Error removing product from cart:", error);
         setError(error.message);
       }
     },
@@ -325,7 +325,7 @@ export const CartProvider = ({ children }) => {
         saveCartToDb([]);
       }
     } catch (error) {
-      console.error("Error clearing cart:", error);
+      // console.error("Error clearing cart:", error);
       setError(error.message);
     }
   }, [setCart, saveCartToDb, session?.user?.id]);

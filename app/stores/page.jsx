@@ -35,7 +35,7 @@ async function fetchBusinesses(category = "All", search = "") {
 
     return response.json();
   } catch (error) {
-    console.error("Error fetching businesses:", error);
+    // console.error("Error fetching businesses:", error);
     return { data: [], message: error.message };
   }
 }

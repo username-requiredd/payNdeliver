@@ -3,16 +3,13 @@ import dbConnect from "@/lib/connectdb";
 import Business from "@/models/businessmodel";
 import bcrypt from "bcryptjs";
 
-// GET handler to fetch businesses with search and category filtering
 export const GET = async (req) => {
   try {
-    await dbConnect(); // Ensure database connection
+    await dbConnect(); 
 
-    // Extract search parameters
+    
     const { searchParams } = new URL(req.url);
-    console.log(searchParams)
     const category = searchParams.get('category') || 'All';
-    console.log(category)
     const search = searchParams.get('search') || '';
 
     // Build query object

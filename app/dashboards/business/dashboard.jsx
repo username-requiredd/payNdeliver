@@ -35,7 +35,7 @@ const StyledListItem = styled(ListItem)(({ theme }) => ({
 
 const DashboardComponent = ({ data }) => {
   // Debug the data to verify its structure
-  console.log("Data received in DashboardComponent:", data);
+  // console.log("Data received in DashboardComponent:", data);
 
   // Safely map the latest orders
   const latestOrders =

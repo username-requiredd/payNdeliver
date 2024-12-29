@@ -135,7 +135,7 @@ const ProfileSetupPage = () => {
         router.push("products/add");
       }, 2000);
     } catch (error) {
-      console.error("Error updating profile:", error);
+      // console.error("Error updating profile:", error);
       toast.error("Error updating profile. Please try again.");
     } finally {
       setLoading(false);

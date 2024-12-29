@@ -1,5 +1,4 @@
 const initializePaystackTransaction = async (email, amount) => {
-  console.log(email, amount);
   try {
     const response = await fetch(
       "https://api.paystack.co/transaction/initialize",
@@ -20,7 +19,7 @@ const initializePaystackTransaction = async (email, amount) => {
 
     return data;
   } catch (error) {
-    console.error("Error initializing Paystack transaction:", error);
+    // console.error("Error initializing Paystack transaction:", error);
     throw new Error("Failed to initialize Paystack transaction");
   }
 };
