@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { signIn, useSession, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
@@ -9,7 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 const REDIRECT_COOKIE_NAME = "redirectAfterSignIn";
 const MIN_PASSWORD_LENGTH = 4;
 
-const Login = () => {
+const LoginContent = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +17,22 @@ const Login = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+
+  const handleSuccessfulSignIn = useCallback(() => {
+    const redirectCookie = document.cookie
+      .split(";")
+      .find((cookie) => cookie.trim().startsWith(`${REDIRECT_COOKIE_NAME}=`));
+
+    if (redirectCookie) {
+      const redirectUrl = decodeURIComponent(redirectCookie.split("=")[1]);
+      router.push(redirectUrl);
+    } else {
+      router.push(
+        session?.user?.role === "business" ? "/dashboards/business" : "/stores"
+      );
+    }
+    toast.success("Welcome back!");
+  }, [router, session?.user?.role]);
 
   useEffect(() => {
     const redirectUrl = searchParams?.get("redirect");
@@ -35,7 +51,7 @@ const Login = () => {
     if (session?.user) {
       handleSuccessfulSignIn();
     }
-  }, [session]);
+  }, [session, handleSuccessfulSignIn]);
 
   const validateForm = () => {
     if (!formData.email || !formData.password) {
@@ -64,22 +80,6 @@ const Login = () => {
     return errorMap[error.message] || errorMap.default;
   };
 
-  const handleSuccessfulSignIn = () => {
-    const redirectCookie = document.cookie
-      .split(";")
-      .find((cookie) => cookie.trim().startsWith(`${REDIRECT_COOKIE_NAME}=`));
-
-    if (redirectCookie) {
-      const redirectUrl = decodeURIComponent(redirectCookie.split("=")[1]);
-      router.push(redirectUrl);
-    } else {
-      router.push(
-        session?.user?.role === "business" ? "/dashboards/business" : "/stores"
-      );
-    }
-    toast.success("Welcome back!");
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -98,7 +98,6 @@ const Login = () => {
       }
 
       if (result?.ok) {
-        // Force a session update
         const updatedSession = await getSession();
         if (updatedSession) {
           handleSuccessfulSignIn();
@@ -216,6 +215,16 @@ const Login = () => {
   );
 };
 
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
+
 export default function SignInForm() {
-  return <Login />;
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <LoginContent />
+    </Suspense>
+  );
 }
