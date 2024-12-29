@@ -38,27 +38,7 @@ This is a Next.js-based online delivery application that allows businesses to re
    npm install
    ```
 
-4. Create a `.env.local` file in the root directory and add the following environment variables:
-
-   ```
-   MONGODB_URI=mongodb+srv://paul:7LALO9OiprzPkbye@cluster0.5jg43eq.mongodb.net/
-NEXT_PUBLIC_API_URL=http://localhost:3000
-NEXTAUTH_SECRET=fhbqlcbeucubwkwkajncnceje
-AUTH_GOOGLE_ID=688859172556-7gsgptk3igkpq8c6dvisb6m5ppmvgin8.apps.googleusercontent.com
-AUTH_GOOGLE_SECRET=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
-NEXT_PUBLIC_PUBLIC_KEY=public_/h0s9G3ODboZO2fiRjz1PmZuyIk=
-NEXT_PUBLIC_URL_ENDPOINT=https://ik.imagekit.io/7dopg2rpt
-PRIVATE_KEY=private_/5IYe2PNJu5jRfNuQ5mBGpKuRsk=
-BASE_URL=http://localhost:3000
-
-NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
-NEXT_PUBLIC_SOLANA_NETWORK=devnet
-EMAIL_USER=payndeliver1@gmail.com
-EMAIL_PASSWORD=koygptoablbwwdrl
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_99a75652aafda7c38f4c16d6578b5204cb4eefde
+4. Create a `.env.local` file in the root directory and add 
 
    ```
 
