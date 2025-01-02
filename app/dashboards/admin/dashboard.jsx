@@ -32,7 +32,7 @@ const StyledListItem = styled(ListItem)(({ theme }) => ({
   },
 }));
 
-const DashboardComponent = ({ data, }) => {
+const DashboardComponent = ({ data }) => {
   // Debug the data to verify its structure
   // console.log("Data received in DashboardComponent:", data);
 
@@ -65,10 +65,10 @@ const DashboardComponent = ({ data, }) => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <StyledTableCell>Order ID</StyledTableCell>
-                  <StyledTableCell>Product</StyledTableCell>
-                  <StyledTableCell>Quantity</StyledTableCell>
-                  <StyledTableCell align="right">Total</StyledTableCell>
+                  <StyledTableCell>No</StyledTableCell>
+                  <StyledTableCell>Business Name</StyledTableCell>
+                  <StyledTableCell>Business Description</StyledTableCell>
+                  <StyledTableCell align="right">Date Created</StyledTableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
